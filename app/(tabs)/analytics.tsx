@@ -1,11 +1,7 @@
-import React, { useEffect } from 'react';
-import { ScrollView, StyleSheet, View, Text, Dimensions, Platform } from 'react-native';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, withDelay, withRepeat,
-  withSequence, Easing, interpolate, useAnimatedProps,
-} from 'react-native-reanimated';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing, ScrollView, StyleSheet, View, Text, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Rect, Circle, Path, Line, Text as SvgText, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
+import Svg, { Rect, Circle, Path, Polyline, Text as SvgText, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import AnimatedBackground from '../../components/AnimatedBackground';
 import GlassCard from '../../components/GlassCard';
 import { Colors } from '../../constants/Colors';
@@ -37,15 +33,7 @@ function BarChart() {
         const x = i * (CHART_W / MONTHLY_DATA.length) + 2;
         return (
           <React.Fragment key={i}>
-            <Rect
-              x={x}
-              y={barH - h}
-              width={barW}
-              height={h}
-              rx={3}
-              fill={i === MONTHLY_DATA.length - 1 ? 'url(#barGradActive)' : 'url(#barGrad)'}
-              opacity={i === MONTHLY_DATA.length - 1 ? 1 : 0.7}
-            />
+            <Rect x={x} y={barH - h} width={barW} height={h} rx={3} fill={i === MONTHLY_DATA.length - 1 ? 'url(#barGradActive)' : 'url(#barGrad)'} opacity={i === MONTHLY_DATA.length - 1 ? 1 : 0.7} />
             <SvgText x={x + barW / 2} y={barH + 14} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize={9}>{MONTHS[i]}</SvgText>
           </React.Fragment>
         );
@@ -63,17 +51,8 @@ function DonutChart({ value, total, color, label }: { value: number; total: numb
     <View style={styles.donutWrap}>
       <Svg width={96} height={96}>
         <Circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={strokeW} />
-        <Circle
-          cx={cx} cy={cy} r={r} fill="none"
-          stroke={color} strokeWidth={strokeW}
-          strokeDasharray={`${dash} ${circumference}`}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${cx} ${cy})`}
-          opacity={0.9}
-        />
-        <SvgText x={cx} y={cy + 5} textAnchor="middle" fill={color} fontSize={14} fontWeight="700">
-          {Math.round(percent * 100)}%
-        </SvgText>
+        <Circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={strokeW} strokeDasharray={`${dash} ${circumference}`} strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} opacity={0.9} />
+        <SvgText x={cx} y={cy + 5} textAnchor="middle" fill={color} fontSize={14} fontWeight="700">{Math.round(percent * 100)}%</SvgText>
       </Svg>
       <Text style={[styles.donutLabel, { color: Colors.textSecondary }]}>{label}</Text>
     </View>
@@ -81,11 +60,14 @@ function DonutChart({ value, total, color, label }: { value: number; total: numb
 }
 
 function AnimatedProgressBar({ value, color, label, delay = 0 }: { value: number; color: string; label: string; delay?: number }) {
-  const width = useSharedValue(0);
+  const widthAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    width.value = withDelay(delay, withTiming(value, { duration: 1200, easing: Easing.out(Easing.cubic) }));
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.timing(widthAnim, { toValue: value, duration: 1200, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+    ]).start();
   }, []);
-  const barStyle = useAnimatedStyle(() => ({ width: `${width.value}%` as any }));
+  const animWidth = widthAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
   return (
     <View style={styles.progressItem}>
       <View style={styles.progressHeader}>
@@ -93,7 +75,7 @@ function AnimatedProgressBar({ value, color, label, delay = 0 }: { value: number
         <Text style={[styles.progressValue, { color }]}>{value}%</Text>
       </View>
       <View style={styles.progressTrack}>
-        <Animated.View style={[styles.progressFill, barStyle, { backgroundColor: color, shadowColor: color }]} />
+        <Animated.View style={[styles.progressFill, { width: animWidth, backgroundColor: color, shadowColor: color }]} />
       </View>
     </View>
   );
@@ -115,8 +97,6 @@ export default function AnalyticsScreen() {
           <Text style={styles.subtitle}>INSIGHTS</Text>
           <Text style={styles.title}>Analytics <Text style={{ color: Colors.success }}>Hub</Text></Text>
         </View>
-
-        {/* KPI Row */}
         <View style={styles.kpiGrid}>
           {KPI_DATA.map((kpi, i) => (
             <GlassCard key={i} glowColor={kpi.color} delay={i * 80} style={styles.kpiCard}>
@@ -128,17 +108,11 @@ export default function AnalyticsScreen() {
             </GlassCard>
           ))}
         </View>
-
-        {/* Monthly Revenue Chart */}
         <GlassCard style={styles.chartCard} glowColor={Colors.neonBlue} delay={350}>
           <Text style={styles.cardTitle}>Monthly Performance</Text>
           <Text style={styles.chartSubtitle}>Revenue & Project Completion — 2024</Text>
-          <View style={styles.chartArea}>
-            <BarChart />
-          </View>
+          <View style={styles.chartArea}><BarChart /></View>
         </GlassCard>
-
-        {/* Donut Charts */}
         <GlassCard style={styles.donutCard} glowColor={Colors.neonPurple} delay={450}>
           <Text style={styles.cardTitle}>Service Distribution</Text>
           <View style={styles.donutRow}>
@@ -148,8 +122,6 @@ export default function AnalyticsScreen() {
             <DonutChart value={17} total={100} color={Colors.success} label="Dev" />
           </View>
         </GlassCard>
-
-        {/* Progress Metrics */}
         <GlassCard style={styles.progressCard} glowColor={Colors.neonCyan} delay={550}>
           <Text style={styles.cardTitle}>Performance Metrics</Text>
           <View style={styles.progressList}>
@@ -160,8 +132,6 @@ export default function AnalyticsScreen() {
             <AnimatedProgressBar value={99} color={Colors.neonPink} label="System Uptime" delay={1000} />
           </View>
         </GlassCard>
-
-        {/* Region breakdown */}
         <GlassCard style={styles.regionCard} glowColor={Colors.warning} delay={650}>
           <Text style={styles.cardTitle}>Regional Presence</Text>
           {[
@@ -180,7 +150,6 @@ export default function AnalyticsScreen() {
             </View>
           ))}
         </GlassCard>
-
         <View style={{ height: 100 }} />
       </ScrollView>
     </View>

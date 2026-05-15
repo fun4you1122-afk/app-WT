@@ -1,13 +1,5 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, Dimensions } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-  withSequence,
-  Easing,
-} from 'react-native-reanimated';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, View, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Line, Path, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { Colors } from '../constants/Colors';
@@ -15,54 +7,56 @@ import { Colors } from '../constants/Colors';
 const { width: W, height: H } = Dimensions.get('window');
 
 function FloatingOrb({ x, y, size, color, delay }: { x: number; y: number; size: number; color: string; delay: number }) {
-  const translateY = useSharedValue(0);
-  const opacity = useSharedValue(0.4);
-  const scale = useSharedValue(1);
+  const translateY = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(0.4)).current;
+  const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    translateY.value = withRepeat(
-      withSequence(
-        withTiming(-20, { duration: 3000 + delay * 500, easing: Easing.inOut(Easing.sin) }),
-        withTiming(20, { duration: 3000 + delay * 500, easing: Easing.inOut(Easing.sin) })
-      ),
-      -1, true
-    );
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(0.8, { duration: 2000 + delay * 400 }),
-        withTiming(0.3, { duration: 2000 + delay * 400 })
-      ),
-      -1, true
-    );
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1.15, { duration: 4000 + delay * 300, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0.9, { duration: 4000 + delay * 300, easing: Easing.inOut(Easing.sin) })
-      ),
-      -1, true
-    );
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(translateY, { toValue: -20, duration: 3000 + delay * 500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(translateY, { toValue: 20, duration: 3000 + delay * 500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ])
+    ).start();
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.8, duration: 2000 + delay * 400, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.3, duration: 2000 + delay * 400, useNativeDriver: true }),
+      ])
+    ).start();
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, { toValue: 1.15, duration: 4000 + delay * 300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 0.9, duration: 4000 + delay * 300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ])
+    ).start();
   }, []);
 
-  const style = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }, { scale: scale.value }],
-  }));
-
   return (
-    <Animated.View style={[styles.orb, style, { left: x, top: y, width: size, height: size, borderRadius: size / 2, backgroundColor: color }]} />
+    <Animated.View
+      style={[
+        styles.orb,
+        {
+          left: x, top: y, width: size, height: size, borderRadius: size / 2,
+          backgroundColor: color,
+          opacity,
+          transform: [{ translateY }, { scale }],
+        },
+      ]}
+    />
   );
 }
 
 export default function AnimatedBackground() {
-  const rotateAnim = useSharedValue(0);
+  const rotateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    rotateAnim.value = withRepeat(withTiming(360, { duration: 20000, easing: Easing.linear }), -1, false);
+    Animated.loop(
+      Animated.timing(rotateAnim, { toValue: 1, duration: 20000, easing: Easing.linear, useNativeDriver: true })
+    ).start();
   }, []);
 
-  const rotStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotateAnim.value}deg` }],
-  }));
+  const rotate = rotateAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
   return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="none">

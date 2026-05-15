@@ -1,14 +1,7 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  withDelay,
-  Easing,
-} from 'react-native-reanimated';
 import { Colors } from '../constants/Colors';
 import { Radius } from '../constants/Theme';
 
@@ -23,21 +16,22 @@ interface GlassCardProps {
 }
 
 export default function GlassCard({ children, style, glowColor = Colors.neonBlue, intensity = 20, onPress, animated = true, delay = 0 }: GlassCardProps) {
-  const opacity = useSharedValue(animated ? 0 : 1);
-  const translateY = useSharedValue(animated ? 30 : 0);
+  const opacity = useRef(new Animated.Value(animated ? 0 : 1)).current;
+  const translateY = useRef(new Animated.Value(animated ? 30 : 0)).current;
 
   useEffect(() => {
-    opacity.value = withDelay(delay, withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) }));
-    translateY.value = withDelay(delay, withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) }));
+    if (!animated) return;
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(opacity, { toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(translateY, { toValue: 0, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      ]),
+    ]).start();
   }, []);
 
-  const animStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
-
   const content = (
-    <Animated.View style={[styles.container, animStyle, style]}>
+    <Animated.View style={[styles.container, { opacity, transform: [{ translateY }] }, style]}>
       <LinearGradient
         colors={[`${glowColor}20`, `${glowColor}05`, 'transparent']}
         style={StyleSheet.absoluteFillObject}

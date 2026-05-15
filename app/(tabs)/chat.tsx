@@ -1,43 +1,20 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  ScrollView, StyleSheet, View, Text, TextInput,
-  TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions
-} from 'react-native';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withRepeat, withSequence,
-  withTiming, withDelay, Easing,
-} from 'react-native-reanimated';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Animated, Easing, ScrollView, StyleSheet, View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import Svg, { Circle, Path } from 'react-native-svg';
 import AnimatedBackground from '../../components/AnimatedBackground';
 import { Colors } from '../../constants/Colors';
 import { Typography, Spacing, Radius } from '../../constants/Theme';
 
 const { width: W } = Dimensions.get('window');
 
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
-}
+interface Message { id: string; role: 'user' | 'assistant'; content: string; timestamp: string; }
 
 const INITIAL_MESSAGES: Message[] = [
-  {
-    id: '1',
-    role: 'assistant',
-    content: "Hello! I'm WeThink AI, your intelligent business assistant. I'm here to help you with insights about our services, projects, analytics, and anything related to your digital transformation journey. How can I assist you today?",
-    timestamp: 'Just now',
-  },
+  { id: '1', role: 'assistant', content: "Hello! I'm WeThink AI, your intelligent business assistant. I'm here to help you with insights about our services, projects, analytics, and anything related to your digital transformation journey. How can I assist you today?", timestamp: 'Just now' },
 ];
 
-const QUICK_PROMPTS = [
-  'What AI services do you offer?',
-  'Show me recent projects',
-  'Explain your cloud solutions',
-  'How can AI benefit my business?',
-];
+const QUICK_PROMPTS = ['What AI services do you offer?', 'Show me recent projects', 'Explain your cloud solutions', 'How can AI benefit my business?'];
 
 const AI_RESPONSES: Record<string, string> = {
   default: "That's a great question! WeThink specializes in delivering cutting-edge AI and technology solutions across the UAE. Our expertise spans machine learning, cloud architecture, cybersecurity, and digital transformation. Would you like me to elaborate on any specific area?",
@@ -48,18 +25,23 @@ const AI_RESPONSES: Record<string, string> = {
 };
 
 function AIAvatar() {
-  const pulse = useSharedValue(1);
-  const ring = useSharedValue(0.8);
+  const pulse = useRef(new Animated.Value(1)).current;
+  const ring = useRef(new Animated.Value(0.8)).current;
   useEffect(() => {
-    pulse.value = withRepeat(withSequence(withTiming(1.1, { duration: 1500 }), withTiming(1, { duration: 1500 })), -1, true);
-    ring.value = withRepeat(withSequence(withTiming(1.2, { duration: 2000 }), withTiming(0.9, { duration: 2000 })), -1, true);
+    Animated.loop(Animated.sequence([
+      Animated.timing(pulse, { toValue: 1.1, duration: 1500, useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 1, duration: 1500, useNativeDriver: true }),
+    ])).start();
+    Animated.loop(Animated.sequence([
+      Animated.timing(ring, { toValue: 1.2, duration: 2000, useNativeDriver: true }),
+      Animated.timing(ring, { toValue: 0.9, duration: 2000, useNativeDriver: true }),
+    ])).start();
   }, []);
-  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
-  const ringStyle = useAnimatedStyle(() => ({ transform: [{ scale: ring.value }], opacity: 2 - ring.value }));
+  const ringOpacity = ring.interpolate({ inputRange: [0.9, 1.2], outputRange: [0.8, 0.2] });
   return (
     <View style={styles.avatarContainer}>
-      <Animated.View style={[styles.avatarRing, ringStyle]} />
-      <Animated.View style={[styles.avatarCore, pulseStyle]}>
+      <Animated.View style={[styles.avatarRing, { opacity: ringOpacity, transform: [{ scale: ring }] }]} />
+      <Animated.View style={[styles.avatarCore, { transform: [{ scale: pulse }] }]}>
         <LinearGradient colors={[Colors.neonBlue, Colors.electricBlue]} style={styles.avatarGrad}>
           <Text style={styles.avatarIcon}>🤖</Text>
         </LinearGradient>
@@ -69,34 +51,39 @@ function AIAvatar() {
 }
 
 function TypingIndicator() {
-  const dots = [useSharedValue(0), useSharedValue(0), useSharedValue(0)];
+  const dots = [useRef(new Animated.Value(0)).current, useRef(new Animated.Value(0)).current, useRef(new Animated.Value(0)).current];
   useEffect(() => {
     dots.forEach((d, i) => {
-      d.value = withDelay(i * 200, withRepeat(withSequence(withTiming(-6, { duration: 400 }), withTiming(0, { duration: 400 })), -1, false));
+      Animated.sequence([
+        Animated.delay(i * 200),
+        Animated.loop(Animated.sequence([
+          Animated.timing(d, { toValue: -6, duration: 400, useNativeDriver: true }),
+          Animated.timing(d, { toValue: 0, duration: 400, useNativeDriver: true }),
+        ])),
+      ]).start();
     });
   }, []);
   return (
     <View style={styles.typingRow}>
-      {dots.map((d, i) => {
-        const style = useAnimatedStyle(() => ({ transform: [{ translateY: d.value }] }));
-        return <Animated.View key={i} style={[styles.typingDot, style]} />;
-      })}
+      {dots.map((d, i) => (
+        <Animated.View key={i} style={[styles.typingDot, { transform: [{ translateY: d }] }]} />
+      ))}
     </View>
   );
 }
 
 function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === 'user';
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(10);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(10)).current;
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 300 });
-    translateY.value = withTiming(0, { duration: 300, easing: Easing.out(Easing.cubic) });
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 0, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
   }, []);
-  const style = useAnimatedStyle(() => ({ opacity: opacity.value, transform: [{ translateY: translateY.value }] }));
-
   return (
-    <Animated.View style={[styles.messageRow, isUser ? styles.userRow : styles.aiRow, style]}>
+    <Animated.View style={[styles.messageRow, isUser ? styles.userRow : styles.aiRow, { opacity, transform: [{ translateY }] }]}>
       {!isUser && (
         <View style={styles.msgAvatar}>
           <LinearGradient colors={[Colors.neonBlue, Colors.electricBlue]} style={styles.msgAvatarGrad}>
@@ -135,7 +122,7 @@ export default function ChatScreen() {
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
-  const sendMessage = (text: string = input) => {
+  const sendMessage = useCallback((text: string = input) => {
     if (!text.trim()) return;
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: text.trim(), timestamp: 'Just now' };
     setMessages(prev => [...prev, userMsg]);
@@ -148,13 +135,11 @@ export default function ChatScreen() {
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     }, 1500);
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-  };
+  }, [input]);
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <AnimatedBackground />
-
-      {/* Header */}
       <View style={styles.header}>
         <AIAvatar />
         <View style={styles.headerInfo}>
@@ -168,15 +153,7 @@ export default function ChatScreen() {
           <Text style={styles.headerActionText}>⋮</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Messages */}
-      <ScrollView
-        ref={scrollRef}
-        style={styles.messages}
-        contentContainerStyle={styles.messagesContent}
-        showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
-      >
+      <ScrollView ref={scrollRef} style={styles.messages} contentContainerStyle={styles.messagesContent} showsVerticalScrollIndicator={false} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}>
         {messages.map(msg => <MessageBubble key={msg.id} message={msg} />)}
         {isTyping && (
           <View style={[styles.messageRow, styles.aiRow]}>
@@ -185,14 +162,10 @@ export default function ChatScreen() {
                 <Text style={{ fontSize: 12 }}>W</Text>
               </LinearGradient>
             </View>
-            <View style={[styles.bubble, styles.aiBubble]}>
-              <TypingIndicator />
-            </View>
+            <View style={[styles.bubble, styles.aiBubble]}><TypingIndicator /></View>
           </View>
         )}
       </ScrollView>
-
-      {/* Quick Prompts */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickPrompts} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
         {QUICK_PROMPTS.map((p, i) => (
           <TouchableOpacity key={i} style={styles.quickBtn} onPress={() => sendMessage(p)}>
@@ -200,25 +173,11 @@ export default function ChatScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
-
-      {/* Input */}
       <BlurView intensity={30} tint="dark" style={styles.inputContainer}>
         <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Ask WeThink AI anything..."
-            placeholderTextColor={Colors.textMuted}
-            multiline
-            maxLength={500}
-            onSubmitEditing={() => sendMessage()}
-          />
+          <TextInput style={styles.input} value={input} onChangeText={setInput} placeholder="Ask WeThink AI anything..." placeholderTextColor={Colors.textMuted} multiline maxLength={500} />
           <TouchableOpacity onPress={() => sendMessage()} style={styles.sendBtn} disabled={!input.trim()}>
-            <LinearGradient
-              colors={input.trim() ? [Colors.neonBlue, Colors.electricBlue] : ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
-              style={styles.sendGrad}
-            >
+            <LinearGradient colors={input.trim() ? [Colors.neonBlue, Colors.electricBlue] : ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']} style={styles.sendGrad}>
               <Text style={styles.sendIcon}>↑</Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -230,16 +189,7 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-    gap: 12,
-  },
+  header: { flexDirection: 'row', alignItems: 'center', paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingHorizontal: Spacing.md, paddingBottom: Spacing.md, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)', gap: 12 },
   avatarContainer: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   avatarRing: { position: 'absolute', width: 52, height: 52, borderRadius: 26, borderWidth: 1, borderColor: `${Colors.neonBlue}40` },
   avatarCore: { width: 42, height: 42, borderRadius: 21, overflow: 'hidden' },
@@ -270,45 +220,12 @@ const styles = StyleSheet.create({
   typingRow: { flexDirection: 'row', gap: 4, alignItems: 'flex-end', padding: 4 },
   typingDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: Colors.neonBlue, opacity: 0.8 },
   quickPrompts: { paddingVertical: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)' },
-  quickBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(0,212,255,0.08)',
-    borderRadius: Radius.full,
-    borderWidth: 1,
-    borderColor: `${Colors.neonBlue}25`,
-  },
+  quickBtn: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: 'rgba(0,212,255,0.08)', borderRadius: Radius.full, borderWidth: 1, borderColor: `${Colors.neonBlue}25` },
   quickText: { ...Typography.bodySM, color: Colors.neonBlue },
-  inputContainer: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
-  },
+  inputContainer: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', paddingBottom: Platform.OS === 'ios' ? 34 : 16 },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, padding: Spacing.md },
-  input: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: Radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
-    color: Colors.textPrimary,
-    maxHeight: 120,
-    ...Typography.bodyMD,
-  },
+  input: { flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: Radius.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, color: Colors.textPrimary, maxHeight: 120, ...Typography.bodyMD },
   sendBtn: {},
-  sendGrad: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.neonBlue,
-    shadowOpacity: 0.6,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 0 },
-  },
+  sendGrad: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', shadowColor: Colors.neonBlue, shadowOpacity: 0.6, shadowRadius: 12, shadowOffset: { width: 0, height: 0 } },
   sendIcon: { fontSize: 20, color: Colors.white, fontWeight: '700' },
 });

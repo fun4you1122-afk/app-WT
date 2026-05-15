@@ -1,15 +1,6 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withTiming,
-  withRepeat,
-  withSequence,
-  Easing,
-} from 'react-native-reanimated';
 import { Colors } from '../constants/Colors';
 import { Typography, Spacing, Radius } from '../constants/Theme';
 
@@ -25,23 +16,31 @@ interface StatCardProps {
 }
 
 export default function StatCard({ value, label, sublabel, trend, trendValue, glowColor = Colors.neonBlue, icon, delay = 0 }: StatCardProps) {
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(20);
-  const pulse = useSharedValue(1);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(20)).current;
+  const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    opacity.value = withDelay(delay, withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) }));
-    translateY.value = withDelay(delay, withTiming(0, { duration: 700, easing: Easing.out(Easing.cubic) }));
-    pulse.value = withDelay(delay + 700, withRepeat(withSequence(withTiming(1.08, { duration: 2000 }), withTiming(1, { duration: 2000 })), -1, true));
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(opacity, { toValue: 1, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(translateY, { toValue: 0, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      ]),
+    ]).start(() => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, { toValue: 1.08, duration: 2000, useNativeDriver: true }),
+          Animated.timing(pulse, { toValue: 1, duration: 2000, useNativeDriver: true }),
+        ])
+      ).start();
+    });
   }, []);
-
-  const cardStyle = useAnimatedStyle(() => ({ opacity: opacity.value, transform: [{ translateY: translateY.value }] }));
-  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
 
   const trendColor = trend === 'up' ? Colors.success : trend === 'down' ? Colors.error : Colors.textMuted;
 
   return (
-    <Animated.View style={[styles.container, cardStyle]}>
+    <Animated.View style={[styles.container, { opacity, transform: [{ translateY }] }]}>
       <LinearGradient
         colors={[`${glowColor}18`, `${glowColor}06`, 'transparent']}
         style={StyleSheet.absoluteFillObject}
@@ -51,7 +50,7 @@ export default function StatCard({ value, label, sublabel, trend, trendValue, gl
       <View style={[styles.border, { backgroundColor: `${glowColor}30` }]} />
       <View style={styles.content}>
         {icon && (
-          <Animated.View style={[styles.iconWrapper, pulseStyle, { backgroundColor: `${glowColor}20`, borderColor: `${glowColor}40` }]}>
+          <Animated.View style={[styles.iconWrapper, { transform: [{ scale: pulse }], backgroundColor: `${glowColor}20`, borderColor: `${glowColor}40` }]}>
             <Text style={styles.iconText}>{icon}</Text>
           </Animated.View>
         )}

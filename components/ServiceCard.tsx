@@ -1,15 +1,6 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withTiming,
-  withRepeat,
-  withSequence,
-  Easing,
-} from 'react-native-reanimated';
 import { Colors } from '../constants/Colors';
 import { Typography, Spacing, Radius } from '../constants/Theme';
 
@@ -24,24 +15,29 @@ interface ServiceCardProps {
 }
 
 export default function ServiceCard({ icon, title, description, tags, glowColor = Colors.neonBlue, delay = 0, onPress }: ServiceCardProps) {
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(40);
-  const iconScale = useSharedValue(1);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(40)).current;
+  const iconScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    opacity.value = withDelay(delay, withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) }));
-    translateY.value = withDelay(delay, withTiming(0, { duration: 700, easing: Easing.out(Easing.cubic) }));
-    iconScale.value = withDelay(delay + 700, withRepeat(
-      withSequence(withTiming(1.1, { duration: 2500, easing: Easing.inOut(Easing.sin) }), withTiming(1, { duration: 2500, easing: Easing.inOut(Easing.sin) })),
-      -1, true
-    ));
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(opacity, { toValue: 1, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(translateY, { toValue: 0, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      ]),
+    ]).start(() => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(iconScale, { toValue: 1.1, duration: 2500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(iconScale, { toValue: 1, duration: 2500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        ])
+      ).start();
+    });
   }, []);
 
-  const cardStyle = useAnimatedStyle(() => ({ opacity: opacity.value, transform: [{ translateY: translateY.value }] }));
-  const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: iconScale.value }] }));
-
   return (
-    <Animated.View style={cardStyle}>
+    <Animated.View style={{ opacity, transform: [{ translateY }] }}>
       <TouchableOpacity onPress={onPress} activeOpacity={0.85}>
         <View style={styles.card}>
           <LinearGradient
@@ -51,7 +47,7 @@ export default function ServiceCard({ icon, title, description, tags, glowColor 
             end={{ x: 1, y: 1 }}
           />
           <View style={[styles.topBorder, { backgroundColor: glowColor }]} />
-          <Animated.View style={[styles.iconContainer, iconStyle, { backgroundColor: `${glowColor}15`, borderColor: `${glowColor}30` }]}>
+          <Animated.View style={[styles.iconContainer, { transform: [{ scale: iconScale }], backgroundColor: `${glowColor}15`, borderColor: `${glowColor}30` }]}>
             <Text style={styles.icon}>{icon}</Text>
           </Animated.View>
           <Text style={styles.title}>{title}</Text>

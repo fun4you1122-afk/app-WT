@@ -1,13 +1,6 @@
-import React, { useCallback } from 'react';
-import { StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
+import React, { useCallback, useRef } from 'react';
+import { Animated, Easing, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  withSequence,
-  Easing,
-} from 'react-native-reanimated';
 import { Colors } from '../constants/Colors';
 import { Typography, Radius } from '../constants/Theme';
 
@@ -21,21 +14,16 @@ interface NeonButtonProps {
   fullWidth?: boolean;
 }
 
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
-
 export default function NeonButton({ title, onPress, variant = 'primary', size = 'md', style, icon, fullWidth }: NeonButtonProps) {
-  const scale = useSharedValue(1);
-  const glow = useSharedValue(1);
+  const scale = useRef(new Animated.Value(1)).current;
 
   const handlePress = useCallback(() => {
-    scale.value = withSequence(withTiming(0.95, { duration: 100 }), withTiming(1, { duration: 200, easing: Easing.out(Easing.back(2)) }));
-    glow.value = withSequence(withTiming(1.5, { duration: 150 }), withTiming(1, { duration: 300 }));
+    Animated.sequence([
+      Animated.timing(scale, { toValue: 0.95, duration: 100, useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 1, duration: 200, easing: Easing.out(Easing.back(2)), useNativeDriver: true }),
+    ]).start();
     onPress?.();
   }, [onPress]);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
 
   const gradients: Record<string, readonly [string, string]> = {
     primary: [Colors.neonBlue, Colors.electricBlue],
@@ -55,23 +43,25 @@ export default function NeonButton({ title, onPress, variant = 'primary', size =
   };
 
   return (
-    <AnimatedTouchable onPress={handlePress} activeOpacity={1} style={[animStyle, fullWidth && { width: '100%' }]}>
-      <LinearGradient
-        colors={gradients[variant]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={[
-          styles.button,
-          { height: heights[size], borderRadius: Radius.lg },
-          variant === 'ghost' && styles.ghostBorder,
-          { shadowColor: glowColors[variant], shadowOpacity: 0.6, shadowRadius: 16, shadowOffset: { width: 0, height: 0 }, elevation: 8 },
-          style,
-        ]}
-      >
-        {icon && <>{icon}</>}
-        <Text style={[styles.label, fontSizes[size], { marginLeft: icon ? 8 : 0 }]}>{title}</Text>
-      </LinearGradient>
-    </AnimatedTouchable>
+    <TouchableOpacity onPress={handlePress} activeOpacity={1} style={fullWidth ? { width: '100%' } : undefined}>
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <LinearGradient
+          colors={gradients[variant]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[
+            styles.button,
+            { height: heights[size], borderRadius: Radius.lg },
+            variant === 'ghost' && styles.ghostBorder,
+            { shadowColor: glowColors[variant], shadowOpacity: 0.6, shadowRadius: 16, shadowOffset: { width: 0, height: 0 }, elevation: 8 },
+            style,
+          ]}
+        >
+          {icon && <>{icon}</>}
+          <Text style={[styles.label, fontSizes[size], { marginLeft: icon ? 8 : 0 }]}>{title}</Text>
+        </LinearGradient>
+      </Animated.View>
+    </TouchableOpacity>
   );
 }
 

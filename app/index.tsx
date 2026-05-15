@@ -1,99 +1,84 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View, Text, Dimensions } from 'react-native';
+import { Animated, Easing, StyleSheet, View, Text, Dimensions } from 'react-native';
 import { router } from 'expo-router';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withDelay,
-  withSequence,
-  withRepeat,
-  Easing,
-  runOnJS,
-} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Defs, RadialGradient, Stop, Line, Path } from 'react-native-svg';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Theme';
 
 const { width: W, height: H } = Dimensions.get('window');
 
-function navigate() {
-  router.replace('/onboarding');
-}
-
 export default function SplashScreen() {
-  const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.3);
-  const ringScale1 = useSharedValue(0);
-  const ringOpacity1 = useSharedValue(0);
-  const ringScale2 = useSharedValue(0);
-  const ringOpacity2 = useSharedValue(0);
-  const taglineOpacity = useSharedValue(0);
-  const taglineY = useSharedValue(20);
-  const screenOpacity = useSharedValue(1);
-  const particleRotate = useSharedValue(0);
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(0.3)).current;
+  const ring1Scale = useRef(new Animated.Value(0)).current;
+  const ring1Opacity = useRef(new Animated.Value(0)).current;
+  const ring2Scale = useRef(new Animated.Value(0)).current;
+  const ring2Opacity = useRef(new Animated.Value(0)).current;
+  const taglineOpacity = useRef(new Animated.Value(0)).current;
+  const taglineY = useRef(new Animated.Value(20)).current;
+  const screenOpacity = useRef(new Animated.Value(1)).current;
+  const particleRotate = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Logo entrance
-    logoScale.value = withDelay(300, withTiming(1, { duration: 900, easing: Easing.out(Easing.back(1.5)) }));
-    logoOpacity.value = withDelay(300, withTiming(1, { duration: 700 }));
+    Animated.sequence([
+      Animated.delay(300),
+      Animated.parallel([
+        Animated.timing(logoScale, { toValue: 1, duration: 900, easing: Easing.out(Easing.back(1.5)), useNativeDriver: true }),
+        Animated.timing(logoOpacity, { toValue: 1, duration: 700, useNativeDriver: true }),
+      ]),
+    ]).start();
 
-    // Pulse rings
-    ringScale1.value = withDelay(800, withRepeat(
-      withSequence(withTiming(0, { duration: 0 }), withTiming(2.5, { duration: 1800, easing: Easing.out(Easing.cubic) })),
-      3, false
-    ));
-    ringOpacity1.value = withDelay(800, withRepeat(
-      withSequence(withTiming(0.6, { duration: 200 }), withTiming(0, { duration: 1600 })),
-      3, false
-    ));
-
-    ringScale2.value = withDelay(1100, withRepeat(
-      withSequence(withTiming(0, { duration: 0 }), withTiming(2.5, { duration: 1800, easing: Easing.out(Easing.cubic) })),
-      3, false
-    ));
-    ringOpacity2.value = withDelay(1100, withRepeat(
-      withSequence(withTiming(0.4, { duration: 200 }), withTiming(0, { duration: 1600 })),
-      3, false
-    ));
+    // Pulse rings (3 repeats)
+    const pulseRing = (scale: Animated.Value, opacity: Animated.Value, delay: number, peakOpacity: number) => {
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.loop(
+          Animated.parallel([
+            Animated.sequence([
+              Animated.timing(scale, { toValue: 0, duration: 0, useNativeDriver: true }),
+              Animated.timing(scale, { toValue: 2.5, duration: 1800, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+            ]),
+            Animated.sequence([
+              Animated.timing(opacity, { toValue: peakOpacity, duration: 200, useNativeDriver: true }),
+              Animated.timing(opacity, { toValue: 0, duration: 1600, useNativeDriver: true }),
+            ]),
+          ]),
+          { iterations: 3 }
+        ),
+      ]).start();
+    };
+    pulseRing(ring1Scale, ring1Opacity, 800, 0.6);
+    pulseRing(ring2Scale, ring2Opacity, 1100, 0.4);
 
     // Tagline
-    taglineOpacity.value = withDelay(1200, withTiming(1, { duration: 800 }));
-    taglineY.value = withDelay(1200, withTiming(0, { duration: 700, easing: Easing.out(Easing.cubic) }));
+    Animated.sequence([
+      Animated.delay(1200),
+      Animated.parallel([
+        Animated.timing(taglineOpacity, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(taglineY, { toValue: 0, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      ]),
+    ]).start();
 
     // Rotate particles
-    particleRotate.value = withRepeat(withTiming(360, { duration: 8000, easing: Easing.linear }), -1, false);
+    Animated.loop(
+      Animated.timing(particleRotate, { toValue: 1, duration: 8000, easing: Easing.linear, useNativeDriver: true })
+    ).start();
 
-    // Navigate away
-    screenOpacity.value = withDelay(3200, withTiming(0, { duration: 500, easing: Easing.in(Easing.cubic) }, () => {
-      runOnJS(navigate)();
-    }));
+    // Navigate away after 3.2s
+    const timer = setTimeout(() => {
+      Animated.timing(screenOpacity, { toValue: 0, duration: 500, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(() => {
+        router.replace('/onboarding');
+      });
+    }, 3200);
+    return () => clearTimeout(timer);
   }, []);
 
-  const logoStyle = useAnimatedStyle(() => ({
-    opacity: logoOpacity.value,
-    transform: [{ scale: logoScale.value }],
-  }));
-  const ring1Style = useAnimatedStyle(() => ({
-    opacity: ringOpacity1.value,
-    transform: [{ scale: ringScale1.value }],
-  }));
-  const ring2Style = useAnimatedStyle(() => ({
-    opacity: ringOpacity2.value,
-    transform: [{ scale: ringScale2.value }],
-  }));
-  const taglineStyle = useAnimatedStyle(() => ({
-    opacity: taglineOpacity.value,
-    transform: [{ translateY: taglineY.value }],
-  }));
-  const screenStyle = useAnimatedStyle(() => ({ opacity: screenOpacity.value }));
-  const particleStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${particleRotate.value}deg` }],
-  }));
+  const rotate = particleRotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
   return (
-    <Animated.View style={[styles.container, screenStyle]}>
+    <Animated.View style={[styles.container, { opacity: screenOpacity }]}>
       <LinearGradient colors={['#050A18', '#080E20', '#050A18']} style={StyleSheet.absoluteFillObject} />
 
       {/* Background glow */}
@@ -108,7 +93,7 @@ export default function SplashScreen() {
       </Svg>
 
       {/* Rotating orbit particles */}
-      <Animated.View style={[styles.orbitContainer, particleStyle]}>
+      <Animated.View style={[styles.orbitContainer, { transform: [{ rotate }] }]}>
         <Svg width={W} height={300}>
           {Array.from({ length: 12 }).map((_, i) => {
             const angle = (i * 30 * Math.PI) / 180;
@@ -121,11 +106,11 @@ export default function SplashScreen() {
       </Animated.View>
 
       {/* Pulse rings */}
-      <Animated.View style={[styles.ring, ring1Style, { borderColor: Colors.neonBlue }]} />
-      <Animated.View style={[styles.ring, ring2Style, { borderColor: Colors.neonCyan }]} />
+      <Animated.View style={[styles.ring, { borderColor: Colors.neonBlue, opacity: ring1Opacity, transform: [{ scale: ring1Scale }] }]} />
+      <Animated.View style={[styles.ring, { borderColor: Colors.neonCyan, opacity: ring2Opacity, transform: [{ scale: ring2Scale }] }]} />
 
       {/* Logo */}
-      <Animated.View style={[styles.logoContainer, logoStyle]}>
+      <Animated.View style={[styles.logoContainer, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}>
         <LinearGradient colors={[Colors.neonBlue, Colors.electricBlue]} style={styles.logoGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
           <Text style={styles.logoText}>W</Text>
         </LinearGradient>
@@ -133,7 +118,7 @@ export default function SplashScreen() {
       </Animated.View>
 
       {/* Brand name */}
-      <Animated.View style={[styles.brandContainer, logoStyle]}>
+      <Animated.View style={[styles.brandContainer, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}>
         <Text style={styles.brandName}>
           <Text style={{ color: Colors.neonBlue }}>We</Text>
           <Text style={{ color: Colors.white }}>Think</Text>
@@ -143,14 +128,14 @@ export default function SplashScreen() {
       </Animated.View>
 
       {/* Tagline */}
-      <Animated.Text style={[styles.tagline, taglineStyle]}>
+      <Animated.Text style={[styles.tagline, { opacity: taglineOpacity, transform: [{ translateY: taglineY }] }]}>
         Powering Tomorrow's Intelligence
       </Animated.Text>
 
       {/* Loading bar */}
-      <Animated.View style={[styles.loadingContainer, taglineStyle]}>
+      <Animated.View style={[styles.loadingContainer, { opacity: taglineOpacity }]}>
         <View style={styles.loadingTrack}>
-          <Animated.View style={[styles.loadingBar, { width: '70%' }]} />
+          <View style={[styles.loadingBar, { width: '70%' }]} />
         </View>
       </Animated.View>
     </Animated.View>

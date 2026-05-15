@@ -1,15 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  ScrollView, StyleSheet, View, Text, TouchableOpacity,
-  Dimensions, Platform
-} from 'react-native';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming,
-  withDelay, withRepeat, withSequence, Easing,
-} from 'react-native-reanimated';
+import { Animated, Easing, ScrollView, StyleSheet, View, Text, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import Svg, { Circle, Path, Polyline } from 'react-native-svg';
+import Svg, { Circle, Polyline } from 'react-native-svg';
 import AnimatedBackground from '../../components/AnimatedBackground';
 import GlassCard from '../../components/GlassCard';
 import StatCard from '../../components/StatCard';
@@ -26,11 +19,11 @@ const STATS = [
 ];
 
 const ACTIVITIES = [
-  { time: '2m ago', action: 'AI Model deployed', detail: 'NLP Engine v3.2 → Production', color: Colors.neonBlue, dot: '●' },
-  { time: '14m ago', action: 'Client onboarded', detail: 'Emirates NBD — Digital Transformation', color: Colors.success, dot: '●' },
-  { time: '1h ago', action: 'Sprint completed', detail: 'Smart City Analytics — Phase 2', color: Colors.neonPurple, dot: '●' },
-  { time: '3h ago', action: 'Report generated', detail: 'Q4 AI Performance Report', color: Colors.neonCyan, dot: '●' },
-  { time: '5h ago', action: 'Integration live', detail: 'Dubai Government API — Connected', color: Colors.warning, dot: '●' },
+  { time: '2m ago', action: 'AI Model deployed', detail: 'NLP Engine v3.2 → Production', color: Colors.neonBlue },
+  { time: '14m ago', action: 'Client onboarded', detail: 'Emirates NBD — Digital Transformation', color: Colors.success },
+  { time: '1h ago', action: 'Sprint completed', detail: 'Smart City Analytics — Phase 2', color: Colors.neonPurple },
+  { time: '3h ago', action: 'Report generated', detail: 'Q4 AI Performance Report', color: Colors.neonCyan },
+  { time: '5h ago', action: 'Integration live', detail: 'Dubai Government API — Connected', color: Colors.warning },
 ];
 
 const QUICK_ACTIONS = [
@@ -55,40 +48,38 @@ function MiniChart({ color }: { color: string }) {
 }
 
 function PulsingDot({ color }: { color: string }) {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
+  const scale = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
   useEffect(() => {
-    scale.value = withRepeat(withSequence(withTiming(1.8, { duration: 800 }), withTiming(1, { duration: 800 })), -1, true);
-    opacity.value = withRepeat(withSequence(withTiming(0.3, { duration: 800 }), withTiming(1, { duration: 800 })), -1, true);
+    Animated.loop(Animated.sequence([
+      Animated.timing(scale, { toValue: 1.8, duration: 800, useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 1, duration: 800, useNativeDriver: true }),
+    ])).start();
+    Animated.loop(Animated.sequence([
+      Animated.timing(opacity, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration: 800, useNativeDriver: true }),
+    ])).start();
   }, []);
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }], opacity: opacity.value }));
-  return <Animated.View style={[{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }, style]} />;
+  return <Animated.View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color, transform: [{ scale }], opacity }} />;
 }
 
 export default function DashboardScreen() {
-  const headerOpacity = useSharedValue(0);
-  const headerY = useSharedValue(-20);
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerY = useRef(new Animated.Value(-20)).current;
 
   useEffect(() => {
-    headerOpacity.value = withTiming(1, { duration: 600 });
-    headerY.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) });
+    Animated.parallel([
+      Animated.timing(headerOpacity, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(headerY, { toValue: 0, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
   }, []);
-
-  const headerStyle = useAnimatedStyle(() => ({
-    opacity: headerOpacity.value,
-    transform: [{ translateY: headerY.value }],
-  }));
 
   return (
     <View style={styles.container}>
       <AnimatedBackground />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <Animated.View style={[styles.header, headerStyle]}>
+        <Animated.View style={[styles.header, { opacity: headerOpacity, transform: [{ translateY: headerY }] }]}>
           <View>
             <Text style={styles.greeting}>Good morning,</Text>
             <Text style={styles.headerTitle}>
@@ -124,9 +115,7 @@ export default function DashboardScreen() {
         <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.statsGrid}>
           {STATS.map((stat, i) => (
-            <View key={i} style={styles.statItem}>
-              <StatCard {...stat} />
-            </View>
+            <View key={i} style={styles.statItem}><StatCard {...stat} /></View>
           ))}
         </View>
 
@@ -140,9 +129,7 @@ export default function DashboardScreen() {
             </View>
           </View>
           <Text style={styles.chartValue}>95.2%<Text style={styles.chartUnit}> accuracy</Text></Text>
-          <View style={styles.chartArea}>
-            <MiniChart color={Colors.neonBlue} />
-          </View>
+          <View style={styles.chartArea}><MiniChart color={Colors.neonBlue} /></View>
           <View style={styles.chartMeta}>
             {['1D', '1W', '1M', '3M', 'YTD'].map((p, i) => (
               <TouchableOpacity key={p} style={[styles.periodBtn, i === 1 && { backgroundColor: `${Colors.neonBlue}20`, borderColor: `${Colors.neonBlue}30` }]}>
@@ -156,12 +143,7 @@ export default function DashboardScreen() {
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.actionsGrid}>
           {QUICK_ACTIONS.map((action, i) => (
-            <TouchableOpacity
-              key={i}
-              style={styles.actionItem}
-              onPress={() => action.onPress && router.push(action.onPress as any)}
-              activeOpacity={0.8}
-            >
+            <TouchableOpacity key={i} style={styles.actionItem} onPress={() => action.onPress && router.push(action.onPress as any)} activeOpacity={0.8}>
               <LinearGradient colors={[`${action.color}20`, `${action.color}08`]} style={styles.actionGradient}>
                 <View style={[styles.actionIconWrap, { backgroundColor: `${action.color}20`, borderColor: `${action.color}30` }]}>
                   <Text style={styles.actionIcon}>{action.icon}</Text>

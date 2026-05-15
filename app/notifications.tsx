@@ -1,10 +1,7 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { Animated, Easing, ScrollView, StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
 import { router } from 'expo-router';
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming, Easing } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import AnimatedBackground from '../components/AnimatedBackground';
-import GlassCard from '../components/GlassCard';
 import { Colors } from '../constants/Colors';
 import { Typography, Spacing, Radius } from '../constants/Theme';
 
@@ -21,21 +18,21 @@ const NOTIFICATIONS = [
 
 function NotificationItem({ notif, delay }: { notif: typeof NOTIFICATIONS[0]; delay: number }) {
   const [read, setRead] = useState(notif.read);
-  const opacity = useSharedValue(0);
-  const translateX = useSharedValue(-20);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateX = useRef(new Animated.Value(-20)).current;
 
-  React.useEffect(() => {
-    opacity.value = withDelay(delay, withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }));
-    translateX.value = withDelay(delay, withTiming(0, { duration: 500, easing: Easing.out(Easing.cubic) }));
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(opacity, { toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(translateX, { toValue: 0, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      ]),
+    ]).start();
   }, []);
 
-  const animStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateX: translateX.value }],
-  }));
-
   return (
-    <Animated.View style={animStyle}>
+    <Animated.View style={{ opacity, transform: [{ translateX }] }}>
       <TouchableOpacity onPress={() => setRead(true)} activeOpacity={0.85}>
         <View style={[styles.notifCard, !read && styles.unreadCard]}>
           {!read && <View style={[styles.unreadBar, { backgroundColor: notif.color }]} />}
@@ -57,7 +54,6 @@ function NotificationItem({ notif, delay }: { notif: typeof NOTIFICATIONS[0]; de
 
 export default function NotificationsScreen() {
   const unreadCount = NOTIFICATIONS.filter(n => !n.read).length;
-
   return (
     <View style={styles.container}>
       <AnimatedBackground />
@@ -73,28 +69,19 @@ export default function NotificationsScreen() {
           <Text style={styles.markAllText}>Mark all read</Text>
         </TouchableOpacity>
       </View>
-
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Unread section */}
         {unreadCount > 0 && (
           <>
             <Text style={styles.sectionLabel}>NEW</Text>
             <View style={styles.section}>
-              {NOTIFICATIONS.filter(n => !n.read).map((n, i) => (
-                <NotificationItem key={n.id} notif={n} delay={i * 60} />
-              ))}
+              {NOTIFICATIONS.filter(n => !n.read).map((n, i) => <NotificationItem key={n.id} notif={n} delay={i * 60} />)}
             </View>
           </>
         )}
-
-        {/* Earlier section */}
         <Text style={styles.sectionLabel}>EARLIER</Text>
         <View style={styles.section}>
-          {NOTIFICATIONS.filter(n => n.read).map((n, i) => (
-            <NotificationItem key={n.id} notif={n} delay={unreadCount * 60 + i * 60} />
-          ))}
+          {NOTIFICATIONS.filter(n => n.read).map((n, i) => <NotificationItem key={n.id} notif={n} delay={unreadCount * 60 + i * 60} />)}
         </View>
-
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -103,16 +90,7 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-  },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingHorizontal: Spacing.md, paddingBottom: Spacing.md, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
   backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 20 },
   backText: { fontSize: 20, color: Colors.textPrimary, fontWeight: '600' },
   headerTitle: { ...Typography.headingMD, color: Colors.white, textAlign: 'center' },
@@ -123,20 +101,8 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.md, paddingTop: Spacing.md },
   sectionLabel: { ...Typography.label, color: Colors.textMuted, letterSpacing: 2, marginBottom: Spacing.sm, marginTop: Spacing.sm },
   section: { gap: Spacing.sm, marginBottom: Spacing.md },
-  notifCard: {
-    flexDirection: 'row',
-    gap: 12,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: Radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    padding: Spacing.md,
-    overflow: 'hidden',
-  },
-  unreadCard: {
-    backgroundColor: 'rgba(0,212,255,0.04)',
-    borderColor: 'rgba(0,212,255,0.12)',
-  },
+  notifCard: { flexDirection: 'row', gap: 12, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: Radius.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', padding: Spacing.md, overflow: 'hidden' },
+  unreadCard: { backgroundColor: 'rgba(0,212,255,0.04)', borderColor: 'rgba(0,212,255,0.12)' },
   unreadBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, borderTopLeftRadius: Radius.xl, borderBottomLeftRadius: Radius.xl },
   notifIcon: { width: 44, height: 44, borderRadius: Radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   notifContent: { flex: 1 },

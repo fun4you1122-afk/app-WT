@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Dimensions, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { Animated, Easing, ScrollView, StyleSheet, View, Text, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming, Easing } from 'react-native-reanimated';
 import AnimatedBackground from '../../components/AnimatedBackground';
 import GlassCard from '../../components/GlassCard';
 import { Colors } from '../../constants/Colors';
@@ -12,116 +11,73 @@ const { width: W } = Dimensions.get('window');
 const INDUSTRIES = ['All', 'Finance', 'Government', 'Energy', 'Healthcare', 'Retail'];
 
 const PROJECTS = [
-  {
-    client: 'Emirates NBD',
-    clientInitials: 'EN',
-    title: 'AI-Powered Fraud Detection Platform',
-    description: 'Real-time transaction monitoring system using deep learning models to detect fraudulent activity across 14M+ accounts.',
-    industry: 'Finance',
-    metrics: [{ label: 'Fraud Reduction', value: '94%' }, { label: 'Processing Speed', value: '<2ms' }, { label: 'Accuracy', value: '99.7%' }],
-    tags: ['Deep Learning', 'Real-time', 'FinTech'],
-    glowColor: Colors.neonBlue,
-    year: '2024',
-    featured: true,
-  },
-  {
-    client: 'Dubai Smart City',
-    clientInitials: 'DSC',
-    title: 'Urban Intelligence Command Center',
-    description: 'Unified city management platform integrating 2,000+ IoT sensors, traffic systems, and emergency response networks.',
-    industry: 'Government',
-    metrics: [{ label: 'Response Time', value: '-60%' }, { label: 'Sensors', value: '2,000+' }, { label: 'Coverage', value: '100%' }],
-    tags: ['IoT', 'Smart City', 'Real-time Analytics'],
-    glowColor: Colors.neonCyan,
-    year: '2024',
-    featured: true,
-  },
-  {
-    client: 'ADNOC',
-    clientInitials: 'ADN',
-    title: 'Predictive Maintenance AI System',
-    description: 'Machine learning platform predicting equipment failures 72 hours in advance across 50+ oil & gas facilities.',
-    industry: 'Energy',
-    metrics: [{ label: 'Downtime Reduction', value: '78%' }, { label: 'Facilities', value: '50+' }, { label: 'ROI', value: '340%' }],
-    tags: ['Predictive ML', 'Industrial IoT', 'Energy'],
-    glowColor: Colors.warning,
-    year: '2023',
-    featured: false,
-  },
-  {
-    client: 'Dubai Health Authority',
-    clientInitials: 'DHA',
-    title: 'Clinical AI Diagnostics Suite',
-    description: 'Medical imaging AI platform assisting radiologists with automated detection across 15 critical conditions.',
-    industry: 'Healthcare',
-    metrics: [{ label: 'Diagnostic Speed', value: '+85%' }, { label: 'Conditions', value: '15+' }, { label: 'Precision', value: '97.3%' }],
-    tags: ['Medical AI', 'Computer Vision', 'Healthcare'],
-    glowColor: Colors.success,
-    year: '2024',
-    featured: false,
-  },
-  {
-    client: 'Majid Al Futtaim',
-    clientInitials: 'MAF',
-    title: 'Omnichannel AI Commerce Engine',
-    description: 'Personalization engine powering recommendations, dynamic pricing, and inventory optimization for 25M+ customers.',
-    industry: 'Retail',
-    metrics: [{ label: 'Revenue Lift', value: '+31%' }, { label: 'Customers', value: '25M+' }, { label: 'Conversion', value: '+45%' }],
-    tags: ['Recommendation AI', 'Personalization', 'Retail'],
-    glowColor: Colors.neonPurple,
-    year: '2023',
-    featured: false,
-  },
+  { client: 'Emirates NBD', clientInitials: 'EN', title: 'AI-Powered Fraud Detection Platform', description: 'Real-time transaction monitoring system using deep learning models to detect fraudulent activity across 14M+ accounts.', industry: 'Finance', metrics: [{ label: 'Fraud Reduction', value: '94%' }, { label: 'Processing Speed', value: '<2ms' }, { label: 'Accuracy', value: '99.7%' }], tags: ['Deep Learning', 'Real-time', 'FinTech'], glowColor: Colors.neonBlue, year: '2024', featured: true },
+  { client: 'Dubai Smart City', clientInitials: 'DSC', title: 'Urban Intelligence Command Center', description: 'Unified city management platform integrating 2,000+ IoT sensors, traffic systems, and emergency response networks.', industry: 'Government', metrics: [{ label: 'Response Time', value: '-60%' }, { label: 'Sensors', value: '2,000+' }, { label: 'Coverage', value: '100%' }], tags: ['IoT', 'Smart City', 'Real-time Analytics'], glowColor: Colors.neonCyan, year: '2024', featured: true },
+  { client: 'ADNOC', clientInitials: 'ADN', title: 'Predictive Maintenance AI System', description: 'Machine learning platform predicting equipment failures 72 hours in advance across 50+ oil & gas facilities.', industry: 'Energy', metrics: [{ label: 'Downtime Reduction', value: '78%' }, { label: 'Facilities', value: '50+' }, { label: 'ROI', value: '340%' }], tags: ['Predictive ML', 'Industrial IoT', 'Energy'], glowColor: Colors.warning, year: '2023', featured: false },
+  { client: 'Dubai Health Authority', clientInitials: 'DHA', title: 'Clinical AI Diagnostics Suite', description: 'Medical imaging AI platform assisting radiologists with automated detection across 15 critical conditions.', industry: 'Healthcare', metrics: [{ label: 'Diagnostic Speed', value: '+85%' }, { label: 'Conditions', value: '15+' }, { label: 'Precision', value: '97.3%' }], tags: ['Medical AI', 'Computer Vision', 'Healthcare'], glowColor: Colors.success, year: '2024', featured: false },
+  { client: 'Majid Al Futtaim', clientInitials: 'MAF', title: 'Omnichannel AI Commerce Engine', description: 'Personalization engine powering recommendations, dynamic pricing, and inventory optimization for 25M+ customers.', industry: 'Retail', metrics: [{ label: 'Revenue Lift', value: '+31%' }, { label: 'Customers', value: '25M+' }, { label: 'Conversion', value: '+45%' }], tags: ['Recommendation AI', 'Personalization', 'Retail'], glowColor: Colors.neonPurple, year: '2023', featured: false },
 ];
 
 function ProjectCard({ project, delay = 0 }: { project: typeof PROJECTS[0]; delay?: number }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(20)).current;
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(opacity, { toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(translateY, { toValue: 0, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      ]),
+    ]).start();
+  }, []);
   return (
-    <GlassCard glowColor={project.glowColor} delay={delay} style={styles.projectCard}>
-      <View style={[styles.projectTopBorder, { backgroundColor: project.glowColor }]} />
-      {project.featured && (
-        <View style={[styles.featuredBadge, { backgroundColor: `${project.glowColor}20`, borderColor: `${project.glowColor}40` }]}>
-          <Text style={[styles.featuredBadgeText, { color: project.glowColor }]}>✦ FEATURED PROJECT</Text>
-        </View>
-      )}
-      <View style={styles.projectHeader}>
-        <View style={[styles.clientLogo, { backgroundColor: `${project.glowColor}20`, borderColor: `${project.glowColor}40` }]}>
-          <Text style={[styles.clientInitials, { color: project.glowColor }]}>{project.clientInitials}</Text>
-        </View>
-        <View style={styles.clientInfo}>
-          <Text style={styles.clientName}>{project.client}</Text>
-          <View style={styles.projectMeta}>
-            <View style={[styles.industryBadge, { backgroundColor: `${project.glowColor}15`, borderColor: `${project.glowColor}25` }]}>
-              <Text style={[styles.industryText, { color: project.glowColor }]}>{project.industry}</Text>
+    <Animated.View style={{ opacity, transform: [{ translateY }] }}>
+      <GlassCard glowColor={project.glowColor} animated={false} style={styles.projectCard}>
+        <View style={[styles.projectTopBorder, { backgroundColor: project.glowColor }]} />
+        {project.featured && (
+          <View style={[styles.featuredBadge, { backgroundColor: `${project.glowColor}20`, borderColor: `${project.glowColor}40` }]}>
+            <Text style={[styles.featuredBadgeText, { color: project.glowColor }]}>✦ FEATURED PROJECT</Text>
+          </View>
+        )}
+        <View style={styles.projectHeader}>
+          <View style={[styles.clientLogo, { backgroundColor: `${project.glowColor}20`, borderColor: `${project.glowColor}40` }]}>
+            <Text style={[styles.clientInitials, { color: project.glowColor }]}>{project.clientInitials}</Text>
+          </View>
+          <View style={styles.clientInfo}>
+            <Text style={styles.clientName}>{project.client}</Text>
+            <View style={styles.projectMeta}>
+              <View style={[styles.industryBadge, { backgroundColor: `${project.glowColor}15`, borderColor: `${project.glowColor}25` }]}>
+                <Text style={[styles.industryText, { color: project.glowColor }]}>{project.industry}</Text>
+              </View>
+              <Text style={styles.projectYear}>{project.year}</Text>
             </View>
-            <Text style={styles.projectYear}>{project.year}</Text>
           </View>
         </View>
-      </View>
-      <Text style={styles.projectTitle}>{project.title}</Text>
-      <Text style={styles.projectDesc}>{project.description}</Text>
-      <View style={styles.metrics}>
-        {project.metrics.map((m, i) => (
-          <View key={i} style={styles.metric}>
-            <Text style={[styles.metricValue, { color: project.glowColor }]}>{m.value}</Text>
-            <Text style={styles.metricLabel}>{m.label}</Text>
-          </View>
-        ))}
-      </View>
-      <View style={styles.tags}>
-        {project.tags.map((tag, i) => (
-          <View key={i} style={[styles.tag, { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }]}>
-            <Text style={styles.tagText}>{tag}</Text>
-          </View>
-        ))}
-      </View>
-    </GlassCard>
+        <Text style={styles.projectTitle}>{project.title}</Text>
+        <Text style={styles.projectDesc}>{project.description}</Text>
+        <View style={styles.metrics}>
+          {project.metrics.map((m, i) => (
+            <View key={i} style={styles.metric}>
+              <Text style={[styles.metricValue, { color: project.glowColor }]}>{m.value}</Text>
+              <Text style={styles.metricLabel}>{m.label}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={styles.tags}>
+          {project.tags.map((tag, i) => (
+            <View key={i} style={[styles.tag, { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }]}>
+              <Text style={styles.tagText}>{tag}</Text>
+            </View>
+          ))}
+        </View>
+      </GlassCard>
+    </Animated.View>
   );
 }
 
 export default function PortfolioScreen() {
   const [activeIndustry, setActiveIndustry] = useState('All');
   const filtered = activeIndustry === 'All' ? PROJECTS : PROJECTS.filter(p => p.industry === activeIndustry);
-
   return (
     <View style={styles.container}>
       <AnimatedBackground />
@@ -131,8 +87,6 @@ export default function PortfolioScreen() {
           <Text style={styles.title}>Client <Text style={{ color: Colors.neonPurple }}>Portfolio</Text></Text>
           <Text style={styles.headerDesc}>Delivering transformative AI and technology solutions to UAE's leading organizations.</Text>
         </View>
-
-        {/* Trust indicators */}
         <View style={styles.trustRow}>
           {[['180+', 'Clients'], ['95%', 'Satisfaction'], ['50+', 'Awards'], ['8+', 'Years']].map(([v, l], i) => (
             <View key={i} style={styles.trustItem}>
@@ -141,26 +95,16 @@ export default function PortfolioScreen() {
             </View>
           ))}
         </View>
-
-        {/* Industry filter */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filters} contentContainerStyle={{ gap: 8, paddingRight: 16 }}>
           {INDUSTRIES.map((ind) => (
-            <TouchableOpacity
-              key={ind}
-              onPress={() => setActiveIndustry(ind)}
-              style={[styles.filterBtn, activeIndustry === ind && { backgroundColor: `${Colors.neonPurple}20`, borderColor: `${Colors.neonPurple}50` }]}
-            >
+            <TouchableOpacity key={ind} onPress={() => setActiveIndustry(ind)} style={[styles.filterBtn, activeIndustry === ind && { backgroundColor: `${Colors.neonPurple}20`, borderColor: `${Colors.neonPurple}50` }]}>
               <Text style={[styles.filterText, activeIndustry === ind && { color: Colors.neonPurple }]}>{ind}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
-
         <View style={styles.cards}>
-          {filtered.map((project, i) => (
-            <ProjectCard key={project.title} project={project} delay={i * 100} />
-          ))}
+          {filtered.map((project, i) => <ProjectCard key={project.title} project={project} delay={i * 100} />)}
         </View>
-
         <View style={{ height: 100 }} />
       </ScrollView>
     </View>
