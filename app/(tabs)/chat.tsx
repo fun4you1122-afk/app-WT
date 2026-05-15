@@ -293,7 +293,7 @@ export default function ChatScreen() {
   // Load persisted history
   useEffect(() => {
     AsyncStorage.getItem(CHAT_KEY)
-      .then(raw => {
+      .then((raw: string | null) => {
         if (raw) {
           const saved: Message[] = JSON.parse(raw);
           if (saved.length > 0) setMessages(saved);

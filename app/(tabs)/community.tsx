@@ -333,10 +333,10 @@ function AISummaryModal({ visible, discussionId, onClose }: AISummaryModalProps)
           <View style={styles.modalContent}>
             {loading ? (
               <>
-                <SkeletonLine width="90%" colors={colors} />
-                <SkeletonLine width="75%" colors={colors} />
-                <SkeletonLine width="85%" colors={colors} />
-                <SkeletonLine width="60%" colors={colors} />
+                <SkeletonLine widthPct={90} colors={colors} />
+                <SkeletonLine widthPct={75} colors={colors} />
+                <SkeletonLine widthPct={85} colors={colors} />
+                <SkeletonLine widthPct={60} colors={colors} />
               </>
             ) : (
               summaryPoints.map((point, i) => (
