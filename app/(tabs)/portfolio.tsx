@@ -1,152 +1,194 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Animated, Easing, ScrollView, StyleSheet, View, Text, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import AnimatedBackground from '../../components/AnimatedBackground';
-import GlassCard from '../../components/GlassCard';
-import { Colors } from '../../constants/Colors';
-import { Typography, Spacing, Radius } from '../../constants/Theme';
 
 const { width: W } = Dimensions.get('window');
 
-const INDUSTRIES = ['All', 'Finance', 'Government', 'Energy', 'Healthcare', 'Retail'];
+const FILTERS = ['All', 'Finance', 'Government', 'Energy', 'Retail', 'Healthcare'];
 
 const PROJECTS = [
-  { client: 'Emirates NBD', clientInitials: 'EN', title: 'AI-Powered Fraud Detection Platform', description: 'Real-time transaction monitoring system using deep learning models to detect fraudulent activity across 14M+ accounts.', industry: 'Finance', metrics: [{ label: 'Fraud Reduction', value: '94%' }, { label: 'Processing Speed', value: '<2ms' }, { label: 'Accuracy', value: '99.7%' }], tags: ['Deep Learning', 'Real-time', 'FinTech'], glowColor: Colors.neonBlue, year: '2024', featured: true },
-  { client: 'Dubai Smart City', clientInitials: 'DSC', title: 'Urban Intelligence Command Center', description: 'Unified city management platform integrating 2,000+ IoT sensors, traffic systems, and emergency response networks.', industry: 'Government', metrics: [{ label: 'Response Time', value: '-60%' }, { label: 'Sensors', value: '2,000+' }, { label: 'Coverage', value: '100%' }], tags: ['IoT', 'Smart City', 'Real-time Analytics'], glowColor: Colors.neonCyan, year: '2024', featured: true },
-  { client: 'ADNOC', clientInitials: 'ADN', title: 'Predictive Maintenance AI System', description: 'Machine learning platform predicting equipment failures 72 hours in advance across 50+ oil & gas facilities.', industry: 'Energy', metrics: [{ label: 'Downtime Reduction', value: '78%' }, { label: 'Facilities', value: '50+' }, { label: 'ROI', value: '340%' }], tags: ['Predictive ML', 'Industrial IoT', 'Energy'], glowColor: Colors.warning, year: '2023', featured: false },
-  { client: 'Dubai Health Authority', clientInitials: 'DHA', title: 'Clinical AI Diagnostics Suite', description: 'Medical imaging AI platform assisting radiologists with automated detection across 15 critical conditions.', industry: 'Healthcare', metrics: [{ label: 'Diagnostic Speed', value: '+85%' }, { label: 'Conditions', value: '15+' }, { label: 'Precision', value: '97.3%' }], tags: ['Medical AI', 'Computer Vision', 'Healthcare'], glowColor: Colors.success, year: '2024', featured: false },
-  { client: 'Majid Al Futtaim', clientInitials: 'MAF', title: 'Omnichannel AI Commerce Engine', description: 'Personalization engine powering recommendations, dynamic pricing, and inventory optimization for 25M+ customers.', industry: 'Retail', metrics: [{ label: 'Revenue Lift', value: '+31%' }, { label: 'Customers', value: '25M+' }, { label: 'Conversion', value: '+45%' }], tags: ['Recommendation AI', 'Personalization', 'Retail'], glowColor: Colors.neonPurple, year: '2023', featured: false },
+  { name: 'Fraud Detection Platform', client: 'Emirates NBD', industry: 'Finance', status: 'Live', color: '#059669', impact: '94% fraud reduction', metric: '$2.4B protected', completion: 100 },
+  { name: 'Smart City Command Center', client: 'Dubai Municipality', industry: 'Government', status: 'Live', color: '#0055FF', impact: '2,000+ IoT sensors', metric: '40% efficiency gain', completion: 100 },
+  { name: 'Predictive Maintenance AI', client: 'ADNOC', industry: 'Energy', status: 'Active', color: '#D97706', impact: '78% downtime reduction', metric: 'AED 180M saved/yr', completion: 85 },
+  { name: 'Customer Intelligence', client: 'Noon.com', industry: 'Retail', status: 'Active', color: '#7C3AED', impact: '3x recommendation accuracy', metric: '+30% revenue lift', completion: 72 },
+  { name: 'Network Optimization AI', client: 'Etisalat by e&', industry: 'Retail', status: 'In Progress', color: '#0EA5E9', impact: '60% ticket reduction', metric: '99.97% uptime', completion: 55 },
+  { name: 'Clinical Decision Support', client: 'Cleveland Clinic Abu Dhabi', industry: 'Healthcare', status: 'In Progress', color: '#DC2626', impact: '42% faster diagnosis', metric: '15,000+ patients', completion: 40 },
+  { name: 'Digital Oilfield Platform', client: 'DEWA', industry: 'Energy', status: 'Completed', color: '#059669', impact: 'AED 500M efficiency', metric: '300+ wells monitored', completion: 100 },
+  { name: 'Retail Analytics Suite', client: 'Majid Al Futtaim', industry: 'Retail', status: 'Live', color: '#6366F1', impact: '28% inventory reduction', metric: '25 malls covered', completion: 100 },
 ];
 
-function ProjectCard({ project, delay = 0 }: { project: typeof PROJECTS[0]; delay?: number }) {
+const STATUS_COLORS: Record<string, string> = {
+  'Live': '#059669',
+  'Active': '#0055FF',
+  'In Progress': '#D97706',
+  'Completed': '#64748B',
+};
+
+function ProjectCard({ project, index }: { project: typeof PROJECTS[0]; index: number }) {
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(20)).current;
+  const translateY = useRef(new Animated.Value(16)).current;
+  const widthAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
     Animated.sequence([
-      Animated.delay(delay),
+      Animated.delay(index * 60),
       Animated.parallel([
-        Animated.timing(opacity, { toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(translateY, { toValue: 0, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.timing(translateY, { toValue: 0, duration: 350, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       ]),
     ]).start();
+    Animated.sequence([
+      Animated.delay(index * 60 + 500),
+      Animated.timing(widthAnim, { toValue: project.completion, duration: 900, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+    ]).start();
   }, []);
+
+  const barWidth = widthAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+  const statusColor = STATUS_COLORS[project.status] || '#64748B';
+
   return (
-    <Animated.View style={{ opacity, transform: [{ translateY }] }}>
-      <GlassCard glowColor={project.glowColor} animated={false} style={styles.projectCard}>
-        <View style={[styles.projectTopBorder, { backgroundColor: project.glowColor }]} />
-        {project.featured && (
-          <View style={[styles.featuredBadge, { backgroundColor: `${project.glowColor}20`, borderColor: `${project.glowColor}40` }]}>
-            <Text style={[styles.featuredBadgeText, { color: project.glowColor }]}>✦ FEATURED PROJECT</Text>
+    <Animated.View style={[styles.projectCard, { opacity, transform: [{ translateY }] }]}>
+      <View style={[styles.projectAccent, { backgroundColor: project.color }]} />
+      <View style={styles.projectBody}>
+        <View style={styles.projectTop}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.projectName} numberOfLines={2}>{project.name}</Text>
+            <Text style={styles.projectClient} numberOfLines={1}>{project.client}</Text>
           </View>
-        )}
-        <View style={styles.projectHeader}>
-          <View style={[styles.clientLogo, { backgroundColor: `${project.glowColor}20`, borderColor: `${project.glowColor}40` }]}>
-            <Text style={[styles.clientInitials, { color: project.glowColor }]}>{project.clientInitials}</Text>
-          </View>
-          <View style={styles.clientInfo}>
-            <Text style={styles.clientName}>{project.client}</Text>
-            <View style={styles.projectMeta}>
-              <View style={[styles.industryBadge, { backgroundColor: `${project.glowColor}15`, borderColor: `${project.glowColor}25` }]}>
-                <Text style={[styles.industryText, { color: project.glowColor }]}>{project.industry}</Text>
-              </View>
-              <Text style={styles.projectYear}>{project.year}</Text>
-            </View>
+          <View style={[styles.statusBadge, { backgroundColor: statusColor + '18' }]}>
+            <Text style={[styles.statusText, { color: statusColor }]}>{project.status}</Text>
           </View>
         </View>
-        <Text style={styles.projectTitle}>{project.title}</Text>
-        <Text style={styles.projectDesc}>{project.description}</Text>
-        <View style={styles.metrics}>
-          {project.metrics.map((m, i) => (
-            <View key={i} style={styles.metric}>
-              <Text style={[styles.metricValue, { color: project.glowColor }]}>{m.value}</Text>
-              <Text style={styles.metricLabel}>{m.label}</Text>
-            </View>
-          ))}
+        <View style={[styles.industryTag, { backgroundColor: project.color + '14' }]}>
+          <Text style={[styles.industryText, { color: project.color }]}>{project.industry}</Text>
         </View>
-        <View style={styles.tags}>
-          {project.tags.map((tag, i) => (
-            <View key={i} style={[styles.tag, { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }]}>
-              <Text style={styles.tagText}>{tag}</Text>
-            </View>
-          ))}
+        <Text style={styles.impactText} numberOfLines={1}>✦ {project.impact}</Text>
+        <Text style={styles.metricText} numberOfLines={1}>{project.metric}</Text>
+        <View style={styles.progressSection}>
+          <View style={styles.progressTrack}>
+            <Animated.View style={[styles.progressBar, { width: barWidth, backgroundColor: project.color }]} />
+          </View>
+          <Text style={[styles.progressLabel, { color: project.color }]}>{project.completion}%</Text>
         </View>
-      </GlassCard>
+        <TouchableOpacity>
+          <Text style={[styles.viewCase, { color: project.color }]}>View Case Study →</Text>
+        </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 }
 
 export default function PortfolioScreen() {
-  const [activeIndustry, setActiveIndustry] = useState('All');
-  const filtered = activeIndustry === 'All' ? PROJECTS : PROJECTS.filter(p => p.industry === activeIndustry);
+  const [filter, setFilter] = useState('All');
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  const filtered = filter === 'All' ? PROJECTS : PROJECTS.filter(p => p.industry === filter);
+
+  const switchFilter = (f: string) => {
+    Animated.timing(fadeAnim, { toValue: 0, duration: 100, useNativeDriver: true }).start(() => {
+      setFilter(f);
+      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+    });
+  };
+
   return (
     <View style={styles.container}>
-      <AnimatedBackground />
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.subtitle}>OUR WORK</Text>
-          <Text style={styles.title}>Client <Text style={{ color: Colors.neonPurple }}>Portfolio</Text></Text>
-          <Text style={styles.headerDesc}>Delivering transformative AI and technology solutions to UAE's leading organizations.</Text>
+          <View>
+            <Text style={styles.headerTitle}>Portfolio</Text>
+            <Text style={styles.headerSub}>32 successful projects across UAE &amp; GCC</Text>
+          </View>
         </View>
-        <View style={styles.trustRow}>
-          {[['180+', 'Clients'], ['95%', 'Satisfaction'], ['50+', 'Awards'], ['8+', 'Years']].map(([v, l], i) => (
-            <View key={i} style={styles.trustItem}>
-              <Text style={styles.trustValue}>{v}</Text>
-              <Text style={styles.trustLabel}>{l}</Text>
-            </View>
-          ))}
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filters} contentContainerStyle={{ gap: 8, paddingRight: 16 }}>
-          {INDUSTRIES.map((ind) => (
-            <TouchableOpacity key={ind} onPress={() => setActiveIndustry(ind)} style={[styles.filterBtn, activeIndustry === ind && { backgroundColor: `${Colors.neonPurple}20`, borderColor: `${Colors.neonPurple}50` }]}>
-              <Text style={[styles.filterText, activeIndustry === ind && { color: Colors.neonPurple }]}>{ind}</Text>
+
+        {/* Filter tabs */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={{ gap: 8, paddingRight: 24 }}>
+          {FILTERS.map(f => (
+            <TouchableOpacity key={f} onPress={() => switchFilter(f)} style={[styles.filterTab, filter === f && styles.filterActive]}>
+              <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
-        <View style={styles.cards}>
-          {filtered.map((project, i) => <ProjectCard key={project.title} project={project} delay={i * 100} />)}
+
+        {/* Featured project */}
+        <LinearGradient colors={['#0055FF', '#003ECC']} style={styles.featuredCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          <View style={styles.featuredBadge}>
+            <Text style={styles.featuredBadgeText}>⭐ Flagship Project</Text>
+          </View>
+          <Text style={styles.featuredTitle}>Emirates NBD{'\n'}AI Fraud Detection</Text>
+          <Text style={styles.featuredDesc}>World-class real-time fraud detection processing 2M+ transactions daily with 94% accuracy.</Text>
+          <View style={styles.featuredMetrics}>
+            {[['94%', 'Accuracy'], ['$2.4B', 'Protected'], ['2M+', 'Daily TXNs']].map(([val, lbl]) => (
+              <View key={lbl} style={styles.featuredMetric}>
+                <Text style={styles.featuredMetricVal}>{val}</Text>
+                <Text style={styles.featuredMetricLbl}>{lbl}</Text>
+              </View>
+            ))}
+          </View>
+        </LinearGradient>
+
+        {/* Projects */}
+        <Animated.View style={{ opacity: fadeAnim, gap: 12 }}>
+          {filtered.map((p, i) => <ProjectCard key={p.name} project={p} index={i} />)}
+        </Animated.View>
+
+        {/* Stats */}
+        <View style={styles.statsRow}>
+          {[['180+', 'Clients'], ['12', 'Countries'], ['98%', 'Success Rate'], ['5★', 'Rating']].map(([val, lbl]) => (
+            <View key={lbl} style={styles.statItem}>
+              <Text style={styles.statVal}>{val}</Text>
+              <Text style={styles.statLbl}>{lbl}</Text>
+            </View>
+          ))}
         </View>
-        <View style={{ height: 100 }} />
+
+        <View style={{ height: 24 }} />
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  scroll: { flex: 1 },
-  content: { paddingHorizontal: Spacing.md, paddingTop: Platform.OS === 'ios' ? 60 : 40 },
-  header: { marginBottom: Spacing.lg },
-  subtitle: { ...Typography.label, color: Colors.neonPurple, letterSpacing: 2, marginBottom: 8 },
-  title: { ...Typography.displayMD, color: Colors.white, fontWeight: '800', marginBottom: 12 },
-  headerDesc: { ...Typography.bodyLG, color: Colors.textSecondary, lineHeight: 26 },
-  trustRow: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: Radius.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', padding: Spacing.md, marginBottom: Spacing.lg, justifyContent: 'space-around' },
-  trustItem: { alignItems: 'center' },
-  trustValue: { ...Typography.headingLG, color: Colors.neonPurple, fontWeight: '700', textShadowColor: Colors.neonPurple, textShadowRadius: 8 },
-  trustLabel: { ...Typography.caption, color: Colors.textMuted, marginTop: 2 },
-  filters: { marginBottom: Spacing.md },
-  filterBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radius.full, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  filterText: { ...Typography.bodyMD, color: Colors.textMuted, fontWeight: '500' },
-  cards: { gap: Spacing.md },
-  projectCard: { padding: Spacing.lg, overflow: 'hidden' },
-  projectTopBorder: { position: 'absolute', top: 0, left: 0, right: 0, height: 2, opacity: 0.7 },
-  featuredBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: Radius.full, borderWidth: 1, marginBottom: Spacing.md },
-  featuredBadgeText: { ...Typography.caption, fontWeight: '700', letterSpacing: 1 },
-  projectHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.md, gap: 12 },
-  clientLogo: { width: 48, height: 48, borderRadius: Radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  clientInitials: { fontSize: 14, fontWeight: '700' },
-  clientInfo: { flex: 1 },
-  clientName: { ...Typography.headingSM, color: Colors.textPrimary, marginBottom: 4 },
-  projectMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  industryBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.full, borderWidth: 1 },
-  industryText: { ...Typography.caption, fontWeight: '600' },
-  projectYear: { ...Typography.caption, color: Colors.textMuted },
-  projectTitle: { ...Typography.headingMD, color: Colors.white, marginBottom: Spacing.sm },
-  projectDesc: { ...Typography.bodyMD, color: Colors.textSecondary, lineHeight: 22, marginBottom: Spacing.md },
-  metrics: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.md, justifyContent: 'space-around' },
-  metric: { alignItems: 'center' },
-  metricValue: { ...Typography.headingMD, fontWeight: '700' },
-  metricLabel: { ...Typography.caption, color: Colors.textMuted, marginTop: 2, textAlign: 'center' },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: Radius.full, borderWidth: 1 },
-  tagText: { ...Typography.caption, color: Colors.textSecondary },
+  container: { flex: 1, backgroundColor: '#F4F6FF' },
+  scroll: { paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 56 : 40 },
+  header: { marginBottom: 20 },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#0A1628', letterSpacing: -0.5 },
+  headerSub: { fontSize: 14, color: '#475569', marginTop: 2 },
+  filterScroll: { marginBottom: 20 },
+  filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0' },
+  filterActive: { backgroundColor: '#0055FF', borderColor: '#0055FF' },
+  filterText: { fontSize: 13, fontWeight: '500', color: '#475569' },
+  filterTextActive: { color: '#FFFFFF', fontWeight: '600' },
+  featuredCard: { borderRadius: 20, padding: 22, marginBottom: 20 },
+  featuredBadge: { backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginBottom: 12 },
+  featuredBadgeText: { fontSize: 12, color: '#FFFFFF', fontWeight: '600' },
+  featuredTitle: { fontSize: 22, fontWeight: '800', color: '#FFFFFF', marginBottom: 8, lineHeight: 28 },
+  featuredDesc: { fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 20, marginBottom: 16 },
+  featuredMetrics: { flexDirection: 'row', gap: 24 },
+  featuredMetric: { alignItems: 'center' },
+  featuredMetricVal: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
+  featuredMetricLbl: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
+  projectCard: { backgroundColor: '#FFFFFF', borderRadius: 16, flexDirection: 'row', overflow: 'hidden', shadowColor: '#0A1628', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
+  projectAccent: { width: 4 },
+  projectBody: { flex: 1, padding: 14, gap: 6 },
+  projectTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  projectName: { fontSize: 14, fontWeight: '700', color: '#0A1628', lineHeight: 20 },
+  projectClient: { fontSize: 12, color: '#475569', marginTop: 2 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, flexShrink: 0 },
+  statusText: { fontSize: 10, fontWeight: '700' },
+  industryTag: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  industryText: { fontSize: 10, fontWeight: '600' },
+  impactText: { fontSize: 12, color: '#0A1628', fontWeight: '600' },
+  metricText: { fontSize: 12, color: '#475569' },
+  progressSection: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  progressTrack: { flex: 1, height: 4, backgroundColor: '#F1F5F9', borderRadius: 2, overflow: 'hidden' },
+  progressBar: { height: '100%', borderRadius: 2 },
+  progressLabel: { fontSize: 11, fontWeight: '700', minWidth: 30, textAlign: 'right' },
+  viewCase: { fontSize: 12, fontWeight: '600', marginTop: 2 },
+  statsRow: { marginTop: 24, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, flexDirection: 'row', justifyContent: 'space-around', shadowColor: '#0A1628', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  statItem: { alignItems: 'center' },
+  statVal: { fontSize: 22, fontWeight: '800', color: '#0055FF' },
+  statLbl: { fontSize: 11, color: '#475569', marginTop: 2 },
 });

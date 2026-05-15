@@ -37,7 +37,7 @@ export default function StatCard({ value, label, sublabel, trend, trendValue, gl
     });
   }, []);
 
-  const trendColor = trend === 'up' ? Colors.success : trend === 'down' ? Colors.error : Colors.textMuted;
+  const trendColor = trend === 'up' ? Colors.success : trend === 'down' ? Colors.error : Colors.textMuted as string;
 
   return (
     <Animated.View style={[styles.container, { opacity, transform: [{ translateY }] }]}>
@@ -93,8 +93,8 @@ const styles = StyleSheet.create({
   iconText: { fontSize: 20 },
   textBlock: { flex: 1 },
   value: { ...Typography.headingLG, fontWeight: '700' },
-  label: { ...Typography.bodyMD, color: Colors.textSecondary, marginTop: 2 },
-  sublabel: { ...Typography.bodySM, color: Colors.textMuted, marginTop: 1 },
+  label: { ...Typography.bodyMD, color: '#475569', marginTop: 2 },
+  sublabel: { ...Typography.bodySM, color: '#94A3B8', marginTop: 1 },
   trendBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.full },
   trendText: { ...Typography.caption, fontWeight: '600' },
 });

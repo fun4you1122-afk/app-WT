@@ -1,37 +1,58 @@
 export const Colors = {
-  background: '#050A18',
-  backgroundSecondary: '#080E20',
-  backgroundTertiary: '#0A1228',
+  // Backgrounds
+  background: '#F4F6FF',
+  surface: '#FFFFFF',
+  surfaceSecondary: '#F8FAFF',
+  surfaceTertiary: '#EEF2FF',
 
-  surface: 'rgba(255,255,255,0.04)',
-  surfaceHover: 'rgba(255,255,255,0.08)',
-  border: 'rgba(255,255,255,0.08)',
-  borderGlow: 'rgba(0,212,255,0.3)',
+  // Primary Blue
+  primary: '#0055FF',
+  primaryLight: '#E8EFFE',
+  primaryDark: '#003ECC',
 
-  neonBlue: '#00D4FF',
-  neonCyan: '#00F5FF',
-  neonPurple: '#BF5FFF',
-  neonPink: '#FF2D92',
-  electricBlue: '#0066FF',
+  // Accent Purple
+  accent: '#7C3AED',
+  accentLight: '#EDE9FE',
 
-  gradientPrimary: ['#00D4FF', '#0066FF'] as const,
-  gradientSecondary: ['#BF5FFF', '#FF2D92'] as const,
-  gradientDark: ['#050A18', '#0A1228'] as const,
-  gradientCard: ['rgba(0,212,255,0.1)', 'rgba(0,102,255,0.05)'] as const,
-  gradientGlow: ['rgba(0,212,255,0.15)', 'transparent'] as const,
+  // Cyan
+  cyan: '#0EA5E9',
+  cyanLight: '#E0F2FE',
 
-  textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(255,255,255,0.7)',
-  textMuted: 'rgba(255,255,255,0.4)',
-  textNeon: '#00D4FF',
+  // Status
+  success: '#059669',
+  successLight: '#D1FAE5',
+  warning: '#D97706',
+  warningLight: '#FEF3C7',
+  error: '#DC2626',
+  errorLight: '#FEE2E2',
 
-  success: '#00FF88',
-  warning: '#FFB800',
-  error: '#FF2D55',
-  info: '#00D4FF',
+  // Text
+  text: '#0A1628',
+  textSecondary: '#475569',
+  textMuted: '#94A3B8',
+  textInverse: '#FFFFFF',
 
+  // Borders & Dividers
+  border: '#E2E8F0',
+  borderLight: '#F1F5F9',
+
+  // Gradients
+  gradientPrimary: ['#0055FF', '#003ECC'] as const,
+  gradientAccent: ['#7C3AED', '#5B21B6'] as const,
+  gradientCyan: ['#0EA5E9', '#0284C7'] as const,
+  gradientWarm: ['#F59E0B', '#D97706'] as const,
+  gradientSuccess: ['#059669', '#047857'] as const,
+  gradientSky: ['#E8EFFE', '#EDE9FE'] as const,
+  gradientHero: ['#0055FF', '#7C3AED'] as const,
+
+  // Legacy aliases kept for compatibility
+  neonBlue: '#0055FF',
+  neonCyan: '#0EA5E9',
+  neonPurple: '#7C3AED',
+  electricBlue: '#003ECC',
+  neonGreen: '#059669',
   white: '#FFFFFF',
-  black: '#000000',
+  black: '#0A1628',
   transparent: 'transparent',
 };
 

@@ -1,113 +1,115 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Animated, Easing, ScrollView, StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
 import { router } from 'expo-router';
-import AnimatedBackground from '../components/AnimatedBackground';
-import { Colors } from '../constants/Colors';
-import { Typography, Spacing, Radius } from '../constants/Theme';
 
-const NOTIFICATIONS = [
-  { id: '1', type: 'success', icon: '✅', title: 'AI Model Deployed', message: 'NLP Engine v3.2 successfully deployed to production with 99.7% accuracy.', time: '2 min ago', read: false, color: Colors.success },
-  { id: '2', type: 'info', icon: '🔔', title: 'New Client Onboarded', message: 'Emirates NBD has been successfully onboarded. Project kickoff scheduled for tomorrow.', time: '14 min ago', read: false, color: Colors.neonBlue },
-  { id: '3', type: 'warning', icon: '⚠️', title: 'Server Load Alert', message: 'ML processing cluster at 87% capacity. Consider scaling up resources.', time: '1h ago', read: false, color: Colors.warning },
-  { id: '4', type: 'info', icon: '📊', title: 'Monthly Report Ready', message: 'Your Q4 2024 AI Performance Report is now available for review.', time: '3h ago', read: true, color: Colors.neonPurple },
-  { id: '5', type: 'success', icon: '🚀', title: 'Sprint Completed', message: 'Smart City Analytics Phase 2 has been completed ahead of schedule.', time: '5h ago', read: true, color: Colors.success },
-  { id: '6', type: 'info', icon: '🤝', title: 'Partnership Agreement', message: 'New strategic partnership with Microsoft Azure finalized for UAE expansion.', time: '1d ago', read: true, color: Colors.neonCyan },
-  { id: '7', type: 'alert', icon: '🛡️', title: 'Security Scan Complete', message: 'Weekly security scan completed. No vulnerabilities detected across all systems.', time: '1d ago', read: true, color: Colors.success },
-  { id: '8', type: 'info', icon: '💡', title: 'AI Insight Available', message: 'New predictive insight: Client retention likely to increase by 23% with recommended actions.', time: '2d ago', read: true, color: Colors.neonBlue },
+const NOTIFS = [
+  { id: '1', icon: '✅', title: 'Deployment Successful', body: 'Emirates NBD Fraud Detection v2.4 is now live in production.', time: '2h ago', category: 'System', read: false, color: '#059669', bg: '#D1FAE5' },
+  { id: '2', icon: '🚀', title: 'New AI Model Ready', body: 'WeThink NLP Model v3.2 has completed training. Accuracy: 96.4%', time: '5h ago', category: 'AI', read: false, color: '#0055FF', bg: '#E8EFFE' },
+  { id: '3', icon: '📋', title: 'Proposal Submitted', body: 'Etisalat digital transformation proposal has been sent for review.', time: '1d ago', category: 'Sales', read: false, color: '#7C3AED', bg: '#EDE9FE' },
+  { id: '4', icon: '🤝', title: 'Partnership Signed', body: 'DEWA strategic partnership agreement executed. Value: AED 45M', time: '2d ago', category: 'Business', read: true, color: '#D97706', bg: '#FEF3C7' },
+  { id: '5', icon: '📈', title: 'Revenue Milestone', body: 'Q2 2025 revenue target exceeded by 18%. Total: AED 1.2B', time: '3d ago', category: 'Finance', read: true, color: '#059669', bg: '#D1FAE5' },
+  { id: '6', icon: '⚠️', title: 'Server Maintenance', body: 'Scheduled maintenance on Analytics cluster tonight 2:00–4:00 AM GST.', time: '3d ago', category: 'System', read: true, color: '#D97706', bg: '#FEF3C7' },
+  { id: '7', icon: '🏆', title: 'Award Received', body: 'WeThink named "Best AI Company UAE 2025" by Forbes Middle East.', time: '5d ago', category: 'Business', read: true, color: '#0055FF', bg: '#E8EFFE' },
+  { id: '8', icon: '👤', title: 'New Team Member', body: 'Dr. Sarah Al-Hassan joined as Head of AI Research.', time: '1w ago', category: 'HR', read: true, color: '#7C3AED', bg: '#EDE9FE' },
 ];
 
-function NotificationItem({ notif, delay }: { notif: typeof NOTIFICATIONS[0]; delay: number }) {
-  const [read, setRead] = useState(notif.read);
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateX = useRef(new Animated.Value(-20)).current;
-
-  useEffect(() => {
-    Animated.sequence([
-      Animated.delay(delay),
-      Animated.parallel([
-        Animated.timing(opacity, { toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(translateX, { toValue: 0, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      ]),
-    ]).start();
-  }, []);
-
-  return (
-    <Animated.View style={{ opacity, transform: [{ translateX }] }}>
-      <TouchableOpacity onPress={() => setRead(true)} activeOpacity={0.85}>
-        <View style={[styles.notifCard, !read && styles.unreadCard]}>
-          {!read && <View style={[styles.unreadBar, { backgroundColor: notif.color }]} />}
-          <View style={[styles.notifIcon, { backgroundColor: `${notif.color}15`, borderColor: `${notif.color}30` }]}>
-            <Text style={{ fontSize: 18 }}>{notif.icon}</Text>
-          </View>
-          <View style={styles.notifContent}>
-            <View style={styles.notifHeader}>
-              <Text style={[styles.notifTitle, !read && { color: Colors.white }]}>{notif.title}</Text>
-              <Text style={styles.notifTime}>{notif.time}</Text>
-            </View>
-            <Text style={styles.notifMessage} numberOfLines={2}>{notif.message}</Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
+const CATEGORIES = ['All', 'System', 'AI', 'Sales', 'Business', 'Finance'];
 
 export default function NotificationsScreen() {
-  const unreadCount = NOTIFICATIONS.filter(n => !n.read).length;
+  const [filter, setFilter] = useState('All');
+  const [notifs, setNotifs] = useState(NOTIFS);
+
+  const filtered = filter === 'All' ? notifs : notifs.filter(n => n.category === filter);
+  const unreadCount = notifs.filter(n => !n.read).length;
+
+  const markAllRead = () => setNotifs(prev => prev.map(n => ({ ...n, read: true })));
+  const markRead = (id: string) => setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+
   return (
     <View style={styles.container}>
-      <AnimatedBackground />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
+          <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <View>
+        <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Notifications</Text>
-          {unreadCount > 0 && <Text style={styles.headerSub}>{unreadCount} unread</Text>}
+          {unreadCount > 0 && <View style={styles.unreadBadge}><Text style={styles.unreadBadgeText}>{unreadCount}</Text></View>}
         </View>
-        <TouchableOpacity style={styles.markAllBtn}>
-          <Text style={styles.markAllText}>Mark all read</Text>
-        </TouchableOpacity>
+        {unreadCount > 0
+          ? <TouchableOpacity onPress={markAllRead} style={{ width: 80, alignItems: 'flex-end' }}><Text style={styles.markAll}>Mark all read</Text></TouchableOpacity>
+          : <View style={{ width: 80 }} />
+        }
       </View>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {unreadCount > 0 && (
-          <>
-            <Text style={styles.sectionLabel}>NEW</Text>
-            <View style={styles.section}>
-              {NOTIFICATIONS.filter(n => !n.read).map((n, i) => <NotificationItem key={n.id} notif={n} delay={i * 60} />)}
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={{ gap: 8, paddingHorizontal: 24, paddingRight: 24 }}>
+        {CATEGORIES.map(cat => (
+          <TouchableOpacity key={cat} onPress={() => setFilter(cat)} style={[styles.filterTab, filter === cat && styles.filterActive]}>
+            <Text style={[styles.filterText, filter === cat && styles.filterTextActive]}>{cat}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        {filtered.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={{ fontSize: 40, marginBottom: 12 }}>🔔</Text>
+            <Text style={styles.emptyTitle}>All caught up!</Text>
+            <Text style={styles.emptySubtitle}>No notifications in this category.</Text>
+          </View>
+        ) : filtered.map(notif => (
+          <TouchableOpacity key={notif.id} onPress={() => markRead(notif.id)} activeOpacity={0.85}>
+            <View style={[styles.notifCard, !notif.read && styles.notifUnread]}>
+              {!notif.read && <View style={styles.unreadDot} />}
+              <View style={[styles.iconWrap, { backgroundColor: notif.bg }]}>
+                <Text style={{ fontSize: 20 }}>{notif.icon}</Text>
+              </View>
+              <View style={styles.notifContent}>
+                <View style={styles.notifTop}>
+                  <Text style={[styles.notifTitle, !notif.read && { fontWeight: '700' }]} numberOfLines={1}>{notif.title}</Text>
+                  <Text style={styles.notifTime}>{notif.time}</Text>
+                </View>
+                <Text style={styles.notifBody} numberOfLines={2}>{notif.body}</Text>
+                <View style={[styles.catTag, { backgroundColor: notif.bg }]}>
+                  <Text style={[styles.catText, { color: notif.color }]}>{notif.category}</Text>
+                </View>
+              </View>
             </View>
-          </>
-        )}
-        <Text style={styles.sectionLabel}>EARLIER</Text>
-        <View style={styles.section}>
-          {NOTIFICATIONS.filter(n => n.read).map((n, i) => <NotificationItem key={n.id} notif={n} delay={unreadCount * 60 + i * 60} />)}
-        </View>
-        <View style={{ height: 40 }} />
+          </TouchableOpacity>
+        ))}
+        <View style={{ height: 24 }} />
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingHorizontal: Spacing.md, paddingBottom: Spacing.md, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 20 },
-  backText: { fontSize: 20, color: Colors.textPrimary, fontWeight: '600' },
-  headerTitle: { ...Typography.headingMD, color: Colors.white, textAlign: 'center' },
-  headerSub: { ...Typography.caption, color: Colors.neonBlue, textAlign: 'center', marginTop: 2 },
-  markAllBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: 'rgba(0,212,255,0.1)', borderRadius: Radius.full, borderWidth: 1, borderColor: `${Colors.neonBlue}25` },
-  markAllText: { ...Typography.caption, color: Colors.neonBlue, fontWeight: '600' },
-  scroll: { flex: 1 },
-  content: { paddingHorizontal: Spacing.md, paddingTop: Spacing.md },
-  sectionLabel: { ...Typography.label, color: Colors.textMuted, letterSpacing: 2, marginBottom: Spacing.sm, marginTop: Spacing.sm },
-  section: { gap: Spacing.sm, marginBottom: Spacing.md },
-  notifCard: { flexDirection: 'row', gap: 12, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: Radius.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', padding: Spacing.md, overflow: 'hidden' },
-  unreadCard: { backgroundColor: 'rgba(0,212,255,0.04)', borderColor: 'rgba(0,212,255,0.12)' },
-  unreadBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, borderTopLeftRadius: Radius.xl, borderBottomLeftRadius: Radius.xl },
-  notifIcon: { width: 44, height: 44, borderRadius: Radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  notifContent: { flex: 1 },
-  notifHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  notifTitle: { ...Typography.bodyMD, color: Colors.textSecondary, fontWeight: '600', flex: 1, marginRight: 8 },
-  notifTime: { ...Typography.caption, color: Colors.textMuted, flexShrink: 0 },
-  notifMessage: { ...Typography.bodySM, color: Colors.textMuted, lineHeight: 18 },
+  container: { flex: 1, backgroundColor: '#F4F6FF' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 56 : 40, paddingBottom: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  backBtn: { width: 80 },
+  backText: { fontSize: 15, color: '#0055FF', fontWeight: '500' },
+  headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: '#0A1628' },
+  unreadBadge: { backgroundColor: '#DC2626', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10 },
+  unreadBadgeText: { fontSize: 11, color: '#FFFFFF', fontWeight: '700' },
+  markAll: { fontSize: 13, color: '#0055FF', fontWeight: '600' },
+  filterScroll: { paddingVertical: 12, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  filterTab: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: '#F4F6FF', borderWidth: 1, borderColor: '#E2E8F0' },
+  filterActive: { backgroundColor: '#0055FF', borderColor: '#0055FF' },
+  filterText: { fontSize: 12, fontWeight: '500', color: '#475569' },
+  filterTextActive: { color: '#FFFFFF', fontWeight: '600' },
+  scroll: { padding: 24, gap: 10 },
+  notifCard: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, flexDirection: 'row', gap: 12, alignItems: 'flex-start', shadowColor: '#0A1628', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1, position: 'relative' },
+  notifUnread: { borderLeftWidth: 3, borderLeftColor: '#0055FF' },
+  unreadDot: { position: 'absolute', top: 14, right: 14, width: 8, height: 8, borderRadius: 4, backgroundColor: '#0055FF' },
+  iconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  notifContent: { flex: 1, gap: 4 },
+  notifTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  notifTitle: { fontSize: 14, color: '#0A1628', fontWeight: '500', flex: 1, marginRight: 8 },
+  notifTime: { fontSize: 11, color: '#94A3B8', flexShrink: 0 },
+  notifBody: { fontSize: 13, color: '#475569', lineHeight: 19 },
+  catTag: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  catText: { fontSize: 10, fontWeight: '600' },
+  empty: { alignItems: 'center', paddingTop: 80 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#0A1628', marginBottom: 6 },
+  emptySubtitle: { fontSize: 14, color: '#475569' },
 });

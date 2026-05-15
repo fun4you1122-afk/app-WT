@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   icon: { fontSize: 26 },
-  title: { ...Typography.headingSM, color: Colors.textPrimary, marginBottom: Spacing.xs },
+  title: { ...Typography.headingSM, color: Colors.text, marginBottom: Spacing.xs },
   description: { ...Typography.bodyMD, color: Colors.textSecondary, lineHeight: 22, marginBottom: Spacing.md },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: Spacing.md },
   tag: {

@@ -1,84 +1,58 @@
-import React, { useCallback, useRef } from 'react';
-import { Animated, Easing, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
+import React, { useRef } from 'react';
+import { Animated, TouchableOpacity, StyleSheet, Text, ActivityIndicator, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors } from '../constants/Colors';
-import { Typography, Radius } from '../constants/Theme';
 
-interface NeonButtonProps {
-  title: string;
-  onPress?: () => void;
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+interface Props {
+  label: string;
+  onPress: () => void;
+  variant?: 'primary' | 'secondary' | 'outline';
   style?: ViewStyle;
-  icon?: React.ReactNode;
-  fullWidth?: boolean;
+  loading?: boolean;
+  disabled?: boolean;
 }
 
-export default function NeonButton({ title, onPress, variant = 'primary', size = 'md', style, icon, fullWidth }: NeonButtonProps) {
+export default function NeonButton({ label, onPress, variant = 'primary', style, loading, disabled }: Props) {
   const scale = useRef(new Animated.Value(1)).current;
 
-  const handlePress = useCallback(() => {
-    Animated.sequence([
-      Animated.timing(scale, { toValue: 0.95, duration: 100, useNativeDriver: true }),
-      Animated.timing(scale, { toValue: 1, duration: 200, easing: Easing.out(Easing.back(2)), useNativeDriver: true }),
-    ]).start();
-    onPress?.();
-  }, [onPress]);
+  const onPressIn = () => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true }).start();
+  const onPressOut = () => Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
 
-  const gradients: Record<string, readonly [string, string]> = {
-    primary: [Colors.neonBlue, Colors.electricBlue],
-    secondary: [Colors.neonPurple, Colors.neonPink],
-    ghost: ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.04)'],
-    danger: [Colors.error, '#CC0033'],
-  };
+  if (variant === 'primary') {
+    return (
+      <Animated.View style={[{ transform: [{ scale }] }, style]}>
+        <TouchableOpacity onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut} disabled={disabled || loading} activeOpacity={1}>
+          <LinearGradient colors={['#0055FF', '#003ECC']} style={styles.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryText}>{label}</Text>}
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  }
 
-  const heights: Record<string, number> = { sm: 40, md: 52, lg: 64 };
-  const fontSizes: Record<string, object> = { sm: Typography.bodySM, md: Typography.bodyMD, lg: Typography.bodyLG };
-
-  const glowColors: Record<string, string> = {
-    primary: Colors.neonBlue,
-    secondary: Colors.neonPurple,
-    ghost: 'transparent',
-    danger: Colors.error,
-  };
+  if (variant === 'outline') {
+    return (
+      <Animated.View style={[{ transform: [{ scale }] }, style]}>
+        <TouchableOpacity onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut} disabled={disabled || loading} activeOpacity={0.8} style={styles.outline}>
+          <Text style={styles.outlineText}>{label}</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  }
 
   return (
-    <TouchableOpacity onPress={handlePress} activeOpacity={1} style={fullWidth ? { width: '100%' } : undefined}>
-      <Animated.View style={{ transform: [{ scale }] }}>
-        <LinearGradient
-          colors={gradients[variant]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[
-            styles.button,
-            { height: heights[size], borderRadius: Radius.lg },
-            variant === 'ghost' && styles.ghostBorder,
-            { shadowColor: glowColors[variant], shadowOpacity: 0.6, shadowRadius: 16, shadowOffset: { width: 0, height: 0 }, elevation: 8 },
-            style,
-          ]}
-        >
-          {icon && <>{icon}</>}
-          <Text style={[styles.label, fontSizes[size], { marginLeft: icon ? 8 : 0 }]}>{title}</Text>
-        </LinearGradient>
-      </Animated.View>
-    </TouchableOpacity>
+    <Animated.View style={[{ transform: [{ scale }] }, style]}>
+      <TouchableOpacity onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut} disabled={disabled || loading} activeOpacity={0.8} style={styles.secondary}>
+        <Text style={styles.secondaryText}>{label}</Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  ghostBorder: {
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
-  },
-  label: {
-    color: Colors.white,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
+  primary: { height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, shadowColor: '#0055FF', shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
+  primaryText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.2 },
+  outline: { height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, borderWidth: 1.5, borderColor: '#0055FF', backgroundColor: '#F4F6FF' },
+  outlineText: { fontSize: 16, fontWeight: '600', color: '#0055FF' },
+  secondary: { height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, backgroundColor: '#E8EFFE' },
+  secondaryText: { fontSize: 16, fontWeight: '600', color: '#0055FF' },
 });

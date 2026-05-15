@@ -1,199 +1,191 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Switch, Platform } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Switch, Platform, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import AnimatedBackground from '../components/AnimatedBackground';
-import GlassCard from '../components/GlassCard';
-import { Colors } from '../constants/Colors';
-import { Typography, Spacing, Radius } from '../constants/Theme';
 
-interface SettingItemProps {
+interface SettingRowProps {
   icon: string;
   label: string;
   value?: string;
-  toggle?: boolean;
+  hasToggle?: boolean;
   toggleValue?: boolean;
   onToggle?: (v: boolean) => void;
-  color?: string;
   onPress?: () => void;
-  destructive?: boolean;
+  showArrow?: boolean;
+  color?: string;
+  danger?: boolean;
 }
 
-function SettingItem({ icon, label, value, toggle, toggleValue, onToggle, color = Colors.neonBlue, onPress, destructive }: SettingItemProps) {
+function SettingRow({ icon, label, value, hasToggle, toggleValue, onToggle, onPress, showArrow = true, color = '#0A1628', danger }: SettingRowProps) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={toggle ? 1 : 0.7} style={styles.settingItem}>
-      <View style={[styles.settingIcon, { backgroundColor: `${color}15`, borderColor: `${color}25` }]}>
-        <Text style={{ fontSize: 16 }}>{icon}</Text>
+    <TouchableOpacity onPress={onPress} activeOpacity={onPress ? 0.7 : 1} style={styles.settingRow}>
+      <View style={[styles.settingIcon, { backgroundColor: danger ? '#FEE2E2' : '#F1F5F9' }]}>
+        <Text style={{ fontSize: 18 }}>{icon}</Text>
       </View>
-      <View style={styles.settingContent}>
-        <Text style={[styles.settingLabel, destructive && { color: Colors.error }]}>{label}</Text>
-        {value && <Text style={styles.settingValue}>{value}</Text>}
+      <Text style={[styles.settingLabel, danger && { color: '#DC2626' }]} numberOfLines={1}>{label}</Text>
+      <View style={styles.settingRight}>
+        {value && <Text style={styles.settingValue} numberOfLines={1}>{value}</Text>}
+        {hasToggle && <Switch value={toggleValue} onValueChange={onToggle} trackColor={{ false: '#E2E8F0', true: '#0055FF' }} thumbColor="#FFFFFF" />}
+        {showArrow && !hasToggle && <Text style={styles.arrow}>›</Text>}
       </View>
-      {toggle ? (
-        <Switch
-          value={toggleValue}
-          onValueChange={onToggle}
-          trackColor={{ false: 'rgba(255,255,255,0.1)', true: `${color}60` }}
-          thumbColor={toggleValue ? color : Colors.textMuted}
-        />
-      ) : (
-        <Text style={styles.settingArrow}>›</Text>
-      )}
     </TouchableOpacity>
   );
 }
 
-function SettingSection({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <View style={styles.section}>
+    <View style={styles.sectionWrap}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      <GlassCard style={styles.sectionCard} glowColor={Colors.neonBlue} animated={false}>
-        {children}
-      </GlassCard>
+      <View style={styles.sectionCard}>{children}</View>
     </View>
   );
 }
 
 export default function SettingsScreen() {
-  const [notifications, setNotifications] = useState(true);
-  const [biometrics, setBiometrics] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
+  const [pushNotifs, setPushNotifs] = useState(true);
+  const [emailNotifs, setEmailNotifs] = useState(true);
+  const [biometrics, setBiometrics] = useState(false);
   const [analytics, setAnalytics] = useState(true);
-  const [aiSuggestions, setAiSuggestions] = useState(true);
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  const handleLogout = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign Out', style: 'destructive', onPress: () => router.replace('/onboarding') },
+    ]);
+  };
 
   return (
     <View style={styles.container}>
-      <AnimatedBackground />
-
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
+          <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: 60 }} />
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+
         {/* Profile Card */}
-        <GlassCard style={styles.profileCard} glowColor={Colors.neonBlue} delay={0}>
-          <LinearGradient colors={[Colors.neonBlue, Colors.electricBlue]} style={styles.profileAvatar}>
-            <Text style={styles.profileAvatarText}>W</Text>
-          </LinearGradient>
+        <LinearGradient colors={['#0055FF', '#7C3AED']} style={styles.profileCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          <View style={styles.profileAvatar}>
+            <Text style={styles.profileAvatarText}>A</Text>
+          </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>WeThink Admin</Text>
-            <Text style={styles.profileEmail}>admin@wethink.ae</Text>
-            <View style={styles.profileBadge}>
-              <Text style={styles.profileBadgeText}>Enterprise Account</Text>
-            </View>
+            <Text style={styles.profileName}>Ahmad Al-Mansoori</Text>
+            <Text style={styles.profileRole}>Enterprise Administrator</Text>
+            <Text style={styles.profileOrg}>WeThink.ae · Dubai, UAE</Text>
           </View>
           <TouchableOpacity style={styles.editBtn}>
-            <Text style={styles.editText}>Edit</Text>
+            <Text style={styles.editBtnText}>Edit</Text>
           </TouchableOpacity>
-        </GlassCard>
+        </LinearGradient>
 
         {/* Account */}
-        <SettingSection title="ACCOUNT">
-          <SettingItem icon="👤" label="Profile Information" value="Update your details" color={Colors.neonBlue} onPress={() => {}} />
+        <SectionCard title="Account">
+          <SettingRow icon="👤" label="Personal Information" value="Ahmad" onPress={() => {}} />
           <View style={styles.divider} />
-          <SettingItem icon="🔐" label="Security & Password" value="Last changed 30 days ago" color={Colors.neonPurple} onPress={() => {}} />
+          <SettingRow icon="📧" label="Email Address" value="ahmad@wethink.ae" onPress={() => {}} />
           <View style={styles.divider} />
-          <SettingItem icon="📧" label="Email Preferences" value="admin@wethink.ae" color={Colors.neonCyan} onPress={() => {}} />
+          <SettingRow icon="📱" label="Phone Number" value="+971 50 XXX XXXX" onPress={() => {}} />
           <View style={styles.divider} />
-          <SettingItem icon="🏢" label="Organization" value="WeThink FZ-LLC" color={Colors.success} onPress={() => {}} />
-        </SettingSection>
+          <SettingRow icon="🏢" label="Organization" value="WeThink.ae" onPress={() => {}} />
+          <View style={styles.divider} />
+          <SettingRow icon="🌍" label="Language" value="English" onPress={() => {}} />
+        </SectionCard>
 
-        {/* App Settings */}
-        <SettingSection title="APP SETTINGS">
-          <SettingItem icon="🔔" label="Push Notifications" toggle toggleValue={notifications} onToggle={setNotifications} color={Colors.neonBlue} />
+        {/* Notifications */}
+        <SectionCard title="Notifications">
+          <SettingRow icon="🔔" label="Push Notifications" hasToggle toggleValue={pushNotifs} onToggle={setPushNotifs} showArrow={false} />
           <View style={styles.divider} />
-          <SettingItem icon="🌙" label="Dark Mode" toggle toggleValue={darkMode} onToggle={setDarkMode} color={Colors.neonPurple} />
+          <SettingRow icon="📧" label="Email Notifications" hasToggle toggleValue={emailNotifs} onToggle={setEmailNotifs} showArrow={false} />
           <View style={styles.divider} />
-          <SettingItem icon="🔄" label="Auto Refresh Data" toggle toggleValue={autoRefresh} onToggle={setAutoRefresh} color={Colors.neonCyan} />
-          <View style={styles.divider} />
-          <SettingItem icon="🌐" label="Language" value="English (UAE)" color={Colors.success} onPress={() => {}} />
-        </SettingSection>
+          <SettingRow icon="📊" label="Weekly Reports" hasToggle toggleValue={analytics} onToggle={setAnalytics} showArrow={false} />
+        </SectionCard>
 
-        {/* AI & Features */}
-        <SettingSection title="AI & FEATURES">
-          <SettingItem icon="🤖" label="AI Suggestions" toggle toggleValue={aiSuggestions} onToggle={setAiSuggestions} color={Colors.neonBlue} />
+        {/* Security */}
+        <SectionCard title="Security & Privacy">
+          <SettingRow icon="🔒" label="Change Password" onPress={() => {}} />
           <View style={styles.divider} />
-          <SettingItem icon="📊" label="Usage Analytics" toggle toggleValue={analytics} onToggle={setAnalytics} color={Colors.neonPurple} />
+          <SettingRow icon="👆" label="Biometric Login" hasToggle toggleValue={biometrics} onToggle={setBiometrics} showArrow={false} />
           <View style={styles.divider} />
-          <SettingItem icon="🔒" label="Biometric Login" toggle toggleValue={biometrics} onToggle={setBiometrics} color={Colors.success} />
+          <SettingRow icon="🛡️" label="Two-Factor Authentication" value="Enabled" onPress={() => {}} />
           <View style={styles.divider} />
-          <SettingItem icon="⚡" label="Performance Mode" value="Optimized" color={Colors.warning} onPress={() => {}} />
-        </SettingSection>
+          <SettingRow icon="📋" label="Privacy Policy" onPress={() => {}} />
+          <View style={styles.divider} />
+          <SettingRow icon="📄" label="Terms of Service" onPress={() => {}} />
+        </SectionCard>
+
+        {/* Preferences */}
+        <SectionCard title="Preferences">
+          <SettingRow icon="🌙" label="Dark Mode" hasToggle toggleValue={darkMode} onToggle={setDarkMode} showArrow={false} />
+          <View style={styles.divider} />
+          <SettingRow icon="💰" label="Currency" value="AED" onPress={() => {}} />
+          <View style={styles.divider} />
+          <SettingRow icon="🕐" label="Timezone" value="GST (UTC+4)" onPress={() => {}} />
+        </SectionCard>
+
+        {/* Support */}
+        <SectionCard title="Support">
+          <SettingRow icon="💬" label="Chat with Support" onPress={() => router.push('/(tabs)/chat')} />
+          <View style={styles.divider} />
+          <SettingRow icon="📞" label="Call Us" value="+971 4 XXX XXXX" onPress={() => {}} />
+          <View style={styles.divider} />
+          <SettingRow icon="🐛" label="Report a Bug" onPress={() => {}} />
+          <View style={styles.divider} />
+          <SettingRow icon="⭐" label="Rate the App" onPress={() => {}} />
+        </SectionCard>
 
         {/* About */}
-        <SettingSection title="ABOUT">
-          <SettingItem icon="ℹ️" label="App Version" value="v2.5.0 (Build 250)" color={Colors.neonCyan} onPress={() => {}} />
+        <SectionCard title="About">
+          <SettingRow icon="ℹ️" label="App Version" value="1.0.0" showArrow={false} />
           <View style={styles.divider} />
-          <SettingItem icon="📋" label="Terms of Service" color={Colors.neonBlue} onPress={() => {}} />
+          <SettingRow icon="🏗️" label="Build" value="2025.05.15" showArrow={false} />
           <View style={styles.divider} />
-          <SettingItem icon="🔏" label="Privacy Policy" color={Colors.neonPurple} onPress={() => {}} />
-          <View style={styles.divider} />
-          <SettingItem icon="⭐" label="Rate WeThink App" color={Colors.warning} onPress={() => {}} />
-        </SettingSection>
+          <SettingRow icon="🌐" label="Website" value="wethink.ae" onPress={() => {}} />
+        </SectionCard>
 
-        {/* Danger zone */}
-        <SettingSection title="ACCOUNT ACTIONS">
-          <SettingItem icon="🚪" label="Sign Out" color={Colors.warning} onPress={() => {}} />
-          <View style={styles.divider} />
-          <SettingItem icon="🗑️" label="Delete Account" color={Colors.error} destructive onPress={() => {}} />
-        </SettingSection>
+        {/* Sign Out */}
+        <TouchableOpacity onPress={handleLogout} style={styles.signOutBtn}>
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>WeThink © 2025 · Dubai, UAE</Text>
-          <Text style={styles.footerSub}>Powering Tomorrow's Intelligence</Text>
-        </View>
-
-        <View style={{ height: 40 }} />
+        <Text style={styles.footer}>WeThink.ae © 2025 · Made with ❤️ in Dubai</Text>
+        <View style={{ height: 24 }} />
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-  },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 20 },
-  backText: { fontSize: 20, color: Colors.textPrimary, fontWeight: '600' },
-  headerTitle: { ...Typography.headingMD, color: Colors.white },
-  scroll: { flex: 1 },
-  content: { paddingHorizontal: Spacing.md, paddingTop: Spacing.lg },
-  profileCard: { flexDirection: 'row', alignItems: 'center', padding: Spacing.lg, marginBottom: Spacing.lg, gap: 16 },
-  profileAvatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', shadowColor: Colors.neonBlue, shadowOpacity: 0.6, shadowRadius: 16, shadowOffset: { width: 0, height: 0 } },
-  profileAvatarText: { fontSize: 24, fontWeight: '800', color: Colors.white },
+  container: { flex: 1, backgroundColor: '#F4F6FF' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 56 : 40, paddingBottom: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  backBtn: { width: 60 },
+  backText: { fontSize: 15, color: '#0055FF', fontWeight: '500' },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: '#0A1628' },
+  scroll: { padding: 24, gap: 0 },
+  profileCard: { borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 28 },
+  profileAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center' },
+  profileAvatarText: { fontSize: 22, fontWeight: '800', color: '#FFFFFF' },
   profileInfo: { flex: 1 },
-  profileName: { ...Typography.headingSM, color: Colors.white, marginBottom: 2 },
-  profileEmail: { ...Typography.bodySM, color: Colors.textMuted, marginBottom: 6 },
-  profileBadge: { backgroundColor: `${Colors.neonBlue}20`, borderWidth: 1, borderColor: `${Colors.neonBlue}30`, borderRadius: Radius.full, paddingHorizontal: 8, paddingVertical: 2, alignSelf: 'flex-start' },
-  profileBadgeText: { ...Typography.caption, color: Colors.neonBlue, fontWeight: '600' },
-  editBtn: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: Radius.full, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  editText: { ...Typography.bodyMD, color: Colors.textSecondary, fontWeight: '500' },
-  section: { marginBottom: Spacing.lg },
-  sectionTitle: { ...Typography.label, color: Colors.textMuted, letterSpacing: 2, marginBottom: Spacing.sm },
-  sectionCard: { padding: 0, overflow: 'hidden' },
-  settingItem: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: Spacing.md, paddingVertical: 14 },
-  settingIcon: { width: 36, height: 36, borderRadius: Radius.sm, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  settingContent: { flex: 1 },
-  settingLabel: { ...Typography.bodyMD, color: Colors.textPrimary, fontWeight: '500' },
-  settingValue: { ...Typography.bodySM, color: Colors.textMuted, marginTop: 2 },
-  settingArrow: { fontSize: 20, color: Colors.textMuted, fontWeight: '300' },
-  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginLeft: 66 },
-  footer: { alignItems: 'center', paddingVertical: Spacing.lg },
-  footerText: { ...Typography.bodyMD, color: Colors.textMuted },
-  footerSub: { ...Typography.caption, color: Colors.neonBlue, marginTop: 4, opacity: 0.7 },
+  profileName: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  profileRole: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
+  profileOrg: { fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 1 },
+  editBtn: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10 },
+  editBtnText: { fontSize: 13, fontWeight: '600', color: '#FFFFFF' },
+  sectionWrap: { marginBottom: 20 },
+  sectionTitle: { fontSize: 12, fontWeight: '700', color: '#94A3B8', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 4 },
+  sectionCard: { backgroundColor: '#FFFFFF', borderRadius: 16, overflow: 'hidden', shadowColor: '#0A1628', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  settingRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13, gap: 12 },
+  settingIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  settingLabel: { flex: 1, fontSize: 15, color: '#0A1628', fontWeight: '500' },
+  settingRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  settingValue: { fontSize: 14, color: '#94A3B8', maxWidth: 120 },
+  arrow: { fontSize: 20, color: '#CBD5E1', fontWeight: '300' },
+  divider: { height: 1, backgroundColor: '#F1F5F9', marginLeft: 64 },
+  signOutBtn: { backgroundColor: '#FEE2E2', borderRadius: 14, padding: 16, alignItems: 'center', marginBottom: 16 },
+  signOutText: { fontSize: 15, fontWeight: '700', color: '#DC2626' },
+  footer: { fontSize: 12, color: '#94A3B8', textAlign: 'center', marginBottom: 4 },
 });

@@ -1,105 +1,161 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Dimensions, Platform } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { Animated, Easing, ScrollView, StyleSheet, View, Text, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import AnimatedBackground from '../../components/AnimatedBackground';
-import GlassCard from '../../components/GlassCard';
-import ServiceCard from '../../components/ServiceCard';
 import { Colors } from '../../constants/Colors';
-import { Typography, Spacing, Radius } from '../../constants/Theme';
 
 const { width: W } = Dimensions.get('window');
 
-const FILTERS = ['All', 'AI & ML', 'Cloud', 'Security', 'Dev'];
+const CATEGORIES = ['All', 'AI & ML', 'Cloud', 'Security', 'Digital', 'Consulting'];
 
 const SERVICES = [
-  { icon: '🧠', title: 'AI & Machine Learning', description: 'Build intelligent systems with custom ML models, NLP, computer vision, and predictive analytics tailored for enterprise.', tags: ['Deep Learning', 'NLP', 'Computer Vision'], glowColor: Colors.neonBlue, category: 'AI & ML' },
-  { icon: '☁️', title: 'Cloud Architecture', description: 'Design and deploy scalable, resilient cloud infrastructure on AWS, Azure, and Google Cloud with zero-downtime deployments.', tags: ['AWS', 'Azure', 'Kubernetes'], glowColor: Colors.neonCyan, category: 'Cloud' },
-  { icon: '🛡️', title: 'Cybersecurity Solutions', description: 'Protect your digital assets with advanced threat detection, penetration testing, and compliance frameworks for UAE regulations.', tags: ['Threat Detection', 'Compliance', 'Zero Trust'], glowColor: Colors.error, category: 'Security' },
-  { icon: '📱', title: 'Smart App Development', description: 'Create next-generation mobile and web applications with cutting-edge UX, AI integration, and enterprise-grade performance.', tags: ['React Native', 'Flutter', 'PWA'], glowColor: Colors.neonPurple, category: 'Dev' },
-  { icon: '📊', title: 'Data Analytics Platform', description: 'Transform raw data into actionable insights with real-time dashboards, BI reporting, and AI-powered forecasting engines.', tags: ['BI', 'Real-time', 'Forecasting'], glowColor: Colors.success, category: 'AI & ML' },
-  { icon: '🚀', title: 'Digital Transformation', description: 'End-to-end digital transformation programs that modernize legacy systems and accelerate innovation across your enterprise.', tags: ['Strategy', 'Automation', 'Integration'], glowColor: Colors.warning, category: 'Dev' },
+  { icon: '🧠', title: 'AI & Machine Learning', desc: 'Custom ML models, NLP, computer vision and predictive analytics for enterprise.', price: '15,000', category: 'AI & ML', color: Colors.primary, bg: Colors.primaryLight, popular: true },
+  { icon: '☁️', title: 'Cloud Architecture', desc: 'AWS, Azure & GCP migrations, Kubernetes, serverless and multi-cloud strategies.', price: '8,000', category: 'Cloud', color: '#0EA5E9', bg: '#E0F2FE', popular: false },
+  { icon: '🛡️', title: 'Cybersecurity', desc: 'Zero-trust architecture, SOC setup, penetration testing and compliance.', price: '12,000', category: 'Security', color: '#DC2626', bg: '#FEE2E2', popular: false },
+  { icon: '🚀', title: 'Digital Transformation', desc: 'End-to-end digitization, process automation and change management.', price: '20,000', category: 'Digital', color: Colors.accent, bg: Colors.accentLight, popular: true },
+  { icon: '📊', title: 'Data Analytics', desc: 'BI dashboards, data warehousing, real-time analytics and reporting.', price: '6,000', category: 'AI & ML', color: '#D97706', bg: '#FEF3C7', popular: false },
+  { icon: '🌐', title: 'IoT Solutions', desc: 'Connected device ecosystems, edge computing and IoT platform integration.', price: '18,000', category: 'Digital', color: '#059669', bg: '#D1FAE5', popular: false },
+  { icon: '⛓️', title: 'Blockchain', desc: 'Smart contracts, DeFi solutions and enterprise blockchain implementation.', price: '25,000', category: 'Consulting', color: '#6366F1', bg: '#EEF2FF', popular: false },
+  { icon: '💼', title: 'IT Consulting', desc: 'Strategic technology advisory, vendor evaluation and digital roadmaps.', price: '5,000', category: 'Consulting', color: '#64748B', bg: '#F1F5F9', popular: false },
 ];
 
 export default function ServicesScreen() {
-  const [activeFilter, setActiveFilter] = useState('All');
-  const filtered = activeFilter === 'All' ? SERVICES : SERVICES.filter(s => s.category === activeFilter);
+  const [activeCategory, setActiveCategory] = useState('All');
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  const filtered = activeCategory === 'All' ? SERVICES : SERVICES.filter(s => s.category === activeCategory);
+
+  const switchCategory = (cat: string) => {
+    Animated.timing(fadeAnim, { toValue: 0, duration: 120, useNativeDriver: true }).start(() => {
+      setActiveCategory(cat);
+      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+    });
+  };
 
   return (
     <View style={styles.container}>
-      <AnimatedBackground />
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.subtitle}>WHAT WE DO</Text>
-          <Text style={styles.title}>Our <Text style={{ color: Colors.neonBlue }}>Services</Text></Text>
-          <Text style={styles.description}>Cutting-edge technology solutions built for the modern UAE enterprise landscape.</Text>
+          <View>
+            <Text style={styles.headerTitle}>Our Services</Text>
+            <Text style={styles.headerSubtitle}>Enterprise solutions for the digital age</Text>
+          </View>
         </View>
-        <TouchableOpacity activeOpacity={0.9} style={{ marginBottom: Spacing.lg }}>
-          <LinearGradient colors={['rgba(0,212,255,0.2)', 'rgba(0,102,255,0.15)', 'rgba(191,95,255,0.1)']} style={styles.featuredBanner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-            <View style={[styles.featuredBorder, { backgroundColor: Colors.neonBlue }]} />
-            <View style={styles.featuredContent}>
-              <View style={styles.featuredBadge}>
-                <Text style={styles.featuredBadgeText}>✦ FEATURED</Text>
-              </View>
-              <Text style={styles.featuredTitle}>Enterprise AI Suite 2025</Text>
-              <Text style={styles.featuredDesc}>Our flagship AI platform — combining ML, NLP, and analytics in one powerful enterprise solution.</Text>
-              <Text style={[styles.featuredCTAText, { color: Colors.neonBlue }]}>Learn more →</Text>
-            </View>
-            <View style={styles.featuredIcon}><Text style={{ fontSize: 48 }}>🤖</Text></View>
-          </LinearGradient>
-        </TouchableOpacity>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filters} contentContainerStyle={{ gap: 8, paddingRight: 16 }}>
-          {FILTERS.map((f) => (
-            <TouchableOpacity key={f} onPress={() => setActiveFilter(f)} style={[styles.filterBtn, activeFilter === f && { backgroundColor: `${Colors.neonBlue}20`, borderColor: `${Colors.neonBlue}50` }]}>
-              <Text style={[styles.filterText, activeFilter === f && { color: Colors.neonBlue }]}>{f}</Text>
+
+        {/* Category Tabs */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tabsScroll}
+          contentContainerStyle={{ gap: 8, paddingRight: 24 }}
+        >
+          {CATEGORIES.map(cat => (
+            <TouchableOpacity
+              key={cat}
+              onPress={() => switchCategory(cat)}
+              style={[styles.tab, activeCategory === cat && styles.tabActive]}
+            >
+              <Text style={[styles.tabText, activeCategory === cat && styles.tabTextActive]}>{cat}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
-        <View style={styles.cards}>
-          {filtered.map((service, i) => <ServiceCard key={service.title} {...service} delay={i * 80} />)}
-        </View>
-        <GlassCard style={styles.ctaCard} glowColor={Colors.neonPurple} delay={400}>
-          <View style={styles.ctaContent}>
-            <Text style={styles.ctaTitle}>Ready to Transform?</Text>
-            <Text style={styles.ctaDesc}>Let's discuss how WeThink can elevate your business with AI.</Text>
-            <TouchableOpacity style={styles.ctaButton}>
-              <LinearGradient colors={[Colors.neonBlue, Colors.electricBlue]} style={styles.ctaButtonGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-                <Text style={styles.ctaButtonText}>Get a Free Consultation →</Text>
-              </LinearGradient>
+
+        {/* Featured Hero Card */}
+        <LinearGradient colors={['#0055FF', '#7C3AED']} style={styles.heroCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          <View style={styles.heroBadge}>
+            <Text style={styles.heroBadgeText}>🏆 Featured 2025</Text>
+          </View>
+          <Text style={styles.heroTitle}>WeThink AI Suite{'\n'}Enterprise Edition</Text>
+          <Text style={styles.heroDesc}>Complete AI transformation platform. ML models, analytics, automation and more — unified for UAE enterprises.</Text>
+          <View style={styles.heroBottom}>
+            <Text style={styles.heroPrice}>From AED 50,000/yr</Text>
+            <TouchableOpacity style={styles.heroBtn}>
+              <Text style={styles.heroBtnText}>Get Demo →</Text>
             </TouchableOpacity>
           </View>
-        </GlassCard>
-        <View style={{ height: 100 }} />
+        </LinearGradient>
+
+        {/* Service Cards */}
+        <Animated.View style={{ opacity: fadeAnim, gap: 12 }}>
+          {filtered.map((svc, i) => (
+            <View key={i} style={styles.serviceCard}>
+              <View style={[styles.serviceIconWrap, { backgroundColor: svc.bg }]}>
+                <Text style={{ fontSize: 26 }}>{svc.icon}</Text>
+              </View>
+              <View style={styles.serviceInfo}>
+                <View style={styles.serviceTopRow}>
+                  <Text style={styles.serviceTitle} numberOfLines={1}>{svc.title}</Text>
+                  {svc.popular && (
+                    <View style={styles.popularBadge}>
+                      <Text style={styles.popularText}>Popular</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.serviceDesc} numberOfLines={2}>{svc.desc}</Text>
+                <View style={styles.serviceBottom}>
+                  <Text style={[styles.servicePrice, { color: svc.color }]}>From AED {svc.price}</Text>
+                  <TouchableOpacity>
+                    <Text style={[styles.exploreBtn, { color: svc.color }]}>Explore →</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          ))}
+        </Animated.View>
+
+        {/* Bottom CTA */}
+        <View style={styles.ctaCard}>
+          <Text style={styles.ctaTitle}>Ready to transform your business?</Text>
+          <Text style={styles.ctaSubtitle}>Our experts are available 24/7 for a consultation.</Text>
+          <TouchableOpacity style={styles.ctaBtn}>
+            <LinearGradient colors={['#0055FF', '#003ECC']} style={styles.ctaBtnGrad}>
+              <Text style={styles.ctaBtnText}>Book Free Consultation</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: 24 }} />
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  scroll: { flex: 1 },
-  content: { paddingHorizontal: Spacing.md, paddingTop: Platform.OS === 'ios' ? 60 : 40 },
-  header: { marginBottom: Spacing.lg },
-  subtitle: { ...Typography.label, color: Colors.neonBlue, letterSpacing: 2, marginBottom: 8 },
-  title: { ...Typography.displayMD, color: Colors.white, fontWeight: '800', marginBottom: 12, lineHeight: 38 },
-  description: { ...Typography.bodyLG, color: Colors.textSecondary, lineHeight: 26 },
-  featuredBanner: { borderRadius: Radius.xl, borderWidth: 1, borderColor: `${Colors.neonBlue}30`, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', padding: Spacing.lg },
-  featuredBorder: { position: 'absolute', top: 0, left: 0, right: 0, height: 2, opacity: 0.7 },
-  featuredContent: { flex: 1, marginRight: 16 },
-  featuredBadge: { backgroundColor: `${Colors.neonBlue}20`, borderWidth: 1, borderColor: `${Colors.neonBlue}40`, borderRadius: Radius.full, paddingHorizontal: 10, paddingVertical: 3, alignSelf: 'flex-start', marginBottom: 10 },
-  featuredBadgeText: { ...Typography.caption, color: Colors.neonBlue, fontWeight: '700', letterSpacing: 1.5 },
-  featuredTitle: { ...Typography.headingMD, color: Colors.white, marginBottom: 8 },
-  featuredDesc: { ...Typography.bodySM, color: Colors.textSecondary, lineHeight: 20, marginBottom: 12 },
-  featuredCTAText: { ...Typography.bodyMD, fontWeight: '600' },
-  featuredIcon: { alignItems: 'center', justifyContent: 'center' },
-  filters: { marginBottom: Spacing.md },
-  filterBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radius.full, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  filterText: { ...Typography.bodyMD, color: Colors.textMuted, fontWeight: '500' },
-  cards: { gap: Spacing.md, marginBottom: Spacing.lg },
-  ctaCard: { padding: Spacing.xl },
-  ctaContent: { alignItems: 'center' },
-  ctaTitle: { ...Typography.headingLG, color: Colors.white, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-  ctaDesc: { ...Typography.bodyMD, color: Colors.textSecondary, textAlign: 'center', marginBottom: Spacing.lg },
-  ctaButton: { width: '100%' },
-  ctaButtonGrad: { height: 52, borderRadius: Radius.lg, alignItems: 'center', justifyContent: 'center', shadowColor: Colors.neonBlue, shadowOpacity: 0.5, shadowRadius: 16, shadowOffset: { width: 0, height: 0 }, elevation: 8 },
-  ctaButtonText: { ...Typography.bodyLG, color: Colors.white, fontWeight: '700' },
+  container: { flex: 1, backgroundColor: '#F4F6FF' },
+  scroll: { paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 56 : 40 },
+  header: { marginBottom: 20 },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#0A1628', letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 14, color: '#475569', marginTop: 2 },
+  tabsScroll: { marginBottom: 20 },
+  tab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0' },
+  tabActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  tabText: { fontSize: 13, fontWeight: '500', color: '#475569' },
+  tabTextActive: { color: '#FFFFFF', fontWeight: '600' },
+  heroCard: { borderRadius: 20, padding: 22, marginBottom: 20 },
+  heroBadge: { backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginBottom: 12 },
+  heroBadgeText: { fontSize: 12, color: '#FFFFFF', fontWeight: '600' },
+  heroTitle: { fontSize: 22, fontWeight: '800', color: '#FFFFFF', marginBottom: 8, lineHeight: 28 },
+  heroDesc: { fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 20, marginBottom: 16 },
+  heroBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  heroPrice: { fontSize: 14, color: 'rgba(255,255,255,0.9)', fontWeight: '600' },
+  heroBtn: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
+  heroBtnText: { fontSize: 13, color: '#FFFFFF', fontWeight: '700' },
+  serviceCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, flexDirection: 'row', gap: 14, alignItems: 'flex-start', shadowColor: '#0A1628', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  serviceIconWrap: { width: 56, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  serviceInfo: { flex: 1 },
+  serviceTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  serviceTitle: { fontSize: 15, fontWeight: '700', color: '#0A1628', flex: 1 },
+  popularBadge: { backgroundColor: '#FEF3C7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  popularText: { fontSize: 10, color: '#D97706', fontWeight: '700' },
+  serviceDesc: { fontSize: 13, color: '#475569', lineHeight: 19, marginBottom: 10 },
+  serviceBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  servicePrice: { fontSize: 12, fontWeight: '700' },
+  exploreBtn: { fontSize: 13, fontWeight: '600' },
+  ctaCard: { marginTop: 24, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, alignItems: 'center', shadowColor: '#0A1628', shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
+  ctaTitle: { fontSize: 18, fontWeight: '800', color: '#0A1628', textAlign: 'center', marginBottom: 6 },
+  ctaSubtitle: { fontSize: 13, color: '#475569', textAlign: 'center', marginBottom: 18 },
+  ctaBtn: { width: '100%' },
+  ctaBtnGrad: { height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  ctaBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
 });
