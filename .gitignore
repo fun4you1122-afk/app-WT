@@ -36,6 +36,9 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# Claude Code
+.claude/
+
 # ios not included (macOS only)
 /ios
 
