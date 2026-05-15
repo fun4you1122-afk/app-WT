@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Animated, Easing, ScrollView, StyleSheet, View, Text, TouchableOpacity, Dimensions, Platform } from 'react-native';
+import { Animated, Easing, ScrollView, StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-
-const { width: W } = Dimensions.get('window');
+import { useTheme } from '../../context/ThemeContext';
 
 const FILTERS = ['All', 'Finance', 'Government', 'Energy', 'Retail', 'Healthcare'];
 
@@ -25,6 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function ProjectCard({ project, index }: { project: typeof PROJECTS[0]; index: number }) {
+  const { colors } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(16)).current;
   const widthAnim = useRef(new Animated.Value(0)).current;
@@ -47,13 +47,13 @@ function ProjectCard({ project, index }: { project: typeof PROJECTS[0]; index: n
   const statusColor = STATUS_COLORS[project.status] || '#64748B';
 
   return (
-    <Animated.View style={[styles.projectCard, { opacity, transform: [{ translateY }] }]}>
+    <Animated.View style={[styles.projectCard, { opacity, transform: [{ translateY }], backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
       <View style={[styles.projectAccent, { backgroundColor: project.color }]} />
       <View style={styles.projectBody}>
         <View style={styles.projectTop}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.projectName} numberOfLines={2}>{project.name}</Text>
-            <Text style={styles.projectClient} numberOfLines={1}>{project.client}</Text>
+            <Text style={[styles.projectName, { color: colors.text }]} numberOfLines={2}>{project.name}</Text>
+            <Text style={[styles.projectClient, { color: colors.textSecondary }]} numberOfLines={1}>{project.client}</Text>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: statusColor + '18' }]}>
             <Text style={[styles.statusText, { color: statusColor }]}>{project.status}</Text>
@@ -62,10 +62,10 @@ function ProjectCard({ project, index }: { project: typeof PROJECTS[0]; index: n
         <View style={[styles.industryTag, { backgroundColor: project.color + '14' }]}>
           <Text style={[styles.industryText, { color: project.color }]}>{project.industry}</Text>
         </View>
-        <Text style={styles.impactText} numberOfLines={1}>✦ {project.impact}</Text>
-        <Text style={styles.metricText} numberOfLines={1}>{project.metric}</Text>
+        <Text style={[styles.impactText, { color: colors.text }]} numberOfLines={1}>✦ {project.impact}</Text>
+        <Text style={[styles.metricText, { color: colors.textSecondary }]} numberOfLines={1}>{project.metric}</Text>
         <View style={styles.progressSection}>
-          <View style={styles.progressTrack}>
+          <View style={[styles.progressTrack, { backgroundColor: colors.borderLight }]}>
             <Animated.View style={[styles.progressBar, { width: barWidth, backgroundColor: project.color }]} />
           </View>
           <Text style={[styles.progressLabel, { color: project.color }]}>{project.completion}%</Text>
@@ -79,6 +79,7 @@ function ProjectCard({ project, index }: { project: typeof PROJECTS[0]; index: n
 }
 
 export default function PortfolioScreen() {
+  const { colors } = useTheme();
   const [filter, setFilter] = useState('All');
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
@@ -92,22 +93,34 @@ export default function PortfolioScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.headerTitle}>Portfolio</Text>
-            <Text style={styles.headerSub}>32 successful projects across UAE &amp; GCC</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Portfolio</Text>
+            <Text style={[styles.headerSub, { color: colors.textSecondary }]}>32 successful projects across UAE &amp; GCC</Text>
           </View>
         </View>
 
         {/* Filter tabs */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={{ gap: 8, paddingRight: 24 }}>
           {FILTERS.map(f => (
-            <TouchableOpacity key={f} onPress={() => switchFilter(f)} style={[styles.filterTab, filter === f && styles.filterActive]}>
-              <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f}</Text>
+            <TouchableOpacity
+              key={f}
+              onPress={() => switchFilter(f)}
+              style={[
+                styles.filterTab,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+                filter === f && { backgroundColor: colors.primary, borderColor: colors.primary },
+              ]}
+            >
+              <Text style={[
+                styles.filterText,
+                { color: colors.textSecondary },
+                filter === f && { color: '#FFFFFF', fontWeight: '600' },
+              ]}>{f}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -135,11 +148,11 @@ export default function PortfolioScreen() {
         </Animated.View>
 
         {/* Stats */}
-        <View style={styles.statsRow}>
+        <View style={[styles.statsRow, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
           {[['180+', 'Clients'], ['12', 'Countries'], ['98%', 'Success Rate'], ['5★', 'Rating']].map(([val, lbl]) => (
             <View key={lbl} style={styles.statItem}>
-              <Text style={styles.statVal}>{val}</Text>
-              <Text style={styles.statLbl}>{lbl}</Text>
+              <Text style={[styles.statVal, { color: colors.primary }]}>{val}</Text>
+              <Text style={[styles.statLbl, { color: colors.textSecondary }]}>{lbl}</Text>
             </View>
           ))}
         </View>
@@ -151,16 +164,14 @@ export default function PortfolioScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F4F6FF' },
+  container: { flex: 1 },
   scroll: { paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 56 : 40 },
   header: { marginBottom: 20 },
-  headerTitle: { fontSize: 28, fontWeight: '800', color: '#0A1628', letterSpacing: -0.5 },
-  headerSub: { fontSize: 14, color: '#475569', marginTop: 2 },
+  headerTitle: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
+  headerSub: { fontSize: 14, marginTop: 2 },
   filterScroll: { marginBottom: 20 },
-  filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0' },
-  filterActive: { backgroundColor: '#0055FF', borderColor: '#0055FF' },
-  filterText: { fontSize: 13, fontWeight: '500', color: '#475569' },
-  filterTextActive: { color: '#FFFFFF', fontWeight: '600' },
+  filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  filterText: { fontSize: 13, fontWeight: '500' },
   featuredCard: { borderRadius: 20, padding: 22, marginBottom: 20 },
   featuredBadge: { backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginBottom: 12 },
   featuredBadgeText: { fontSize: 12, color: '#FFFFFF', fontWeight: '600' },
@@ -170,25 +181,25 @@ const styles = StyleSheet.create({
   featuredMetric: { alignItems: 'center' },
   featuredMetricVal: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
   featuredMetricLbl: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
-  projectCard: { backgroundColor: '#FFFFFF', borderRadius: 16, flexDirection: 'row', overflow: 'hidden', shadowColor: '#0A1628', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
+  projectCard: { borderRadius: 16, flexDirection: 'row', overflow: 'hidden', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
   projectAccent: { width: 4 },
   projectBody: { flex: 1, padding: 14, gap: 6 },
   projectTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  projectName: { fontSize: 14, fontWeight: '700', color: '#0A1628', lineHeight: 20 },
-  projectClient: { fontSize: 12, color: '#475569', marginTop: 2 },
+  projectName: { fontSize: 14, fontWeight: '700', lineHeight: 20 },
+  projectClient: { fontSize: 12, marginTop: 2 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, flexShrink: 0 },
   statusText: { fontSize: 10, fontWeight: '700' },
   industryTag: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   industryText: { fontSize: 10, fontWeight: '600' },
-  impactText: { fontSize: 12, color: '#0A1628', fontWeight: '600' },
-  metricText: { fontSize: 12, color: '#475569' },
+  impactText: { fontSize: 12, fontWeight: '600' },
+  metricText: { fontSize: 12 },
   progressSection: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  progressTrack: { flex: 1, height: 4, backgroundColor: '#F1F5F9', borderRadius: 2, overflow: 'hidden' },
+  progressTrack: { flex: 1, height: 4, borderRadius: 2, overflow: 'hidden' },
   progressBar: { height: '100%', borderRadius: 2 },
   progressLabel: { fontSize: 11, fontWeight: '700', minWidth: 30, textAlign: 'right' },
   viewCase: { fontSize: 12, fontWeight: '600', marginTop: 2 },
-  statsRow: { marginTop: 24, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, flexDirection: 'row', justifyContent: 'space-around', shadowColor: '#0A1628', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  statsRow: { marginTop: 24, borderRadius: 16, padding: 20, flexDirection: 'row', justifyContent: 'space-around', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   statItem: { alignItems: 'center' },
-  statVal: { fontSize: 22, fontWeight: '800', color: '#0055FF' },
-  statLbl: { fontSize: 11, color: '#475569', marginTop: 2 },
+  statVal: { fontSize: 22, fontWeight: '800' },
+  statLbl: { fontSize: 11, marginTop: 2 },
 });

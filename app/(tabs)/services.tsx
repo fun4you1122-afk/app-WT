@@ -1,17 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Animated, Easing, ScrollView, StyleSheet, View, Text, TouchableOpacity, Dimensions, Platform } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { Animated, ScrollView, StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors } from '../../constants/Colors';
-
-const { width: W } = Dimensions.get('window');
+import { useTheme } from '../../context/ThemeContext';
 
 const CATEGORIES = ['All', 'AI & ML', 'Cloud', 'Security', 'Digital', 'Consulting'];
 
 const SERVICES = [
-  { icon: '🧠', title: 'AI & Machine Learning', desc: 'Custom ML models, NLP, computer vision and predictive analytics for enterprise.', price: '15,000', category: 'AI & ML', color: Colors.primary, bg: Colors.primaryLight, popular: true },
+  { icon: '🧠', title: 'AI & Machine Learning', desc: 'Custom ML models, NLP, computer vision and predictive analytics for enterprise.', price: '15,000', category: 'AI & ML', color: '#0055FF', bg: '#E8EFFE', popular: true },
   { icon: '☁️', title: 'Cloud Architecture', desc: 'AWS, Azure & GCP migrations, Kubernetes, serverless and multi-cloud strategies.', price: '8,000', category: 'Cloud', color: '#0EA5E9', bg: '#E0F2FE', popular: false },
   { icon: '🛡️', title: 'Cybersecurity', desc: 'Zero-trust architecture, SOC setup, penetration testing and compliance.', price: '12,000', category: 'Security', color: '#DC2626', bg: '#FEE2E2', popular: false },
-  { icon: '🚀', title: 'Digital Transformation', desc: 'End-to-end digitization, process automation and change management.', price: '20,000', category: 'Digital', color: Colors.accent, bg: Colors.accentLight, popular: true },
+  { icon: '🚀', title: 'Digital Transformation', desc: 'End-to-end digitization, process automation and change management.', price: '20,000', category: 'Digital', color: '#7C3AED', bg: '#EDE9FE', popular: true },
   { icon: '📊', title: 'Data Analytics', desc: 'BI dashboards, data warehousing, real-time analytics and reporting.', price: '6,000', category: 'AI & ML', color: '#D97706', bg: '#FEF3C7', popular: false },
   { icon: '🌐', title: 'IoT Solutions', desc: 'Connected device ecosystems, edge computing and IoT platform integration.', price: '18,000', category: 'Digital', color: '#059669', bg: '#D1FAE5', popular: false },
   { icon: '⛓️', title: 'Blockchain', desc: 'Smart contracts, DeFi solutions and enterprise blockchain implementation.', price: '25,000', category: 'Consulting', color: '#6366F1', bg: '#EEF2FF', popular: false },
@@ -19,6 +17,7 @@ const SERVICES = [
 ];
 
 export default function ServicesScreen() {
+  const { colors } = useTheme();
   const [activeCategory, setActiveCategory] = useState('All');
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
@@ -32,14 +31,14 @@ export default function ServicesScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.headerTitle}>Our Services</Text>
-            <Text style={styles.headerSubtitle}>Enterprise solutions for the digital age</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Our Services</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Enterprise solutions for the digital age</Text>
           </View>
         </View>
 
@@ -54,9 +53,17 @@ export default function ServicesScreen() {
             <TouchableOpacity
               key={cat}
               onPress={() => switchCategory(cat)}
-              style={[styles.tab, activeCategory === cat && styles.tabActive]}
+              style={[
+                styles.tab,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+                activeCategory === cat && { backgroundColor: colors.primary, borderColor: colors.primary },
+              ]}
             >
-              <Text style={[styles.tabText, activeCategory === cat && styles.tabTextActive]}>{cat}</Text>
+              <Text style={[
+                styles.tabText,
+                { color: colors.textSecondary },
+                activeCategory === cat && { color: '#FFFFFF', fontWeight: '600' },
+              ]}>{cat}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -79,20 +86,20 @@ export default function ServicesScreen() {
         {/* Service Cards */}
         <Animated.View style={{ opacity: fadeAnim, gap: 12 }}>
           {filtered.map((svc, i) => (
-            <View key={i} style={styles.serviceCard}>
+            <View key={i} style={[styles.serviceCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
               <View style={[styles.serviceIconWrap, { backgroundColor: svc.bg }]}>
                 <Text style={{ fontSize: 26 }}>{svc.icon}</Text>
               </View>
               <View style={styles.serviceInfo}>
                 <View style={styles.serviceTopRow}>
-                  <Text style={styles.serviceTitle} numberOfLines={1}>{svc.title}</Text>
+                  <Text style={[styles.serviceTitle, { color: colors.text }]} numberOfLines={1}>{svc.title}</Text>
                   {svc.popular && (
                     <View style={styles.popularBadge}>
                       <Text style={styles.popularText}>Popular</Text>
                     </View>
                   )}
                 </View>
-                <Text style={styles.serviceDesc} numberOfLines={2}>{svc.desc}</Text>
+                <Text style={[styles.serviceDesc, { color: colors.textSecondary }]} numberOfLines={2}>{svc.desc}</Text>
                 <View style={styles.serviceBottom}>
                   <Text style={[styles.servicePrice, { color: svc.color }]}>From AED {svc.price}</Text>
                   <TouchableOpacity>
@@ -105,9 +112,9 @@ export default function ServicesScreen() {
         </Animated.View>
 
         {/* Bottom CTA */}
-        <View style={styles.ctaCard}>
-          <Text style={styles.ctaTitle}>Ready to transform your business?</Text>
-          <Text style={styles.ctaSubtitle}>Our experts are available 24/7 for a consultation.</Text>
+        <View style={[styles.ctaCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+          <Text style={[styles.ctaTitle, { color: colors.text }]}>Ready to transform your business?</Text>
+          <Text style={[styles.ctaSubtitle, { color: colors.textSecondary }]}>Our experts are available 24/7 for a consultation.</Text>
           <TouchableOpacity style={styles.ctaBtn}>
             <LinearGradient colors={['#0055FF', '#003ECC']} style={styles.ctaBtnGrad}>
               <Text style={styles.ctaBtnText}>Book Free Consultation</Text>
@@ -122,16 +129,14 @@ export default function ServicesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F4F6FF' },
+  container: { flex: 1 },
   scroll: { paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 56 : 40 },
   header: { marginBottom: 20 },
-  headerTitle: { fontSize: 28, fontWeight: '800', color: '#0A1628', letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 14, color: '#475569', marginTop: 2 },
+  headerTitle: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 14, marginTop: 2 },
   tabsScroll: { marginBottom: 20 },
-  tab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0' },
-  tabActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  tabText: { fontSize: 13, fontWeight: '500', color: '#475569' },
-  tabTextActive: { color: '#FFFFFF', fontWeight: '600' },
+  tab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  tabText: { fontSize: 13, fontWeight: '500' },
   heroCard: { borderRadius: 20, padding: 22, marginBottom: 20 },
   heroBadge: { backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginBottom: 12 },
   heroBadgeText: { fontSize: 12, color: '#FFFFFF', fontWeight: '600' },
@@ -141,20 +146,20 @@ const styles = StyleSheet.create({
   heroPrice: { fontSize: 14, color: 'rgba(255,255,255,0.9)', fontWeight: '600' },
   heroBtn: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
   heroBtnText: { fontSize: 13, color: '#FFFFFF', fontWeight: '700' },
-  serviceCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, flexDirection: 'row', gap: 14, alignItems: 'flex-start', shadowColor: '#0A1628', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  serviceCard: { borderRadius: 16, padding: 16, flexDirection: 'row', gap: 14, alignItems: 'flex-start', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   serviceIconWrap: { width: 56, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   serviceInfo: { flex: 1 },
   serviceTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
-  serviceTitle: { fontSize: 15, fontWeight: '700', color: '#0A1628', flex: 1 },
+  serviceTitle: { fontSize: 15, fontWeight: '700', flex: 1 },
   popularBadge: { backgroundColor: '#FEF3C7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   popularText: { fontSize: 10, color: '#D97706', fontWeight: '700' },
-  serviceDesc: { fontSize: 13, color: '#475569', lineHeight: 19, marginBottom: 10 },
+  serviceDesc: { fontSize: 13, lineHeight: 19, marginBottom: 10 },
   serviceBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   servicePrice: { fontSize: 12, fontWeight: '700' },
   exploreBtn: { fontSize: 13, fontWeight: '600' },
-  ctaCard: { marginTop: 24, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, alignItems: 'center', shadowColor: '#0A1628', shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
-  ctaTitle: { fontSize: 18, fontWeight: '800', color: '#0A1628', textAlign: 'center', marginBottom: 6 },
-  ctaSubtitle: { fontSize: 13, color: '#475569', textAlign: 'center', marginBottom: 18 },
+  ctaCard: { marginTop: 24, borderRadius: 20, padding: 24, alignItems: 'center', shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
+  ctaTitle: { fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 6 },
+  ctaSubtitle: { fontSize: 13, textAlign: 'center', marginBottom: 18 },
   ctaBtn: { width: '100%' },
   ctaBtnGrad: { height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   ctaBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
