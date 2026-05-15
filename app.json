@@ -6,12 +6,12 @@
     "scheme": "wethink",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#050A18"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": true,
@@ -32,7 +32,8 @@
     },
     "plugins": [
       "expo-font",
-      "expo-router"
+      "expo-router",
+      "expo-image-picker"
     ],
     "experiments": {
       "typedRoutes": true
