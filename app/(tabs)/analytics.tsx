@@ -7,23 +7,56 @@ const { width: W } = Dimensions.get('window');
 
 const PERIODS = ['Week', 'Month', 'Quarter', 'Year'];
 
-const REVENUE_DATA = [
-  { month: 'Jan', value: 65 },
-  { month: 'Feb', value: 78 },
-  { month: 'Mar', value: 72 },
-  { month: 'Apr', value: 88 },
-  { month: 'May', value: 95 },
-  { month: 'Jun', value: 82 },
-  { month: 'Jul', value: 105 },
-  { month: 'Aug', value: 118 },
-];
+const REVENUE_DATA_BY_PERIOD: Record<string, { month: string; value: number }[]> = {
+  Week: [
+    { month: 'Mon', value: 18 }, { month: 'Tue', value: 22 }, { month: 'Wed', value: 19 },
+    { month: 'Thu', value: 28 }, { month: 'Fri', value: 34 }, { month: 'Sat', value: 25 }, { month: 'Sun', value: 20 },
+  ],
+  Month: [
+    { month: 'Jan', value: 65 }, { month: 'Feb', value: 78 }, { month: 'Mar', value: 72 },
+    { month: 'Apr', value: 88 }, { month: 'May', value: 95 }, { month: 'Jun', value: 82 },
+    { month: 'Jul', value: 105 }, { month: 'Aug', value: 118 },
+  ],
+  Quarter: [
+    { month: 'Q1 23', value: 210 }, { month: 'Q2 23', value: 265 }, { month: 'Q3 23', value: 290 },
+    { month: 'Q4 23', value: 340 }, { month: 'Q1 24', value: 395 }, { month: 'Q2 24', value: 450 },
+  ],
+  Year: [
+    { month: '2020', value: 320 }, { month: '2021', value: 580 }, { month: '2022', value: 890 },
+    { month: '2023', value: 1500 }, { month: '2024', value: 2200 }, { month: '2025', value: 3100 },
+  ],
+};
 
-const KPIS = [
-  { label: 'Revenue', value: 'AED 4.2B', change: '+18%', up: true, color: '#0055FF', bg: '#E8EFFE' },
-  { label: 'Growth', value: '34%', change: '+8pp', up: true, color: '#059669', bg: '#D1FAE5' },
-  { label: 'Projects', value: '247', change: '+29', up: true, color: '#7C3AED', bg: '#EDE9FE' },
-  { label: 'NPS Score', value: '72', change: '+5', up: true, color: '#D97706', bg: '#FEF3C7' },
-];
+const KPIS_BY_PERIOD: Record<string, typeof KPIS_TEMPLATE> = {
+  Week: [
+    { label: 'Revenue', value: 'AED 146M', change: '+6%', up: true, color: '#0055FF', bg: '#E8EFFE' },
+    { label: 'Growth', value: '28%', change: '+3pp', up: true, color: '#059669', bg: '#D1FAE5' },
+    { label: 'Projects', value: '12', change: '+3', up: true, color: '#7C3AED', bg: '#EDE9FE' },
+    { label: 'NPS Score', value: '74', change: '+2', up: true, color: '#D97706', bg: '#FEF3C7' },
+  ],
+  Month: [
+    { label: 'Revenue', value: 'AED 4.2B', change: '+18%', up: true, color: '#0055FF', bg: '#E8EFFE' },
+    { label: 'Growth', value: '34%', change: '+8pp', up: true, color: '#059669', bg: '#D1FAE5' },
+    { label: 'Projects', value: '247', change: '+29', up: true, color: '#7C3AED', bg: '#EDE9FE' },
+    { label: 'NPS Score', value: '72', change: '+5', up: true, color: '#D97706', bg: '#FEF3C7' },
+  ],
+  Quarter: [
+    { label: 'Revenue', value: 'AED 1.1B', change: '+22%', up: true, color: '#0055FF', bg: '#E8EFFE' },
+    { label: 'Growth', value: '31%', change: '+6pp', up: true, color: '#059669', bg: '#D1FAE5' },
+    { label: 'Projects', value: '68', change: '+11', up: true, color: '#7C3AED', bg: '#EDE9FE' },
+    { label: 'NPS Score', value: '71', change: '+4', up: true, color: '#D97706', bg: '#FEF3C7' },
+  ],
+  Year: [
+    { label: 'Revenue', value: 'AED 4.2B', change: '+41%', up: true, color: '#0055FF', bg: '#E8EFFE' },
+    { label: 'Growth', value: '34%', change: '+12pp', up: true, color: '#059669', bg: '#D1FAE5' },
+    { label: 'Projects', value: '247', change: '+83', up: true, color: '#7C3AED', bg: '#EDE9FE' },
+    { label: 'NPS Score', value: '72', change: '+9', up: true, color: '#D97706', bg: '#FEF3C7' },
+  ],
+};
+
+// type alias used by KPIS_BY_PERIOD value
+type KpiItem = { label: string; value: string; change: string; up: boolean; color: string; bg: string };
+const KPIS_TEMPLATE: KpiItem[] = [];
 
 const PIPELINE = [
   { stage: 'Prospects', count: 148, color: '#94A3B8', pct: 100 },
@@ -49,12 +82,14 @@ const COUNTRIES = [
   { name: 'Bahrain', flag: '🇧🇭', projects: 11, pct: 8 },
 ];
 
-function RevenueChart() {
+function RevenueChart({ period }: { period: string }) {
+  const data = REVENUE_DATA_BY_PERIOD[period] ?? REVENUE_DATA_BY_PERIOD.Month;
+  const kpi = (KPIS_BY_PERIOD[period] ?? KPIS_BY_PERIOD.Month)[0];
   const chartW = W - 48;
   const chartH = 140;
-  const maxVal = Math.max(...REVENUE_DATA.map(d => d.value));
-  const pts = REVENUE_DATA.map((d, i) => ({
-    x: (i / (REVENUE_DATA.length - 1)) * (chartW - 32) + 16,
+  const maxVal = Math.max(...data.map(d => d.value));
+  const pts = data.map((d, i) => ({
+    x: (i / (data.length - 1)) * (chartW - 32) + 16,
     y: chartH - 24 - ((d.value / maxVal) * (chartH - 40)),
   }));
   const polylinePoints = pts.map(p => `${p.x},${p.y}`).join(' ');
@@ -62,14 +97,15 @@ function RevenueChart() {
 
   const animProg = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(animProg, { toValue: 1, duration: 1200, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
-  }, []);
+    animProg.setValue(0);
+    Animated.timing(animProg, { toValue: 1, duration: 900, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  }, [period]);
 
   return (
     <View style={styles.chartCard}>
       <View style={styles.chartHeader}>
         <Text style={styles.chartTitle}>Revenue Trend</Text>
-        <Text style={styles.chartValue}>AED 4.2B</Text>
+        <Text style={styles.chartValue}>{kpi.value}</Text>
       </View>
       <Svg width={chartW} height={chartH}>
         <Path d={areaPath} fill="#0055FF" opacity="0.08" />
@@ -77,7 +113,7 @@ function RevenueChart() {
         {pts.map((p, i) => (
           <Circle key={i} cx={p.x} cy={p.y} r="4" fill="#0055FF" />
         ))}
-        {REVENUE_DATA.map((d, i) => (
+        {data.map((d, i) => (
           <SvgText key={i} x={pts[i].x} y={chartH - 6} textAnchor="middle" fontSize="9" fill="#94A3B8">{d.month}</SvgText>
         ))}
       </Svg>
@@ -149,6 +185,7 @@ function CountryRow({ item, index }: { item: typeof COUNTRIES[0]; index: number 
 
 export default function AnalyticsScreen() {
   const [period, setPeriod] = useState('Month');
+  const kpis = KPIS_BY_PERIOD[period] ?? KPIS_BY_PERIOD.Month;
 
   return (
     <View style={styles.container}>
@@ -168,7 +205,7 @@ export default function AnalyticsScreen() {
 
         {/* KPI Cards */}
         <View style={styles.kpiGrid}>
-          {KPIS.map((k, i) => (
+          {kpis.map((k, i) => (
             <View key={i} style={[styles.kpiCard, { backgroundColor: k.bg }]}>
               <Text style={[styles.kpiValue, { color: k.color }]} numberOfLines={1}>{k.value}</Text>
               <Text style={styles.kpiLabel} numberOfLines={1}>{k.label}</Text>
@@ -178,7 +215,7 @@ export default function AnalyticsScreen() {
         </View>
 
         {/* Revenue Chart */}
-        <RevenueChart />
+        <RevenueChart period={period} />
 
         {/* Pipeline */}
         <View style={styles.sectionCard}>

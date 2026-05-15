@@ -16,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
+import { useCommunity } from '../context/CommunityContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -50,6 +51,7 @@ function SectionLabel({ label, colors }: { label: string; colors: any }) {
 
 export default function ComposeScreen() {
   const { colors } = useTheme();
+  const { addPost } = useCommunity();
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -172,6 +174,28 @@ export default function ComposeScreen() {
     if (!canPost || posting) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setPosting(true);
+
+    const isPoll = postType === 'Poll' && pollQuestion.trim().length > 0;
+    const validOptions = pollOptions.filter(o => o.trim().length > 0);
+    addPost({
+      id: String(Date.now()),
+      author: 'You',
+      initials: 'U',
+      avatarColor: colors.accent,
+      time: 'Just now',
+      category,
+      title: title.trim(),
+      preview: body.trim(),
+      likes: 0,
+      comments: 0,
+      sentiment: { pos: 50, neu: 40, neg: 10 },
+      isPoll,
+      poll: isPoll && validOptions.length >= 2 ? {
+        question: pollQuestion.trim(),
+        options: validOptions.map(t => ({ text: t, votes: 0 })),
+        totalVotes: 0,
+      } : undefined,
+    });
 
     Animated.sequence([
       Animated.parallel([

@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
+import { CommunityProvider } from '../context/CommunityContext';
 
 function AppStack() {
   const { isDark, colors } = useTheme();
@@ -25,7 +26,9 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <AppStack />
+        <CommunityProvider>
+          <AppStack />
+        </CommunityProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );
