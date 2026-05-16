@@ -83,11 +83,11 @@ export default function SettingsScreen() {
         {/* Profile Card */}
         <LinearGradient colors={['#0055FF', '#7C3AED']} style={styles.profileCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
           <View style={styles.profileAvatar}>
-            <Text style={styles.profileAvatarText}>A</Text>
+            <Text style={styles.profileAvatarText}>RA</Text>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>Ahmad Al-Mansoori</Text>
-            <Text style={styles.profileRole}>Enterprise Administrator</Text>
+            <Text style={styles.profileName}>Rasha Aljalam</Text>
+            <Text style={styles.profileRole}>CEO · WeThink.ae</Text>
             <Text style={styles.profileOrg}>WeThink.ae · Dubai, UAE</Text>
           </View>
           <TouchableOpacity style={styles.editBtn}>
@@ -97,9 +97,9 @@ export default function SettingsScreen() {
 
         {/* Account */}
         <SectionCard title="Account">
-          <SettingRow icon="👤" label="Personal Information" value="Ahmad" onPress={() => {}} />
+          <SettingRow icon="👤" label="Personal Information" value="Rasha" onPress={() => {}} />
           <View style={[styles.divider, { backgroundColor: colors.borderLight, marginLeft: 64 }]} />
-          <SettingRow icon="📧" label="Email Address" value="ahmad@wethink.ae" onPress={() => {}} />
+          <SettingRow icon="📧" label="Email Address" value="rasha@wethink.ae" onPress={() => {}} />
           <View style={[styles.divider, { backgroundColor: colors.borderLight, marginLeft: 64 }]} />
           <SettingRow icon="📱" label="Phone Number" value="+971 50 XXX XXXX" onPress={() => {}} />
           <View style={[styles.divider, { backgroundColor: colors.borderLight, marginLeft: 64 }]} />

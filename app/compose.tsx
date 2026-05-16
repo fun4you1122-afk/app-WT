@@ -179,8 +179,8 @@ export default function ComposeScreen() {
     const validOptions = pollOptions.filter(o => o.trim().length > 0);
     addPost({
       id: String(Date.now()),
-      author: 'You',
-      initials: 'U',
+      author: 'Rasha Aljalam',
+      initials: 'RA',
       avatarColor: colors.accent,
       time: 'Just now',
       category,
@@ -320,10 +320,10 @@ export default function ComposeScreen() {
             </View>
             <View>
               <Text style={[composeStyles.authorName, { color: colors.text }]}>
-                You
+                Rasha Aljalam
               </Text>
               <Text style={[composeStyles.authorHandle, { color: colors.textMuted }]}>
-                @user · WeThink Member
+                @rasha.aljalam · CEO, WeThink.ae
               </Text>
             </View>
           </View>
