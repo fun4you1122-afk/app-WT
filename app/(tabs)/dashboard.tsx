@@ -131,7 +131,7 @@ export default function Dashboard() {
         <Animated.View style={[styles.header, { opacity: headerOpacity, transform: [{ translateY: headerY }] }]}>
           <View>
             <Text style={[styles.greeting, { color: colors.textSecondary }]}>{greeting},</Text>
-            <Text style={[styles.userName, { color: colors.text }]}>Ahmad 👋</Text>
+            <Text style={[styles.userName, { color: colors.text }]}>Rasha 👋</Text>
           </View>
           <View style={styles.headerActions}>
             <TouchableOpacity

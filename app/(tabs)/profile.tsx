@@ -277,15 +277,16 @@ export default function ProfileScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.avatarGradient}
             >
-              <Text style={styles.avatarInitials}>AK</Text>
+              <Text style={styles.avatarInitials}>RA</Text>
             </LinearGradient>
           </Animated.View>
         </View>
 
         {/* ── Name & Bio ── */}
         <View style={styles.nameSection}>
-          <Text style={[styles.displayName, { color: colors.text }]}>Ahmed Al-Kaabi</Text>
-          <Text style={[styles.handle, { color: colors.primary }]}>@ahmed.kaabi</Text>
+          <Text style={[styles.displayName, { color: colors.text }]}>Rasha Aljalam</Text>
+          <Text style={[styles.role, { color: colors.primary }]}>CEO of WeThink.ae</Text>
+          <Text style={[styles.handle, { color: colors.textSecondary }]}>@rasha.aljalam</Text>
           <Text style={[styles.bio, { color: colors.textSecondary }]}>
             {'AI Policy Researcher · UAE Digital Economy Advocate\nBuilding the future with @WeThink.ae 🇦🇪'}
           </Text>
@@ -440,7 +441,8 @@ const styles = StyleSheet.create({
   // Name section
   nameSection: { paddingHorizontal: 20, marginBottom: 20 },
   displayName: { fontSize: 24, fontWeight: '800', letterSpacing: -0.4, marginBottom: 2 },
-  handle: { fontSize: 15, fontWeight: '600', marginBottom: 10 },
+  role: { fontSize: 15, fontWeight: '700', marginBottom: 2 },
+  handle: { fontSize: 14, fontWeight: '500', marginBottom: 10 },
   bio: { fontSize: 14, lineHeight: 21 },
 
   // Stats
