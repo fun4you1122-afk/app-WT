@@ -17,49 +17,50 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 
 const { width: W } = Dimensions.get('window');
-const CARD_W = (W - 48 - 12) / 2;
+const CELL_W = (W - 48 - 12) / 2;
 
-const TOOLS = [
-  { id: 'ai-chat',         emoji: '🤖', title: 'AI Assistant',      subtitle: 'Chat with WeThink AI',         color: '#7C3AED', bg: '#EDE9FE' },
-  { id: 'quiz',            emoji: '📊', title: 'Readiness Quiz',     subtitle: 'Assess your digital maturity', color: '#0055FF', bg: '#E8EFFE' },
-  { id: 'cost-estimator',  emoji: '💰', title: 'Cost Estimator',     subtitle: 'Price your AI project',        color: '#059669', bg: '#D1FAE5' },
-  { id: 'roi-calculator',  emoji: '🧮', title: 'ROI Calculator',     subtitle: 'Measure your returns',         color: '#D97706', bg: '#FEF3C7' },
-  { id: 'consultation',    emoji: '📅', title: 'Book Consultation',  subtitle: 'Schedule a free call',         color: '#DC2626', bg: '#FEE2E2' },
-  { id: 'news',            emoji: '📰', title: 'Tech News',          subtitle: 'Latest AI & tech stories',     color: '#0EA5E9', bg: '#E0F2FE' },
-  { id: 'knowledge-base',  emoji: '📚', title: 'Knowledge Base',     subtitle: 'Learn from our experts',       color: '#7C3AED', bg: '#EDE9FE' },
-  { id: 'password-gen',    emoji: '🔑', title: 'Password Generator', subtitle: 'Create secure passwords',      color: '#059669', bg: '#D1FAE5' },
-  { id: 'speed-test',      emoji: '🌐', title: 'Speed Test',         subtitle: 'Test your connection',         color: '#D97706', bg: '#FEF3C7' },
-  { id: 'security-scan',   emoji: '🛡️', title: 'Security Scanner',  subtitle: 'Check your website security', color: '#DC2626', bg: '#FEE2E2' },
-  { id: 'project-tracker', emoji: '📋', title: 'Project Tracker',   subtitle: 'Track your deliverables',      color: '#0055FF', bg: '#E8EFFE' },
-  { id: 'live-chat',       emoji: '💬', title: 'Live Support',       subtitle: 'Chat with our team',           color: '#0EA5E9', bg: '#E0F2FE' },
+const PRIMARY_TOOLS = [
+  { id: 'ai-chat',        emoji: '🤖', title: 'AI Assistant',   subtitle: 'Chat with WeThink AI',        colors: ['#7C3AED','#A78BFA'] as const },
+  { id: 'quiz',           emoji: '📊', title: 'Readiness Quiz', subtitle: 'Assess digital maturity',     colors: ['#0055FF','#38BDF8'] as const },
+  { id: 'cost-estimator', emoji: '💰', title: 'Cost Estimator', subtitle: 'Price your project',          colors: ['#059669','#34D399'] as const },
+  { id: 'roi-calculator', emoji: '🧮', title: 'ROI Calculator', subtitle: 'Measure your returns',        colors: ['#D97706','#FCD34D'] as const },
+  { id: 'consultation',   emoji: '📅', title: 'Book a Call',    subtitle: 'Free 30-min consultation',    colors: ['#DC2626','#F87171'] as const },
+  { id: 'news',           emoji: '📰', title: 'Tech News',      subtitle: 'Latest AI stories',           colors: ['#0EA5E9','#7DD3FC'] as const },
 ];
 
-function Particle({ style }: { style: any }) {
+const SECONDARY_TOOLS = [
+  { id: 'knowledge-base',  emoji: '📚', title: 'Knowledge Base', color: '#7C3AED' },
+  { id: 'password-gen',    emoji: '🔑', title: 'Password Gen',   color: '#059669' },
+  { id: 'speed-test',      emoji: '🌐', title: 'Speed Test',     color: '#D97706' },
+  { id: 'security-scan',   emoji: '🛡️', title: 'Security Scan',  color: '#DC2626' },
+  { id: 'project-tracker', emoji: '📋', title: 'Projects',       color: '#0055FF' },
+  { id: 'live-chat',       emoji: '💬', title: 'Live Support',   color: '#0EA5E9' },
+];
+
+// ── Decorative floating circle ────────────────────────────────────────────────
+function FloatCircle({ style }: { style: any }) {
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(anim, { toValue: 1, duration: 3200, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
-        Animated.timing(anim, { toValue: 0, duration: 3200, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
+        Animated.timing(anim, { toValue: 1, duration: 3000, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
+        Animated.timing(anim, { toValue: 0, duration: 3000, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
       ])
     ).start();
   }, []);
   return (
     <Animated.View
-      style={[
-        style,
-        {
-          transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, -14] }) }],
-          opacity: anim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.4, 0.85, 0.4] }),
-        },
-      ]}
+      style={[style, {
+        transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, -12] }) }],
+        opacity:    anim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.4, 0.85, 0.4] }),
+      }]}
     />
   );
 }
 
-function ToolCard({ tool, index }: { tool: typeof TOOLS[0]; index: number }) {
-  const { colors, isDark } = useTheme();
-  const scale = useRef(new Animated.Value(0.85)).current;
+// ── Primary grid card ─────────────────────────────────────────────────────────
+function PrimaryCard({ tool, index }: { tool: typeof PRIMARY_TOOLS[0]; index: number }) {
+  const scale   = useRef(new Animated.Value(0.8)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -67,14 +68,14 @@ function ToolCard({ tool, index }: { tool: typeof TOOLS[0]; index: number }) {
       Animated.timing(scale, {
         toValue: 1,
         duration: 400,
-        delay: index * 60,
+        delay: index * 70,
+        easing: Easing.out(Easing.back(1.15)),
         useNativeDriver: true,
-        easing: Easing.out(Easing.back(1.2)),
       }),
       Animated.timing(opacity, {
         toValue: 1,
         duration: 350,
-        delay: index * 60,
+        delay: index * 70,
         useNativeDriver: true,
       }),
     ]).start();
@@ -85,33 +86,40 @@ function ToolCard({ tool, index }: { tool: typeof TOOLS[0]; index: number }) {
     router.push(('/tools/' + tool.id) as any);
   };
 
-  const bgColor = isDark ? colors.card : tool.bg;
-
   return (
-    <Animated.View style={{ opacity, transform: [{ scale }], width: CARD_W }}>
-      <TouchableOpacity
-        style={[styles.toolCard, { backgroundColor: bgColor, shadowColor: tool.color }]}
-        onPress={handlePress}
-        activeOpacity={0.85}
-      >
-        <View style={[styles.toolIconWrap, { backgroundColor: tool.color + '22' }]}>
-          <Text style={styles.toolEmoji}>{tool.emoji}</Text>
-        </View>
-        <View style={[styles.toolAccentBar, { backgroundColor: tool.color }]} />
-        <Text style={[styles.toolTitle, { color: isDark ? colors.text : tool.color }]} numberOfLines={1}>
-          {tool.title}
-        </Text>
-        <Text style={[styles.toolSubtitle, { color: isDark ? colors.textSecondary : tool.color + 'CC' }]} numberOfLines={2}>
-          {tool.subtitle}
-        </Text>
-        <View style={[styles.toolArrow, { backgroundColor: tool.color }]}>
-          <Text style={styles.toolArrowText}>→</Text>
-        </View>
+    <Animated.View style={{ opacity, transform: [{ scale }], width: CELL_W }}>
+      <TouchableOpacity onPress={handlePress} activeOpacity={0.85} style={styles.primaryCardOuter}>
+        <LinearGradient colors={tool.colors} style={styles.primaryCard}>
+          <Text style={styles.primaryEmoji}>{tool.emoji}</Text>
+          <Text style={styles.primaryTitle}>{tool.title}</Text>
+          <Text style={styles.primarySubtitle}>{tool.subtitle}</Text>
+          <View style={styles.primaryArrow}>
+            <Text style={styles.primaryArrowText}>→</Text>
+          </View>
+        </LinearGradient>
       </TouchableOpacity>
     </Animated.View>
   );
 }
 
+// ── Secondary chip ────────────────────────────────────────────────────────────
+function SecondaryChip({ tool }: { tool: typeof SECONDARY_TOOLS[0] }) {
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(('/tools/' + tool.id) as any);
+  };
+
+  return (
+    <TouchableOpacity onPress={handlePress} activeOpacity={0.8} style={styles.chip}>
+      <View style={[styles.chipIcon, { backgroundColor: tool.color + '22' }]}>
+        <Text style={styles.chipEmoji}>{tool.emoji}</Text>
+      </View>
+      <Text style={[styles.chipTitle, { color: tool.color }]}>{tool.title}</Text>
+    </TouchableOpacity>
+  );
+}
+
+// ── Main screen ───────────────────────────────────────────────────────────────
 export default function ServicesScreen() {
   const { colors } = useTheme();
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -128,61 +136,51 @@ export default function ServicesScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
+        {/* ── Hero Banner ── */}
         <Animated.View style={{
           opacity: headerAnim,
           transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }],
         }}>
           <LinearGradient
-            colors={['#0055FF', '#7C3AED', '#A855F7']}
+            colors={['#0055FF', '#7C3AED']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.heroHeader}
+            style={styles.heroBanner}
           >
-            <Particle style={[styles.particle, { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(255,255,255,0.12)', top: 20, left: 30 }]} />
-            <Particle style={[styles.particle, { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.08)', top: 60, right: 50 }]} />
-            <Particle style={[styles.particle, { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.06)', bottom: 10, right: 20 }]} />
-            <Particle style={[styles.particle, { width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.15)', bottom: 30, left: 100 }]} />
+            {/* Floating decorative circles */}
+            <FloatCircle style={[styles.deco, { width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(255,255,255,0.10)', top: 10, left: 20 }]} />
+            <FloatCircle style={[styles.deco, { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.07)', top: 50, right: 40 }]} />
+            <FloatCircle style={[styles.deco, { width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.05)', bottom: -20, right: 10 }]} />
+            <FloatCircle style={[styles.deco, { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.13)', bottom: 24, left: 110 }]} />
 
             <View style={styles.heroContent}>
-              <View style={styles.heroBadge}>
-                <Text style={styles.heroBadgeText}>⚡ WeThink Tools Hub</Text>
-              </View>
-              <Text style={styles.heroTitle}>Your AI Toolkit</Text>
-              <Text style={styles.heroSubtitle}>
-                12 powerful tools to accelerate your digital transformation journey
-              </Text>
-              <View style={styles.heroStats}>
-                <View style={styles.heroStatItem}>
-                  <Text style={styles.heroStatValue}>12</Text>
-                  <Text style={styles.heroStatLabel}>Tools</Text>
-                </View>
-                <View style={styles.heroStatDivider} />
-                <View style={styles.heroStatItem}>
-                  <Text style={styles.heroStatValue}>180+</Text>
-                  <Text style={styles.heroStatLabel}>Clients</Text>
-                </View>
-                <View style={styles.heroStatDivider} />
-                <View style={styles.heroStatItem}>
-                  <Text style={styles.heroStatValue}>24/7</Text>
-                  <Text style={styles.heroStatLabel}>Support</Text>
-                </View>
-              </View>
+              <Text style={styles.heroTitle}>WeThink Tools</Text>
+              <Text style={styles.heroSubtitle}>12 AI-powered tools</Text>
             </View>
           </LinearGradient>
         </Animated.View>
 
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>All Tools</Text>
-          <Text style={[styles.sectionCount, { color: colors.textMuted }]}>{TOOLS.length} available</Text>
-        </View>
-
-        <View style={styles.grid}>
-          {TOOLS.map((tool, i) => (
-            <ToolCard key={tool.id} tool={tool} index={i} />
+        {/* ── Primary Grid ── */}
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Featured Tools</Text>
+        <View style={styles.primaryGrid}>
+          {PRIMARY_TOOLS.map((tool, i) => (
+            <PrimaryCard key={tool.id} tool={tool} index={i} />
           ))}
         </View>
+
+        {/* ── Secondary Tools ── */}
+        <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>More Tools</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.secondaryRow}
+        >
+          {SECONDARY_TOOLS.map((tool) => (
+            <SecondaryChip key={tool.id} tool={tool} />
+          ))}
+        </ScrollView>
 
         <View style={{ height: 32 }} />
       </ScrollView>
@@ -192,74 +190,78 @@ export default function ServicesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { paddingBottom: 24 },
-  heroHeader: {
-    minHeight: 220,
+  scroll: { paddingBottom: 24 },
+
+  // Hero banner
+  heroBanner: {
+    height: 140,
+    marginHorizontal: 0,
     paddingTop: Platform.OS === 'ios' ? 60 : (StatusBar.currentHeight ?? 24) + 16,
-    paddingBottom: 28,
     paddingHorizontal: 24,
     overflow: 'hidden',
+    justifyContent: 'flex-end',
+    paddingBottom: 20,
   },
-  particle: { position: 'absolute' },
+  deco: { position: 'absolute' },
   heroContent: { zIndex: 1 },
-  heroBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  heroBadgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  heroTitle: { color: '#FFFFFF', fontSize: 30, fontWeight: '900', letterSpacing: -0.8, marginBottom: 8 },
-  heroSubtitle: { color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 21, marginBottom: 20 },
-  heroStats: { flexDirection: 'row', alignItems: 'center' },
-  heroStatItem: { alignItems: 'center' },
-  heroStatValue: { color: '#FFFFFF', fontSize: 20, fontWeight: '800' },
-  heroStatLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '500', marginTop: 1 },
-  heroStatDivider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.3)', marginHorizontal: 20 },
-  sectionHeader: {
+  heroTitle: { color: '#FFFFFF', fontSize: 28, fontWeight: '900', letterSpacing: -0.8 },
+  heroSubtitle: { color: 'rgba(255,255,255,0.80)', fontSize: 14, fontWeight: '500', marginTop: 2 },
+
+  // Section title
+  sectionTitle: { fontSize: 17, fontWeight: '700', marginBottom: 14, paddingHorizontal: 24 },
+
+  // Primary grid
+  primaryGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 12,
     paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 12,
   },
-  sectionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.3 },
-  sectionCount: { fontSize: 13, fontWeight: '500' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 24 },
-  toolCard: {
-    width: CARD_W,
-    borderRadius: 20,
-    padding: 16,
+  primaryCardOuter: {
+    width: CELL_W,
+    height: 160,
+    borderRadius: 22,
+    overflow: 'hidden',
+    shadowColor: '#000',
     shadowOpacity: 0.15,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-    overflow: 'hidden',
+    elevation: 5,
   },
-  toolIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+  primaryCard: {
+    flex: 1,
+    padding: 18,
+    justifyContent: 'flex-end',
+  },
+  primaryEmoji: { fontSize: 40, marginBottom: 8 },
+  primaryTitle: { fontSize: 15, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 },
+  primarySubtitle: { fontSize: 11, color: 'rgba(255,255,255,0.80)', marginTop: 2, lineHeight: 15 },
+  primaryArrow: {
+    position: 'absolute',
+    top: 14, right: 14,
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  primaryArrowText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+
+  // Secondary chips
+  secondaryRow: { paddingHorizontal: 24, gap: 10, paddingBottom: 4 },
+  chip: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 40,
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.07)',
   },
-  toolEmoji: { fontSize: 26 },
-  toolAccentBar: { height: 3, borderRadius: 2, marginBottom: 10, width: '40%' },
-  toolTitle: { fontSize: 14, fontWeight: '800', marginBottom: 4, letterSpacing: -0.2 },
-  toolSubtitle: { fontSize: 11, lineHeight: 16, marginBottom: 12 },
-  toolArrow: {
-    alignSelf: 'flex-end',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+  chipIcon: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
   },
-  toolArrowText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  chipEmoji: { fontSize: 18 },
+  chipTitle: { fontSize: 13, fontWeight: '700' },
 });
