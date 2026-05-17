@@ -14,8 +14,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Svg, { Circle, Path, Polyline, G, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Path, Polyline, G, Text as SvgText, Rect } from 'react-native-svg';
 import { useTheme } from '../../context/ThemeContext';
+import { CalendarIcon, BotIcon, ServicesGridIcon, AnalyticsLineIcon, BellIcon } from '../../components/DashIcons';
 
 const { width: W } = Dimensions.get('window');
 
@@ -38,10 +39,10 @@ const DONUT = [
 ];
 
 const QUICK_ACTIONS = [
-  { label: 'Demo',      icon: '📅', colors: ['#0055FF', '#3B82F6'] as const, route: '/(tabs)/services' },
-  { label: 'AI Chat',   icon: '🤖', colors: ['#7C3AED', '#A78BFA'] as const, route: '/(tabs)/chat'     },
-  { label: 'Services',  icon: '⚡', colors: ['#059669', '#34D399'] as const, route: '/(tabs)/services' },
-  { label: 'Analytics', icon: '📊', colors: ['#D97706', '#FCD34D'] as const, route: '/(tabs)/portfolio' },
+  { label: 'Demo',      IconComp: CalendarIcon,     colors: ['#0055FF', '#3B82F6'] as const, route: '/(tabs)/services' },
+  { label: 'AI Chat',   IconComp: BotIcon,           colors: ['#7C3AED', '#A78BFA'] as const, route: '/(tabs)/chat'     },
+  { label: 'Services',  IconComp: ServicesGridIcon,  colors: ['#059669', '#34D399'] as const, route: '/(tabs)/services' },
+  { label: 'Analytics', IconComp: AnalyticsLineIcon, colors: ['#D97706', '#FCD34D'] as const, route: '/(tabs)/portfolio' },
 ];
 
 const ACTIVITIES = [
@@ -264,7 +265,7 @@ export default function Dashboard() {
               router.push('/notifications' as any);
             }}
           >
-            <Text style={{ fontSize: 20 }}>🔔</Text>
+            <BellIcon color={colors.text} size={22} />
             <View style={[styles.notifDot, { borderColor: colors.surface }]} />
           </TouchableOpacity>
         </Animated.View>
@@ -331,7 +332,7 @@ export default function Dashboard() {
               activeOpacity={0.82}
             >
               <LinearGradient colors={a.colors} style={styles.actionCircle}>
-                <Text style={{ fontSize: 26 }}>{a.icon}</Text>
+                <a.IconComp color="#fff" size={26} />
               </LinearGradient>
               <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>{a.label}</Text>
             </TouchableOpacity>
