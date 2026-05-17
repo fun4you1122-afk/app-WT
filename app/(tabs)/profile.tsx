@@ -1,59 +1,100 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Animated,
-  Easing,
-  ScrollView,
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  Switch,
-  Dimensions,
-  Platform,
-  StatusBar,
+  Animated, Easing, ScrollView, StyleSheet, View, Text,
+  TouchableOpacity, Switch, Dimensions, Platform, StatusBar,
+  Linking,
 } from 'react-native';
-import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
-import Svg, { Path, Circle, Rect, Line, G } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 
 const { width: W } = Dimensions.get('window');
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
+// ─── Data ─────────────────────────────────────────────────────────────────────
 
-function GearIcon({ color, size = 22 }: { color: string; size?: number }) {
+const COMPANY_STATS = [
+  { value: 247, label: 'Projects', suffix: '', color: '#0055FF' },
+  { value: 180, label: 'Clients', suffix: '', color: '#7C3AED' },
+  { value: 6, label: 'Countries', suffix: '', color: '#059669' },
+  { value: 200, label: 'Team', suffix: '+', color: '#D97706' },
+];
+
+const LEADERSHIP = [
+  {
+    initials: 'RA',
+    name: 'Rasha Aljalam',
+    role: 'CEO & Co-founder',
+    credential: '15 years in enterprise AI',
+    gradient: ['#0D1B4B', '#0055FF'] as const,
+    accentColor: '#0055FF',
+  },
+  {
+    initials: 'KM',
+    name: 'Khalid Al-Mansouri',
+    role: 'CTO',
+    credential: 'Ex-Google Brain, Arabic NLP pioneer',
+    gradient: ['#2E1B5E', '#7C3AED'] as const,
+    accentColor: '#7C3AED',
+  },
+  {
+    initials: 'SC',
+    name: 'Sarah Chen',
+    role: 'Head of Delivery',
+    credential: 'Delivered 80+ AI projects',
+    gradient: ['#064E3B', '#059669'] as const,
+    accentColor: '#059669',
+  },
+];
+
+const CLIENTS = [
+  { name: 'Emirates NBD', color: '#0055FF' },
+  { name: 'ADNOC', color: '#059669' },
+  { name: 'Dubai Municipality', color: '#7C3AED' },
+  { name: 'Etisalat', color: '#D97706' },
+  { name: 'DEWA', color: '#DC2626' },
+  { name: 'RTA Dubai', color: '#0EA5E9' },
+];
+
+const CERTIFICATIONS = [
+  { name: 'ISO 27001', sub: 'Information Security', color: '#0055FF' },
+  { name: 'Microsoft Gold Partner', sub: 'Cloud & AI', color: '#7C3AED' },
+  { name: 'Google Cloud Partner', sub: 'Machine Learning', color: '#059669' },
+];
+
+// ─── SVG Icons ────────────────────────────────────────────────────────────────
+
+function ShieldCheckIcon({ color, size = 22 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth="1.8" />
-      <Path
-        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
-        stroke={color}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <Path d="M12 22C12 22 4 18 4 12V5L12 2L20 5V12C20 18 12 22 12 22Z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M9 12L11 14L15 10" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
 
-function EditIcon({ color, size = 18 }: { color: string; size?: number }) {
+function MapPinIcon({ color, size = 18 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"
-        stroke={color}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M18.5 2.5C18.8978 2.10218 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10218 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10218 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z"
-        stroke={color}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <Path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 5.02944 7.02944 1 12 1C16.9706 1 21 5.02944 21 10Z" stroke={color} strokeWidth="1.8" />
+      <Circle cx="12" cy="10" r="3" stroke={color} strokeWidth="1.8" />
+    </Svg>
+  );
+}
+
+function MailIcon({ color, size = 18 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="2" y="4" width="20" height="16" rx="2" stroke={color} strokeWidth="1.8" />
+      <Path d="M2 8L12 14L22 8" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function PhoneIcon({ color, size = 18 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.95 13a19.79 19.79 0 01-3.07-8.67A2 2 0 012.86 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
@@ -61,309 +102,208 @@ function EditIcon({ color, size = 18 }: { color: string; size?: number }) {
 function MoonIcon({ color, size = 18 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
-        stroke={color}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill={color + '20'}
-      />
+      <Path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill={color + '20'} />
     </Svg>
   );
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const BANNER_HEIGHT = 160;
-const AVATAR_SIZE = 84;
-const AVATAR_OVERLAP = 36;
-
-const CATEGORY_COLORS: Record<string, string> = {
-  AI: '#7C3AED',
-  Tech: '#0EA5E9',
-  Business: '#059669',
-  UAE: '#D97706',
-  Global: '#DC2626',
-};
-
-const MY_DISCUSSIONS = [
-  { id: 'd1', title: 'UAE fintech regulatory sandbox — a blueprint for the world?', category: 'Business', likes: 312 },
-  { id: 'd2', title: 'Why I switched from GPT-4 to Claude for my startup', category: 'AI', likes: 198 },
-  { id: 'd3', title: 'Dubai 2040 urban plan: ambitious or achievable?', category: 'UAE', likes: 445 },
-  { id: 'd4', title: 'The hidden costs of rapid AI adoption in enterprise', category: 'Tech', likes: 267 },
-  { id: 'd5', title: 'Quantum computing timeline: closer than you think', category: 'Tech', likes: 183 },
-  { id: 'd6', title: 'How decentralised identity could reshape the Gulf economy', category: 'Global', likes: 341 },
-];
-
-const SAVED_DISCUSSIONS = [
-  { id: 's1', title: 'Is AI replacing human creativity or enhancing it?', category: 'AI', likes: 234 },
-  { id: 's2', title: 'The case for autonomous vehicles in Gulf cities', category: 'Tech', likes: 189 },
-  { id: 's3', title: "How WeThink's AI is transforming UAE banking", category: 'Business', likes: 412 },
-  { id: 's4', title: 'Poll: Should UAE mandate AI literacy in schools?', category: 'UAE', likes: 567 },
-  { id: 's5', title: 'Web3 identity and privacy in the post-GDPR era', category: 'Global', likes: 143 },
-  { id: 's6', title: 'Mental health tech startups boom in post-pandemic MENA', category: 'Business', likes: 298 },
-];
-
 // ─── Animated Counter ─────────────────────────────────────────────────────────
 
-interface CounterProps {
-  target: number;
-  suffix?: string;
-  style: any;
-  duration?: number;
-}
-
-function AnimatedCounter({ target, suffix = '', style, duration = 1200 }: CounterProps) {
+function AnimatedCounter({ target, suffix = '', color, labelStyle, valueStyle }: {
+  target: number; suffix?: string; color: string; labelStyle: any; valueStyle: any;
+}) {
   const anim = useRef(new Animated.Value(0)).current;
   const [display, setDisplay] = useState('0');
 
   useEffect(() => {
     const listener = anim.addListener(({ value }) => {
-      if (suffix === 'K') {
-        setDisplay((value / 1000).toFixed(value >= 1000 ? 1 : 0));
-      } else {
-        setDisplay(Math.round(value).toString());
-      }
+      setDisplay(Math.round(value).toString());
     });
-    Animated.timing(anim, {
-      toValue: suffix === 'K' ? target * 1000 : target,
-      duration,
-      useNativeDriver: false,
-      easing: Easing.out(Easing.cubic),
-    }).start();
+    Animated.timing(anim, { toValue: target, duration: 1300, useNativeDriver: false, easing: Easing.out(Easing.cubic) }).start();
     return () => anim.removeListener(listener);
-  }, [anim, target, suffix, duration]);
-
-  return <Text style={style}>{display}{suffix}</Text>;
-}
-
-// ─── Mini Discussion Card ─────────────────────────────────────────────────────
-
-function MiniCard({ item, colors, index }: { item: typeof MY_DISCUSSIONS[0]; colors: any; index: number }) {
-  const slideAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(slideAnim, {
-      toValue: 1,
-      duration: 350,
-      delay: index * 60,
-      useNativeDriver: true,
-      easing: Easing.out(Easing.cubic),
-    }).start();
-  }, [slideAnim, index]);
-
-  const catColor = CATEGORY_COLORS[item.category] ?? colors.primary;
+  }, []);
 
   return (
-    <Animated.View
-      style={[
-        styles.miniCard,
-        {
-          backgroundColor: colors.card,
-          borderColor: colors.borderLight,
-          opacity: slideAnim,
-          transform: [{ translateY: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }],
-        },
-      ]}
-    >
-      <View style={[styles.miniCategoryDot, { backgroundColor: catColor }]} />
-      <View style={styles.miniCardBody}>
-        <Text style={[styles.miniTitle, { color: colors.text }]} numberOfLines={2}>
-          {item.title}
-        </Text>
-        <View style={styles.miniFooter}>
-          <View style={[styles.miniCategoryBadge, { backgroundColor: catColor + '18' }]}>
-            <Text style={[styles.miniCategoryText, { color: catColor }]}>{item.category}</Text>
-          </View>
-          <Text style={[styles.miniLikes, { color: colors.textMuted }]}>♥ {item.likes}</Text>
-        </View>
-      </View>
-    </Animated.View>
+    <Text style={[valueStyle, { color }]}>{display}{suffix}</Text>
   );
 }
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
-export default function ProfileScreen() {
+export default function AboutScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState<'My Discussions' | 'Saved'>('My Discussions');
-  const bannerAnim = useRef(new Animated.Value(0)).current;
-  const avatarAnim = useRef(new Animated.Value(0)).current;
-  const tabIndicatorAnim = useRef(new Animated.Value(0)).current;
+  const heroAnim = useRef(new Animated.Value(0)).current;
+  const contentAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.sequence([
-      Animated.timing(bannerAnim, { toValue: 1, duration: 500, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
-      Animated.spring(avatarAnim, { toValue: 1, useNativeDriver: true, friction: 6, tension: 120 }),
+      Animated.timing(heroAnim, { toValue: 1, duration: 500, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+      Animated.timing(contentAnim, { toValue: 1, duration: 400, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
     ]).start();
-  }, [bannerAnim, avatarAnim]);
-
-  const handleTabSwitch = (tab: 'My Discussions' | 'Saved') => {
-    Haptics.selectionAsync();
-    setActiveTab(tab);
-    Animated.timing(tabIndicatorAnim, {
-      toValue: tab === 'My Discussions' ? 0 : 1,
-      duration: 250,
-      useNativeDriver: false,
-      easing: Easing.out(Easing.cubic),
-    }).start();
-  };
+  }, []);
 
   const handleThemeToggle = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     toggleTheme();
   };
 
-  const tabIndicatorLeft = tabIndicatorAnim.interpolate({ inputRange: [0, 1], outputRange: ['2%', '52%'] });
-  const discussions = activeTab === 'My Discussions' ? MY_DISCUSSIONS : SAVED_DISCUSSIONS;
-
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-
-        {/* ── Banner ── */}
-        <Animated.View style={{ opacity: bannerAnim }}>
-          <LinearGradient
-            colors={['#0055FF', '#7C3AED', '#A855F7']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.banner}
-          >
+        {/* ── Hero Banner ── */}
+        <Animated.View style={{ opacity: heroAnim, transform: [{ translateY: heroAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }}>
+          <LinearGradient colors={['#020818', '#0D1B4B', '#0055FF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
             {/* Decorative circles */}
-            <View style={[styles.bannerCircle, styles.bannerCircle1]} />
-            <View style={[styles.bannerCircle, styles.bannerCircle2]} />
+            <View style={[styles.heroCircle, styles.heroCircle1]} />
+            <View style={[styles.heroCircle, styles.heroCircle2]} />
 
-            {/* Top action buttons */}
-            <View style={styles.bannerActions}>
-              <TouchableOpacity
-                onPress={() => router.push('/settings' as any)}
-                style={styles.bannerIconBtn}
-                activeOpacity={0.8}
-              >
-                <GearIcon color="#FFFFFF" size={20} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {/* edit profile */ }}
-                style={[styles.bannerEditBtn]}
-                activeOpacity={0.8}
-              >
-                <EditIcon color="#FFFFFF" size={16} />
-                <Text style={styles.bannerEditText}>Edit Profile</Text>
-              </TouchableOpacity>
+            {/* Logo */}
+            <LinearGradient colors={['#7C3AED', '#0055FF']} style={styles.logoCircle} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+              <Text style={styles.logoText}>WT</Text>
+            </LinearGradient>
+            <Text style={styles.heroCompanyName}>WeThink.ae</Text>
+            <Text style={styles.heroTagline}>The Middle East's Leading AI Consultancy</Text>
+            <View style={styles.foundedBadge}>
+              <Text style={styles.foundedText}>Est. 2019 · Dubai, UAE</Text>
             </View>
           </LinearGradient>
         </Animated.View>
 
-        {/* ── Avatar ── */}
-        <View style={styles.avatarSection}>
-          <Animated.View
-            style={[
-              styles.avatarWrapper,
-              {
-                borderColor: colors.background,
-                transform: [
-                  { scale: avatarAnim },
-                  { translateY: avatarAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) },
-                ],
-              },
-            ]}
-          >
-            <LinearGradient
-              colors={['#0055FF', '#7C3AED']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.avatarGradient}
-            >
-              <Text style={styles.avatarInitials}>RA</Text>
-            </LinearGradient>
-          </Animated.View>
-        </View>
-
-        {/* ── Name & Bio ── */}
-        <View style={styles.nameSection}>
-          <Text style={[styles.displayName, { color: colors.text }]}>Rasha Aljalam</Text>
-          <Text style={[styles.role, { color: colors.primary }]}>CEO of WeThink.ae</Text>
-          <Text style={[styles.handle, { color: colors.textSecondary }]}>@rasha.aljalam</Text>
-          <Text style={[styles.bio, { color: colors.textSecondary }]}>
-            {'AI Policy Researcher · UAE Digital Economy Advocate\nBuilding the future with @WeThink.ae 🇦🇪'}
-          </Text>
-        </View>
-
-        {/* ── Stats ── */}
-        <View style={[styles.statsRow, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-          <TouchableOpacity style={styles.statItem} activeOpacity={0.7}>
-            <AnimatedCounter target={47} style={[styles.statValue, { color: colors.text }]} duration={1000} />
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Posts</Text>
-          </TouchableOpacity>
-          <View style={[styles.statDivider, { backgroundColor: colors.borderLight }]} />
-          <TouchableOpacity style={styles.statItem} activeOpacity={0.7}>
-            <View style={styles.statValueRow}>
-              <AnimatedCounter target={1.2} suffix="K" style={[styles.statValue, { color: colors.text }]} duration={1200} />
-            </View>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Followers</Text>
-          </TouchableOpacity>
-          <View style={[styles.statDivider, { backgroundColor: colors.borderLight }]} />
-          <TouchableOpacity style={styles.statItem} activeOpacity={0.7}>
-            <AnimatedCounter target={234} style={[styles.statValue, { color: colors.text }]} duration={1100} />
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Following</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── Toggle Tabs ── */}
-        <View style={[styles.tabSwitcher, { backgroundColor: colors.surfaceSecondary, borderColor: colors.borderLight }]}>
-          <Animated.View
-            style={[
-              styles.tabSwitcherIndicator,
-              { backgroundColor: colors.card, left: tabIndicatorLeft, shadowColor: colors.shadow },
-            ]}
-          />
-          {(['My Discussions', 'Saved'] as const).map(tab => (
-            <TouchableOpacity
-              key={tab}
-              onPress={() => handleTabSwitch(tab)}
-              style={styles.tabSwitcherBtn}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.tabSwitcherText, { color: activeTab === tab ? colors.text : colors.textMuted, fontWeight: activeTab === tab ? '700' : '500' }]}>
-                {tab}
-              </Text>
-            </TouchableOpacity>
+        {/* ── Stats Bar ── */}
+        <Animated.View style={[styles.statsBar, { backgroundColor: colors.surface, borderColor: colors.border }, { opacity: contentAnim }]}>
+          {COMPANY_STATS.map((stat, i) => (
+            <React.Fragment key={stat.label}>
+              {i > 0 && <View style={[styles.statDivider, { backgroundColor: colors.border }]} />}
+              <View style={styles.statItem}>
+                <AnimatedCounter
+                  target={stat.value}
+                  suffix={stat.suffix}
+                  color={stat.color}
+                  valueStyle={styles.statValue}
+                  labelStyle={styles.statLabel}
+                />
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>{stat.label}</Text>
+              </View>
+            </React.Fragment>
           ))}
-        </View>
+        </Animated.View>
 
-        {/* ── Discussion Grid ── */}
-        <View style={styles.grid}>
-          {discussions.map((item, i) => (
-            <MiniCard key={item.id} item={item} colors={colors} index={i} />
-          ))}
-        </View>
-
-        {/* ── Theme Toggle ── */}
-        <View style={[styles.themeRow, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-          <View style={styles.themeRowLeft}>
-            <View style={[styles.themeIconWrap, { backgroundColor: isDark ? colors.accentLight : colors.primaryLight }]}>
-              <MoonIcon color={isDark ? colors.accent : colors.primary} size={18} />
-            </View>
-            <View>
-              <Text style={[styles.themeLabel, { color: colors.text }]}>Dark Mode</Text>
-              <Text style={[styles.themeSubtitle, { color: colors.textMuted }]}>
-                {isDark ? 'Currently dark theme' : 'Currently light theme'}
-              </Text>
-            </View>
+        {/* ── Our Mission ── */}
+        <View style={[styles.section, { paddingHorizontal: 24 }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Our Mission</Text>
+          <View style={[styles.missionCard, { backgroundColor: colors.surface, borderColor: colors.border, borderLeftColor: '#0055FF' }]}>
+            <Text style={[styles.missionText, { color: colors.textSecondary }]}>
+              "We exist to make enterprise AI accessible, ethical, and impactful across the Middle East. Every solution we build creates real value for real people."
+            </Text>
           </View>
-          <Switch
-            value={isDark}
-            onValueChange={handleThemeToggle}
-            trackColor={{ false: colors.border, true: colors.primary + '80' }}
-            thumbColor={isDark ? colors.primary : colors.textMuted}
-            ios_backgroundColor={colors.border}
-          />
         </View>
 
-        {/* Bottom spacer */}
+        {/* ── Leadership Team ── */}
+        <View style={[styles.section]}>
+          <Text style={[styles.sectionTitle, { color: colors.text, paddingHorizontal: 24 }]}>Leadership Team</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.leadershipRow}>
+            {LEADERSHIP.map((person, i) => (
+              <View key={i} style={[styles.leaderCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <LinearGradient colors={person.gradient} style={styles.leaderAvatar} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                  <Text style={styles.leaderInitials}>{person.initials}</Text>
+                </LinearGradient>
+                <Text style={[styles.leaderName, { color: colors.text }]}>{person.name}</Text>
+                <Text style={[styles.leaderRole, { color: colors.textSecondary }]}>{person.role}</Text>
+                <View style={[styles.credentialTag, { backgroundColor: person.accentColor + '15', borderColor: person.accentColor + '40' }]}>
+                  <Text style={[styles.credentialText, { color: person.accentColor }]}>{person.credential}</Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* ── Trusted By ── */}
+        <View style={[styles.section, { paddingHorizontal: 24 }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Trusted By</Text>
+          <View style={styles.clientGrid}>
+            {CLIENTS.map(client => (
+              <View key={client.name} style={[styles.clientChip, { backgroundColor: client.color + '12', borderColor: client.color + '35' }]}>
+                <View style={[styles.clientDot, { backgroundColor: client.color }]} />
+                <Text style={[styles.clientName, { color: client.color }]}>{client.name}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* ── Certifications ── */}
+        <View style={[styles.section, { paddingHorizontal: 24 }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Certifications</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.certRow}>
+            {CERTIFICATIONS.map(cert => (
+              <View key={cert.name} style={[styles.certCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={[styles.certIconWrap, { backgroundColor: cert.color + '15' }]}>
+                  <ShieldCheckIcon color={cert.color} size={22} />
+                </View>
+                <Text style={[styles.certName, { color: colors.text }]}>{cert.name}</Text>
+                <Text style={[styles.certSub, { color: colors.textMuted }]}>{cert.sub}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* ── Contact Strip ── */}
+        <View style={[styles.section, { paddingHorizontal: 24 }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Us</Text>
+          <View style={[styles.contactCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {[
+              { icon: 'map', label: 'Dubai Internet City, UAE', onPress: () => {} },
+              { icon: 'mail', label: 'hello@wethink.ae', onPress: () => Linking.openURL('mailto:hello@wethink.ae') },
+              { icon: 'phone', label: '+971 4 XXX XXXX', onPress: () => Linking.openURL('tel:+9714XXXXXXX') },
+            ].map((item, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <View style={[styles.contactDivider, { backgroundColor: colors.borderLight }]} />}
+                <TouchableOpacity
+                  style={styles.contactRow}
+                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); item.onPress(); }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.contactIconWrap, { backgroundColor: colors.primary + '15' }]}>
+                    {item.icon === 'map' && <MapPinIcon color={colors.primary} />}
+                    {item.icon === 'mail' && <MailIcon color={colors.primary} />}
+                    {item.icon === 'phone' && <PhoneIcon color={colors.primary} />}
+                  </View>
+                  <Text style={[styles.contactLabel, { color: colors.text }]}>{item.label}</Text>
+                </TouchableOpacity>
+              </React.Fragment>
+            ))}
+          </View>
+        </View>
+
+        {/* ── Dark Mode Toggle ── */}
+        <View style={[styles.section, { paddingHorizontal: 24 }]}>
+          <View style={[styles.themeRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={styles.themeRowLeft}>
+              <View style={[styles.themeIconWrap, { backgroundColor: isDark ? colors.accentLight : colors.primaryLight }]}>
+                <MoonIcon color={isDark ? colors.accent : colors.primary} size={18} />
+              </View>
+              <View>
+                <Text style={[styles.themeLabel, { color: colors.text }]}>Dark Mode</Text>
+                <Text style={[styles.themeSub, { color: colors.textMuted }]}>{isDark ? 'Currently dark theme' : 'Currently light theme'}</Text>
+              </View>
+            </View>
+            <Switch
+              value={isDark}
+              onValueChange={handleThemeToggle}
+              trackColor={{ false: colors.border, true: colors.primary + '80' }}
+              thumbColor={isDark ? colors.primary : colors.textMuted}
+              ios_backgroundColor={colors.border}
+            />
+          </View>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={[styles.footerText, { color: colors.textMuted }]}>WeThink.ae © 2019–2026</Text>
+          <Text style={[styles.footerSub, { color: colors.textMuted }]}>The Middle East's Leading AI Consultancy</Text>
+        </View>
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -371,163 +311,134 @@ export default function ProfileScreen() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: { paddingBottom: 24 },
+  root: { flex: 1 },
+  scroll: { paddingBottom: 24 },
+  section: { marginTop: 28 },
+  sectionTitle: { fontSize: 20, fontWeight: '800', letterSpacing: -0.5, marginBottom: 14 },
 
-  // Banner
-  banner: {
-    height: BANNER_HEIGHT + (Platform.OS === 'ios' ? 44 : StatusBar.currentHeight ?? 24),
+  // Hero
+  hero: {
+    height: 200 + (Platform.OS === 'ios' ? 44 : StatusBar.currentHeight ?? 24),
     paddingTop: Platform.OS === 'ios' ? 56 : (StatusBar.currentHeight ?? 24) + 12,
-    paddingHorizontal: 20,
+    alignItems: 'center',
     overflow: 'hidden',
+    paddingBottom: 28,
+    justifyContent: 'flex-end',
   },
-  bannerCircle: {
-    position: 'absolute',
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  bannerCircle1: { width: 200, height: 200, top: -60, right: -40 },
-  bannerCircle2: { width: 120, height: 120, bottom: -20, left: 60 },
-  bannerActions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  bannerIconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bannerEditBtn: {
+  heroCircle: { position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.06)' },
+  heroCircle1: { width: 240, height: 240, top: -100, right: -60 },
+  heroCircle2: { width: 150, height: 150, bottom: -40, left: -30 },
+  logoCircle: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+  logoText: { color: '#fff', fontSize: 26, fontWeight: '900', letterSpacing: -1 },
+  heroCompanyName: { color: '#fff', fontSize: 28, fontWeight: '900', letterSpacing: -0.8, marginBottom: 6 },
+  heroTagline: { color: 'rgba(255,255,255,0.75)', fontSize: 14, textAlign: 'center', paddingHorizontal: 32 },
+  foundedBadge: { marginTop: 12, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6 },
+  foundedText: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '700' },
+
+  // Stats bar
+  statsBar: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  bannerEditText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-
-  // Avatar
-  avatarSection: {
-    paddingHorizontal: 20,
-    marginTop: -(AVATAR_OVERLAP),
-    marginBottom: 4,
-  },
-  avatarWrapper: {
-    width: AVATAR_SIZE + 6,
-    height: AVATAR_SIZE + 6,
-    borderRadius: (AVATAR_SIZE + 6) / 2,
-    borderWidth: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  avatarGradient: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarInitials: { color: '#FFFFFF', fontSize: 30, fontWeight: '800' },
-
-  // Name section
-  nameSection: { paddingHorizontal: 20, marginBottom: 20 },
-  displayName: { fontSize: 24, fontWeight: '800', letterSpacing: -0.4, marginBottom: 2 },
-  role: { fontSize: 15, fontWeight: '700', marginBottom: 2 },
-  handle: { fontSize: 14, fontWeight: '500', marginBottom: 10 },
-  bio: { fontSize: 14, lineHeight: 21 },
-
-  // Stats
-  statsRow: {
-    flexDirection: 'row',
-    marginHorizontal: 16,
+    marginHorizontal: 24,
+    marginTop: 20,
     borderRadius: 18,
     borderWidth: 1,
-    marginBottom: 16,
     overflow: 'hidden',
-    shadowColor: '#0A1628',
+    shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   statItem: { flex: 1, alignItems: 'center', paddingVertical: 18 },
-  statValueRow: { flexDirection: 'row', alignItems: 'baseline' },
-  statValue: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
-  statLabel: { fontSize: 12, fontWeight: '500', marginTop: 2 },
+  statValue: { fontSize: 20, fontWeight: '900', letterSpacing: -0.5 },
+  statLabel: { fontSize: 11, fontWeight: '600', marginTop: 2 },
   statDivider: { width: 1, marginVertical: 12 },
 
-  // Tab switcher
-  tabSwitcher: {
-    flexDirection: 'row',
-    marginHorizontal: 16,
-    borderRadius: 14,
+  // Mission
+  missionCard: {
+    borderRadius: 16,
     borderWidth: 1,
-    padding: 3,
-    marginBottom: 16,
-    position: 'relative',
-  },
-  tabSwitcherIndicator: {
-    position: 'absolute',
-    top: 3,
-    bottom: 3,
-    width: '46%',
-    borderRadius: 12,
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  tabSwitcherBtn: { flex: 1, alignItems: 'center', paddingVertical: 10, zIndex: 1 },
-  tabSwitcherText: { fontSize: 14 },
-
-  // Grid
-  grid: { paddingHorizontal: 16, gap: 10, marginBottom: 20 },
-  miniCard: {
-    flexDirection: 'row',
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-    gap: 12,
-    shadowColor: '#0A1628',
+    borderLeftWidth: 4,
+    padding: 18,
+    shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
   },
-  miniCategoryDot: { width: 4, borderRadius: 2, alignSelf: 'stretch', marginTop: 2 },
-  miniCardBody: { flex: 1, gap: 8 },
-  miniTitle: { fontSize: 14, fontWeight: '700', lineHeight: 20 },
-  miniFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  miniCategoryBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  miniCategoryText: { fontSize: 11, fontWeight: '700' },
-  miniLikes: { fontSize: 12, fontWeight: '600' },
+  missionText: { fontSize: 15, lineHeight: 23, fontStyle: 'italic', fontWeight: '500' },
 
-  // Theme row
-  themeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginHorizontal: 16,
+  // Leadership
+  leadershipRow: { paddingHorizontal: 24, paddingBottom: 4, gap: 12 },
+  leaderCard: {
+    width: 160,
     borderRadius: 18,
     borderWidth: 1,
     padding: 16,
-    shadowColor: '#0A1628',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  leaderAvatar: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  leaderInitials: { color: '#fff', fontSize: 22, fontWeight: '800' },
+  leaderName: { fontSize: 14, fontWeight: '800', textAlign: 'center', letterSpacing: -0.2, marginBottom: 3 },
+  leaderRole: { fontSize: 12, textAlign: 'center', marginBottom: 10 },
+  credentialTag: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
+  credentialText: { fontSize: 10, fontWeight: '700', textAlign: 'center', lineHeight: 14 },
+
+  // Clients
+  clientGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  clientChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  clientDot: { width: 7, height: 7, borderRadius: 3.5 },
+  clientName: { fontSize: 13, fontWeight: '700' },
+
+  // Certifications
+  certRow: { paddingBottom: 4, gap: 12 },
+  certCard: {
+    width: 150,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
   },
+  certIconWrap: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  certName: { fontSize: 13, fontWeight: '800', textAlign: 'center', letterSpacing: -0.2, marginBottom: 3 },
+  certSub: { fontSize: 11, textAlign: 'center', fontWeight: '500' },
+
+  // Contact
+  contactCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  contactRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 14 },
+  contactIconWrap: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  contactLabel: { fontSize: 14, fontWeight: '600' },
+  contactDivider: { height: 1, marginLeft: 68 },
+
+  // Theme toggle
+  themeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 18, borderWidth: 1, padding: 16 },
   themeRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   themeIconWrap: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   themeLabel: { fontSize: 15, fontWeight: '700' },
-  themeSubtitle: { fontSize: 12, marginTop: 1 },
+  themeSub: { fontSize: 12, marginTop: 1 },
+
+  // Footer
+  footer: { alignItems: 'center', marginTop: 32, gap: 4 },
+  footerText: { fontSize: 13, fontWeight: '600' },
+  footerSub: { fontSize: 11 },
 });

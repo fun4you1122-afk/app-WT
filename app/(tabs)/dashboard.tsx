@@ -6,7 +6,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Svg, { Circle, Ellipse, Path, Rect, G } from 'react-native-svg';
+import Svg, { Circle, Ellipse, Path, Rect } from 'react-native-svg';
 import { useTheme } from '../../context/ThemeContext';
 
 const { width: W } = Dimensions.get('window');
@@ -38,14 +38,8 @@ const WHY_ITEMS = [
 function GearIcon({ color, size }: { color: string; size: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
-        stroke={color} strokeWidth="1.8" fill="none"
-      />
-      <Path
-        d="M19.4 15C19.1 15.6 19.3 16.4 19.8 16.9L19.9 17C20.3 17.4 20.3 18 19.9 18.4L18.4 19.9C18 20.3 17.4 20.3 17 19.9L16.9 19.8C16.4 19.3 15.6 19.1 15 19.4C14.4 19.7 14 20.3 14 21V21.1C14 21.6 13.6 22 13.1 22H10.9C10.4 22 10 21.6 10 21.1V21C10 20.3 9.6 19.7 9 19.4C8.4 19.1 7.6 19.3 7.1 19.8L7 19.9C6.6 20.3 6 20.3 5.6 19.9L4.1 18.4C3.7 18 3.7 17.4 4.1 17L4.2 16.9C4.7 16.4 4.9 15.6 4.6 15C4.3 14.4 3.7 14 3 14H2.9C2.4 14 2 13.6 2 13.1V10.9C2 10.4 2.4 10 2.9 10H3C3.7 10 4.3 9.6 4.6 9C4.9 8.4 4.7 7.6 4.2 7.1L4.1 7C3.7 6.6 3.7 6 4.1 5.6L5.6 4.1C6 3.7 6.6 3.7 7 4.1L7.1 4.2C7.6 4.7 8.4 4.9 9 4.6C9.6 4.3 10 3.7 10 3V2.9C10 2.4 10.4 2 10.9 2H13.1C13.6 2 14 2.4 14 2.9V3C14 3.7 14.4 4.3 15 4.6C15.6 4.9 16.4 4.7 16.9 4.2L17 4.1C17.4 3.7 18 3.7 18.4 4.1L19.9 5.6C20.3 6 20.3 6.6 19.9 7L19.8 7.1C19.3 7.6 19.1 8.4 19.4 9C19.7 9.6 20.3 10 21 10H21.1C21.6 10 22 10.4 22 10.9V13.1C22 13.6 21.6 14 21.1 14H21C20.3 14 19.7 14.4 19.4 15Z"
-        stroke={color} strokeWidth="1.8" fill="none"
-      />
+      <Path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke={color} strokeWidth="1.8" fill="none" />
+      <Path d="M19.4 15C19.1 15.6 19.3 16.4 19.8 16.9L19.9 17C20.3 17.4 20.3 18 19.9 18.4L18.4 19.9C18 20.3 17.4 20.3 17 19.9L16.9 19.8C16.4 19.3 15.6 19.1 15 19.4C14.4 19.7 14 20.3 14 21V21.1C14 21.6 13.6 22 13.1 22H10.9C10.4 22 10 21.6 10 21.1V21C10 20.3 9.6 19.7 9 19.4C8.4 19.1 7.6 19.3 7.1 19.8L7 19.9C6.6 20.3 6 20.3 5.6 19.9L4.1 18.4C3.7 18 3.7 17.4 4.1 17L4.2 16.9C4.7 16.4 4.9 15.6 4.6 15C4.3 14.4 3.7 14 3 14H2.9C2.4 14 2 13.6 2 13.1V10.9C2 10.4 2.4 10 2.9 10H3C3.7 10 4.3 9.6 4.6 9C4.9 8.4 4.7 7.6 4.2 7.1L4.1 7C3.7 6.6 3.7 6 4.1 5.6L5.6 4.1C6 3.7 6.6 3.7 7 4.1L7.1 4.2C7.6 4.7 8.4 4.9 9 4.6C9.6 4.3 10 3.7 10 3V2.9C10 2.4 10.4 2 10.9 2H13.1C13.6 2 14 2.4 14 2.9V3C14 3.7 14.4 4.3 15 4.6C15.6 4.9 16.4 4.7 16.9 4.2L17 4.1C17.4 3.7 18 3.7 18.4 4.1L19.9 5.6C20.3 6 20.3 6.6 19.9 7L19.8 7.1C19.3 7.6 19.1 8.4 19.4 9C19.7 9.6 20.3 10 21 10H21.1C21.6 10 22 10.4 22 10.9V13.1C22 13.6 21.6 14 21.1 14H21C20.3 14 19.7 14.4 19.4 15Z" stroke={color} strokeWidth="1.8" fill="none" />
     </Svg>
   );
 }
@@ -139,20 +133,22 @@ function getWhyIcon(iconType: string, color: string) {
 function HeroSection() {
   const orb1Scale = useRef(new Animated.Value(1)).current;
   const orb2Scale = useRef(new Animated.Value(1)).current;
+  const fadeIn = useRef(new Animated.Value(0)).current;
+  const slideUp = useRef(new Animated.Value(24)).current;
 
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(orb1Scale, { toValue: 1.15, duration: 2800, useNativeDriver: true }),
-        Animated.timing(orb1Scale, { toValue: 1, duration: 2800, useNativeDriver: true }),
-      ])
-    ).start();
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(orb2Scale, { toValue: 1.1, duration: 3400, useNativeDriver: true }),
-        Animated.timing(orb2Scale, { toValue: 1, duration: 3400, useNativeDriver: true }),
-      ])
-    ).start();
+    Animated.parallel([
+      Animated.timing(fadeIn, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.spring(slideUp, { toValue: 0, useNativeDriver: true, damping: 16, stiffness: 120 }),
+    ]).start();
+    Animated.loop(Animated.sequence([
+      Animated.timing(orb1Scale, { toValue: 1.15, duration: 2800, useNativeDriver: true }),
+      Animated.timing(orb1Scale, { toValue: 1, duration: 2800, useNativeDriver: true }),
+    ])).start();
+    Animated.loop(Animated.sequence([
+      Animated.timing(orb2Scale, { toValue: 1.1, duration: 3400, useNativeDriver: true }),
+      Animated.timing(orb2Scale, { toValue: 1, duration: 3400, useNativeDriver: true }),
+    ])).start();
   }, []);
 
   const ctaPress = (route: string) => {
@@ -166,14 +162,15 @@ function HeroSection() {
       start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
       style={styles.hero}
     >
-      {/* Animated orbs */}
       <Animated.View style={[styles.orb, styles.orb1, { transform: [{ scale: orb1Scale }] }]} />
       <Animated.View style={[styles.orb, styles.orb2, { transform: [{ scale: orb2Scale }] }]} />
-      <Svg style={StyleSheet.absoluteFill} width={W} height={280} pointerEvents="none">
+      <Svg style={StyleSheet.absoluteFill as any} width={W} height={300} pointerEvents="none">
         <Ellipse cx={W * 0.85} cy={50} rx={90} ry={90} fill="rgba(124,58,237,0.2)" />
-        <Ellipse cx={W * 0.1} cy={220} rx={70} ry={70} fill="rgba(14,165,233,0.13)" />
-        <Circle cx={W * 0.5} cy={280} r={120} stroke="rgba(255,255,255,0.04)" strokeWidth="1" fill="none" />
-        <Circle cx={W * 0.5} cy={280} r={80} stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" />
+        <Ellipse cx={W * 0.1} cy={240} rx={70} ry={70} fill="rgba(14,165,233,0.13)" />
+        <Circle cx={W * 0.5} cy={300} r={120} stroke="rgba(255,255,255,0.04)" strokeWidth="1" fill="none" />
+        <Circle cx={W * 0.5} cy={300} r={80} stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" />
+        <Circle cx={W * 0.15} cy={80} r={8} fill="rgba(255,255,255,0.06)" />
+        <Circle cx={W * 0.88} cy={200} r={5} fill="rgba(255,255,255,0.08)" />
       </Svg>
 
       {/* Top bar */}
@@ -187,27 +184,18 @@ function HeroSection() {
         </TouchableOpacity>
       </View>
 
-      {/* Headline */}
-      <Text style={styles.heroHeadline}>{"Transform Your\nBusiness with AI"}</Text>
-      <Text style={styles.heroSub}>Enterprise AI consulting trusted by UAE's leading organizations</Text>
-
-      {/* CTA buttons */}
-      <View style={styles.heroCtas}>
-        <TouchableOpacity
-          style={styles.ctaSolid}
-          onPress={() => ctaPress('/tools/consultation')}
-          activeOpacity={0.88}
-        >
-          <Text style={styles.ctaSolidText}>Book Free Consultation</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.ctaOutline}
-          onPress={() => ctaPress('/(tabs)/services')}
-          activeOpacity={0.88}
-        >
-          <Text style={styles.ctaOutlineText}>Explore Solutions</Text>
-        </TouchableOpacity>
-      </View>
+      <Animated.View style={{ opacity: fadeIn, transform: [{ translateY: slideUp }] }}>
+        <Text style={styles.heroHeadline}>{"Transform Your\nBusiness with AI"}</Text>
+        <Text style={styles.heroSub}>Enterprise AI consulting trusted by UAE's leading organizations</Text>
+        <View style={styles.heroCtas}>
+          <TouchableOpacity style={styles.ctaSolid} onPress={() => ctaPress('/tools/consultation')} activeOpacity={0.88}>
+            <Text style={styles.ctaSolidText}>Book Free Consultation</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.ctaOutline} onPress={() => ctaPress('/(tabs)/services')} activeOpacity={0.88}>
+            <Text style={styles.ctaOutlineText}>Explore Solutions</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
     </LinearGradient>
   );
 }
@@ -215,10 +203,10 @@ function HeroSection() {
 // ─── Impact Strip ─────────────────────────────────────────────────────────────
 function ImpactStrip({ colors }: { colors: any }) {
   return (
-    <View style={[styles.impactWrap, { backgroundColor: colors.surface }]}>
+    <View style={[styles.impactWrap, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.impactRow}>
         {STATS.map(s => (
-          <View key={s.label} style={styles.impactChip}>
+          <View key={s.label} style={[styles.impactChip, { borderRightColor: colors.border }]}>
             <Text style={[styles.impactValue, { color: s.color }]}>{s.value}</Text>
             <Text style={[styles.impactLabel, { color: colors.textMuted }]}>{s.label}</Text>
           </View>
@@ -240,15 +228,11 @@ function IndustryCard({ item, index }: { item: typeof INDUSTRIES[0]; index: numb
     ]).start();
   }, []);
 
-  const onPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
-
   return (
     <Animated.View style={{ opacity, transform: [{ scale }], width: (W - 60) / 2 }}>
-      <TouchableOpacity onPress={onPress} activeOpacity={0.88}>
+      <TouchableOpacity onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} activeOpacity={0.88}>
         <LinearGradient colors={item.gradient} style={styles.industryCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-          <Svg style={StyleSheet.absoluteFill} width={(W - 60) / 2} height={110} pointerEvents="none">
+          <Svg style={StyleSheet.absoluteFill as any} width={(W - 60) / 2} height={110} pointerEvents="none">
             <Circle cx={(W - 60) / 2} cy={0} r={60} stroke="rgba(255,255,255,0.07)" strokeWidth="1" fill="none" />
           </Svg>
           <View style={styles.industryIcon}>
@@ -263,7 +247,7 @@ function IndustryCard({ item, index }: { item: typeof INDUSTRIES[0]; index: numb
 }
 
 // ─── Success Story ────────────────────────────────────────────────────────────
-function SuccessStory({ colors }: { colors: any }) {
+function SuccessStory() {
   const scale = useRef(new Animated.Value(0.96)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -276,16 +260,13 @@ function SuccessStory({ colors }: { colors: any }) {
 
   return (
     <Animated.View style={{ opacity, transform: [{ scale }] }}>
-      <TouchableOpacity
-        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
-        activeOpacity={0.9}
-      >
+      <TouchableOpacity onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)} activeOpacity={0.9}>
         <LinearGradient
           colors={['#065F46', '#059669', '#34D399']}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={styles.storyCard}
         >
-          <Svg style={StyleSheet.absoluteFill} width={W - 48} height={160} pointerEvents="none">
+          <Svg style={StyleSheet.absoluteFill as any} width={W - 48} height={160} pointerEvents="none">
             <Circle cx={W - 80} cy={-20} r={100} stroke="rgba(255,255,255,0.07)" strokeWidth="1" fill="none" />
             <Circle cx={W - 80} cy={-20} r={60} stroke="rgba(255,255,255,0.05)" strokeWidth="1" fill="none" />
           </Svg>
@@ -294,7 +275,6 @@ function SuccessStory({ colors }: { colors: any }) {
           </View>
           <Text style={styles.storyClient}>Emirates NBD</Text>
           <Text style={styles.storyHeadline}>AI Fraud Detection saved{'\n'}AED 340M in 12 months</Text>
-          {/* Progress bar */}
           <View style={styles.progressTrack}>
             <View style={styles.progressFill} />
           </View>
@@ -333,7 +313,7 @@ function CTABanner() {
       start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
       style={styles.ctaBanner}
     >
-      <Svg style={StyleSheet.absoluteFill} width={W - 48} height={140} pointerEvents="none">
+      <Svg style={StyleSheet.absoluteFill as any} width={W - 48} height={140} pointerEvents="none">
         <Circle cx={W - 60} cy={70} r={80} fill="rgba(255,255,255,0.04)" />
         <Circle cx={20} cy={20} r={50} fill="rgba(255,255,255,0.03)" />
       </Svg>
@@ -376,15 +356,12 @@ export default function Dashboard() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         contentContainerStyle={styles.scroll}
       >
-        {/* ── Hero ── */}
         <HeroSection />
 
-        {/* ── Impact Numbers ── */}
         <View style={styles.section}>
           <ImpactStrip colors={colors} />
         </View>
 
-        {/* ── Industries ── */}
         <View style={styles.section}>
           <SectionHeader title="Industries We Serve" colors={colors} />
           <View style={styles.industryGrid}>
@@ -394,21 +371,18 @@ export default function Dashboard() {
           </View>
         </View>
 
-        {/* ── Success Story ── */}
         <View style={styles.section}>
           <SectionHeader title="Success Story" colors={colors} />
           <View style={styles.padH}>
-            <SuccessStory colors={colors} />
+            <SuccessStory />
           </View>
         </View>
 
-        {/* ── Why WeThink ── */}
         <View style={styles.section}>
           <SectionHeader title="Why WeThink" colors={colors} />
           <WhyWeThink colors={colors} />
         </View>
 
-        {/* ── CTA Banner ── */}
         <View style={[styles.section, styles.padH]}>
           <CTABanner />
         </View>
@@ -431,7 +405,7 @@ const styles = StyleSheet.create({
   // Hero
   hero: {
     paddingTop: Platform.OS === 'ios' ? 60 : 44,
-    paddingBottom: 32,
+    paddingBottom: 36,
     paddingHorizontal: 24,
     minHeight: 280,
     overflow: 'hidden',
@@ -451,7 +425,7 @@ const styles = StyleSheet.create({
   ctaOutlineText: { fontSize: 13, fontWeight: '800', color: '#fff' },
 
   // Impact strip
-  impactWrap: { marginHorizontal: 24, borderRadius: 18, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  impactWrap: { marginHorizontal: 24, borderRadius: 18, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   impactRow: { paddingHorizontal: 8, paddingVertical: 4 },
   impactChip: { paddingHorizontal: 20, paddingVertical: 16, alignItems: 'center', minWidth: 90 },
   impactValue: { fontSize: 20, fontWeight: '900', letterSpacing: -0.5 },

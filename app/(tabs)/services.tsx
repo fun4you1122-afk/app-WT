@@ -1,206 +1,250 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
-  Animated, Easing, ScrollView, StyleSheet, View, Text,
+  Animated, ScrollView, StyleSheet, View, Text,
   TouchableOpacity, Dimensions, Platform, StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import Svg, { Path, Circle, Defs, RadialGradient, Stop, Ellipse, G } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Ellipse } from 'react-native-svg';
 import { useTheme } from '../../context/ThemeContext';
-import {
-  BotIcon, QuizIcon, CostIcon, ROIIcon, CalendarIcon, NewsIcon,
-  BookIcon, KeyIcon, GaugeIcon, ShieldIcon, BoardIcon, HeadsetIcon,
-} from '../../components/ToolIcons';
 
 const { width: W } = Dimensions.get('window');
-const CARD_W = (W - 48 - 12) / 2;
 
-const PRIMARY_TOOLS = [
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const SERVICES = [
   {
-    id: 'ai-chat',
-    Icon: BotIcon,
-    title: 'AI Assistant',
-    subtitle: 'Chat with WeThink AI',
-    colors: ['#5B21B6', '#7C3AED', '#A78BFA'] as const,
-    accent: '#C4B5FD',
-    stat: '24/7',
-    statLabel: 'Available',
+    id: 'strategy',
+    name: 'AI Strategy & Consulting',
+    color: '#0055FF',
+    gradient: ['#0D1B4B', '#0055FF'] as const,
+    desc: 'We assess your readiness and build a custom AI roadmap tailored to your business goals.',
+    tags: ['AI Roadmap', 'Digital Maturity', 'ROI Analysis'],
+    iconType: 'chart',
   },
   {
-    id: 'quiz',
-    Icon: QuizIcon,
-    title: 'Readiness Quiz',
-    subtitle: 'Assess digital maturity',
-    colors: ['#1D4ED8', '#2563EB', '#38BDF8'] as const,
-    accent: '#93C5FD',
-    stat: '5 min',
-    statLabel: 'Assessment',
+    id: 'development',
+    name: 'Custom AI Development',
+    color: '#7C3AED',
+    gradient: ['#2E1B5E', '#7C3AED'] as const,
+    desc: 'Bespoke ML models, NLP systems and computer vision solutions built for your enterprise.',
+    tags: ['Machine Learning', 'NLP Arabic', 'Computer Vision'],
+    iconType: 'code',
   },
   {
-    id: 'cost-estimator',
-    Icon: CostIcon,
-    title: 'Cost Estimator',
-    subtitle: 'Price your project',
-    colors: ['#065F46', '#059669', '#34D399'] as const,
-    accent: '#6EE7B7',
-    stat: 'Live',
-    statLabel: 'Pricing',
+    id: 'data',
+    name: 'Data Engineering',
+    color: '#059669',
+    gradient: ['#064E3B', '#059669'] as const,
+    desc: 'End-to-end data pipelines, lakes and real-time analytics to power your AI initiatives.',
+    tags: ['Data Lake', 'Real-time', 'ETL/ELT'],
+    iconType: 'database',
   },
   {
-    id: 'roi-calculator',
-    Icon: ROIIcon,
-    title: 'ROI Calculator',
-    subtitle: 'Measure your returns',
-    colors: ['#92400E', '#D97706', '#FCD34D'] as const,
-    accent: '#FDE68A',
-    stat: '3x',
-    statLabel: 'Avg Return',
-  },
-  {
-    id: 'consultation',
-    Icon: CalendarIcon,
-    title: 'Book a Call',
-    subtitle: 'Free 30-min consultation',
-    colors: ['#991B1B', '#DC2626', '#F87171'] as const,
-    accent: '#FCA5A5',
-    stat: 'Free',
-    statLabel: '30 Min',
-  },
-  {
-    id: 'news',
-    Icon: NewsIcon,
-    title: 'Tech News',
-    subtitle: 'Latest AI stories',
-    colors: ['#0C4A6E', '#0EA5E9', '#7DD3FC'] as const,
-    accent: '#BAE6FD',
-    stat: 'Live',
-    statLabel: 'Feed',
+    id: 'integration',
+    name: 'AI Integration',
+    color: '#D97706',
+    gradient: ['#451A03', '#D97706'] as const,
+    desc: 'Connect AI capabilities to your existing enterprise systems with minimal disruption.',
+    tags: ['ERP Integration', 'API Layer', 'Legacy Modernisation'],
+    iconType: 'connect',
   },
 ];
 
-const SECONDARY_TOOLS = [
-  { id: 'knowledge-base',  Icon: BookIcon,    title: 'Knowledge Base', color: '#7C3AED', bg: '#EDE9FE' },
-  { id: 'password-gen',    Icon: KeyIcon,     title: 'Password Gen',   color: '#059669', bg: '#D1FAE5' },
-  { id: 'speed-test',      Icon: GaugeIcon,   title: 'Speed Test',     color: '#D97706', bg: '#FEF3C7' },
-  { id: 'security-scan',   Icon: ShieldIcon,  title: 'Security Scan',  color: '#DC2626', bg: '#FEE2E2' },
-  { id: 'project-tracker', Icon: BoardIcon,   title: 'Projects',       color: '#0055FF', bg: '#DBEAFE' },
-  { id: 'live-chat',       Icon: HeadsetIcon, title: 'Live Support',   color: '#0EA5E9', bg: '#E0F2FE' },
+const ENGAGEMENT_MODELS = [
+  {
+    id: 'project',
+    name: 'Project-Based',
+    desc: 'Fixed scope, defined outcomes',
+    range: 'AED 50K – 500K',
+    color: '#0055FF',
+    badge: null,
+  },
+  {
+    id: 'retainer',
+    name: 'Retainer',
+    desc: 'Ongoing AI partnership',
+    range: 'AED 30K / month',
+    color: '#7C3AED',
+    badge: 'Most Popular',
+  },
+  {
+    id: 'staff',
+    name: 'Staff Augmentation',
+    desc: 'Expert team extension',
+    range: 'AED 15K / resource',
+    color: '#059669',
+    badge: null,
+  },
 ];
 
-// ── Decorative SVG blob ───────────────────────────────────────────────────────
-function HeroDecor() {
-  const anim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.loop(Animated.sequence([
-      Animated.timing(anim, { toValue: 1, duration: 4000, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
-      Animated.timing(anim, { toValue: 0, duration: 4000, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
-    ])).start();
-  }, []);
+const FREE_TOOLS = [
+  { id: 'ai-chat', name: 'AI Assistant', color: '#7C3AED', gradient: ['#2E1B5E', '#7C3AED'] as const },
+  { id: 'cost-estimator', name: 'Cost Estimator', color: '#059669', gradient: ['#064E3B', '#059669'] as const },
+  { id: 'roi-calculator', name: 'ROI Calculator', color: '#D97706', gradient: ['#451A03', '#D97706'] as const },
+  { id: 'quiz', name: 'Readiness Quiz', color: '#0055FF', gradient: ['#0D1B4B', '#0055FF'] as const },
+  { id: 'project-tracker', name: 'Project Tracker', color: '#DC2626', gradient: ['#450A0A', '#DC2626'] as const },
+  { id: 'consultation', name: 'Book a Call', color: '#0EA5E9', gradient: ['#0C4A6E', '#0EA5E9'] as const },
+];
 
-  return (
-    <Animated.View style={[StyleSheet.absoluteFill, {
-      opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0.9] }),
-      transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }],
-    }]} pointerEvents="none">
-      <Svg width={W} height={180} style={StyleSheet.absoluteFill}>
-        <Defs>
-          <RadialGradient id="rg1" cx="70%" cy="30%" r="50%">
-            <Stop offset="0%" stopColor="#A78BFA" stopOpacity="0.4" />
-            <Stop offset="100%" stopColor="#7C3AED" stopOpacity="0" />
-          </RadialGradient>
-          <RadialGradient id="rg2" cx="20%" cy="80%" r="40%">
-            <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.3" />
-            <Stop offset="100%" stopColor="#0EA5E9" stopOpacity="0" />
-          </RadialGradient>
-        </Defs>
-        <Ellipse cx={W * 0.75} cy={50} rx={90} ry={90} fill="url(#rg1)" />
-        <Ellipse cx={W * 0.2} cy={140} rx={70} ry={70} fill="url(#rg2)" />
-        <Circle cx={W * 0.85} cy={150} r={18} fill="rgba(255,255,255,0.07)" />
-        <Circle cx={W * 0.1} cy={40} r={12} fill="rgba(255,255,255,0.09)" />
-        <Circle cx={W * 0.5} cy={160} r={8} fill="rgba(255,255,255,0.06)" />
-      </Svg>
-    </Animated.View>
-  );
-}
+// ─── SVG Icons ────────────────────────────────────────────────────────────────
 
-// ── Card decorative ring ──────────────────────────────────────────────────────
-function CardDecorRing({ color }: { color: string }) {
+function ChartIcon({ color }: { color: string }) {
   return (
-    <Svg width={80} height={80} style={[StyleSheet.absoluteFill, { top: -10, right: -10, opacity: 0.18 }]} pointerEvents="none">
-      <Circle cx={70} cy={10} r={50} stroke={color} strokeWidth="1" fill="none" />
-      <Circle cx={70} cy={10} r={30} stroke={color} strokeWidth="1" fill="none" />
+    <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
+      <Path d="M18 20V10M12 20V4M6 20V14" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
 
-// ── Primary grid card ─────────────────────────────────────────────────────────
-function PrimaryCard({ tool, index }: { tool: typeof PRIMARY_TOOLS[0]; index: number }) {
-  const scale   = useRef(new Animated.Value(0.82)).current;
+function CodeIcon({ color }: { color: string }) {
+  return (
+    <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
+      <Path d="M16 18L22 12L16 6M8 6L2 12L8 18" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+function DatabaseIcon({ color }: { color: string }) {
+  return (
+    <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
+      <Ellipse cx="12" cy="5" rx="9" ry="3" stroke={color} strokeWidth="1.8" />
+      <Path d="M3 5V19C3 20.66 7.03 22 12 22C16.97 22 21 20.66 21 19V5" stroke={color} strokeWidth="1.8" />
+      <Path d="M3 12C3 13.66 7.03 15 12 15C16.97 15 21 13.66 21 12" stroke={color} strokeWidth="1.8" />
+    </Svg>
+  );
+}
+
+function ConnectIcon({ color }: { color: string }) {
+  return (
+    <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
+      <Circle cx="5" cy="6" r="3" stroke={color} strokeWidth="1.8" />
+      <Circle cx="19" cy="6" r="3" stroke={color} strokeWidth="1.8" />
+      <Circle cx="5" cy="18" r="3" stroke={color} strokeWidth="1.8" />
+      <Circle cx="19" cy="18" r="3" stroke={color} strokeWidth="1.8" />
+      <Path d="M8 6H16M8 18H16M5 9V15M19 9V15" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function getServiceIcon(iconType: string, color: string) {
+  switch (iconType) {
+    case 'chart': return <ChartIcon color={color} />;
+    case 'code': return <CodeIcon color={color} />;
+    case 'database': return <DatabaseIcon color={color} />;
+    case 'connect': return <ConnectIcon color={color} />;
+    default: return null;
+  }
+}
+
+function ArrowIcon({ color }: { color: string }) {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+      <Path d="M5 12H19M13 6L19 12L13 18" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+function ToolArrowIcon({ color }: { color: string }) {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+      <Path d="M7 17L17 7M7 7H17V17" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+// ─── Service Card ─────────────────────────────────────────────────────────────
+function ServiceCard({ service, index, colors }: { service: typeof SERVICES[0]; index: number; colors: any }) {
+  const translateY = useRef(new Animated.Value(30)).current;
   const opacity = useRef(new Animated.Value(0)).current;
-  const pressScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(scale, {
-        toValue: 1,
-        delay: index * 80,
-        useNativeDriver: true,
-        damping: 14,
-        stiffness: 120,
-      }),
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 350,
-        delay: index * 80,
-        useNativeDriver: true,
-      }),
+      Animated.spring(translateY, { toValue: 0, delay: index * 100, useNativeDriver: true, damping: 15, stiffness: 120 }),
+      Animated.timing(opacity, { toValue: 1, duration: 350, delay: index * 100, useNativeDriver: true }),
     ]).start();
   }, []);
 
-  const handlePressIn = () => {
-    Animated.spring(pressScale, { toValue: 0.95, useNativeDriver: true, damping: 15, stiffness: 300 }).start();
-  };
-  const handlePressOut = () => {
-    Animated.spring(pressScale, { toValue: 1, useNativeDriver: true, damping: 12, stiffness: 250 }).start();
-  };
-  const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push(('/tools/' + tool.id) as any);
-  };
+  return (
+    <Animated.View style={[styles.serviceCard, { backgroundColor: colors.surface, borderColor: colors.border, borderLeftColor: service.color, opacity, transform: [{ translateY }] }]}>
+      {/* Icon area */}
+      <View style={styles.serviceCardHeader}>
+        <LinearGradient colors={service.gradient} style={styles.serviceIconWrap} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          {getServiceIcon(service.iconType, '#fff')}
+        </LinearGradient>
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push('/tools/consultation' as any);
+          }}
+          style={styles.exploreBtn}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.exploreText, { color: service.color }]}>Explore</Text>
+          <ArrowIcon color={service.color} />
+        </TouchableOpacity>
+      </View>
+
+      <Text style={[styles.serviceName, { color: colors.text }]}>{service.name}</Text>
+      <Text style={[styles.serviceDesc, { color: colors.textSecondary }]}>{service.desc}</Text>
+
+      {/* Capability tags */}
+      <View style={styles.tagsRow}>
+        {service.tags.map(tag => (
+          <View key={tag} style={[styles.tag, { backgroundColor: service.color + '15', borderColor: service.color + '40' }]}>
+            <Text style={[styles.tagText, { color: service.color }]}>{tag}</Text>
+          </View>
+        ))}
+      </View>
+    </Animated.View>
+  );
+}
+
+// ─── Engagement Model Card ────────────────────────────────────────────────────
+function EngagementCard({ model, colors }: { model: typeof ENGAGEMENT_MODELS[0]; colors: any }) {
+  return (
+    <TouchableOpacity
+      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/tools/consultation' as any); }}
+      activeOpacity={0.85}
+      style={[styles.engCard, { backgroundColor: colors.surface, borderColor: model.badge ? model.color : colors.border }]}
+    >
+      {model.badge && (
+        <View style={[styles.popularBadge, { backgroundColor: model.color }]}>
+          <Text style={styles.popularBadgeText}>{model.badge}</Text>
+        </View>
+      )}
+      <View style={[styles.engDot, { backgroundColor: model.color }]} />
+      <Text style={[styles.engName, { color: colors.text }]}>{model.name}</Text>
+      <Text style={[styles.engDesc, { color: colors.textMuted }]}>{model.desc}</Text>
+      <Text style={[styles.engRange, { color: model.color }]}>{model.range}</Text>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Tool Card ────────────────────────────────────────────────────────────────
+function ToolCard({ tool }: { tool: typeof FREE_TOOLS[0] }) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => Animated.spring(scale, { toValue: 0.94, useNativeDriver: true, damping: 15, stiffness: 300 }).start();
+  const handlePressOut = () => Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 12, stiffness: 250 }).start();
 
   return (
-    <Animated.View style={{ opacity, transform: [{ scale: Animated.multiply(scale, pressScale) }], width: CARD_W }}>
+    <Animated.View style={[styles.toolCard, { transform: [{ scale }] }]}>
       <TouchableOpacity
-        onPress={handlePress}
+        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push(('/tools/' + tool.id) as any); }}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={1}
-        style={styles.cardOuter}
+        style={styles.toolCardInner}
       >
-        <LinearGradient colors={tool.colors} style={styles.card} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-          <CardDecorRing color={tool.accent} />
-
-          {/* Icon container */}
-          <View style={styles.iconWrap}>
-            <tool.Icon color="#fff" size={26} />
-          </View>
-
-          {/* Stat badge */}
-          <View style={[styles.statBadge, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
-            <Text style={styles.statNum}>{tool.stat}</Text>
-            <Text style={styles.statLbl}>{tool.statLabel}</Text>
-          </View>
-
-          {/* Labels */}
-          <View style={styles.cardBottom}>
-            <Text style={styles.cardTitle} numberOfLines={1}>{tool.title}</Text>
-            <Text style={styles.cardSubtitle} numberOfLines={2}>{tool.subtitle}</Text>
-          </View>
-
-          {/* Arrow */}
-          <View style={styles.arrowBubble}>
-            <Text style={styles.arrowText}>↗</Text>
+        <LinearGradient colors={tool.gradient} style={styles.toolGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          <Svg style={StyleSheet.absoluteFill as any} width={(W - 72) / 2} height={76} pointerEvents="none">
+            <Circle cx={(W - 72) / 2} cy={0} r={50} fill="rgba(255,255,255,0.06)" />
+          </Svg>
+          <Text style={styles.toolName} numberOfLines={2}>{tool.name}</Text>
+          <View style={styles.toolArrow}>
+            <ToolArrowIcon color="rgba(255,255,255,0.9)" />
           </View>
         </LinearGradient>
       </TouchableOpacity>
@@ -208,50 +252,13 @@ function PrimaryCard({ tool, index }: { tool: typeof PRIMARY_TOOLS[0]; index: nu
   );
 }
 
-// ── Secondary row item ────────────────────────────────────────────────────────
-function SecondaryItem({ tool, index }: { tool: typeof SECONDARY_TOOLS[0]; index: number }) {
-  const translateX = useRef(new Animated.Value(30)).current;
-  const opacity    = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(translateX, { toValue: 0, delay: 300 + index * 60, useNativeDriver: true, damping: 16, stiffness: 140 }),
-      Animated.timing(opacity, { toValue: 1, duration: 300, delay: 300 + index * 60, useNativeDriver: true }),
-    ]).start();
-  }, []);
-
-  return (
-    <Animated.View style={{ opacity, transform: [{ translateX }] }}>
-      <TouchableOpacity
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.push(('/tools/' + tool.id) as any);
-        }}
-        activeOpacity={0.82}
-        style={[styles.secItem, { borderColor: tool.color + '30' }]}
-      >
-        <View style={[styles.secIconWrap, { backgroundColor: tool.bg }]}>
-          <tool.Icon color={tool.color} size={20} />
-        </View>
-        <Text style={[styles.secTitle, { color: tool.color }]} numberOfLines={1}>{tool.title}</Text>
-        <Text style={{ color: tool.color, fontSize: 14, marginLeft: 'auto' }}>›</Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
-
-// ── Main screen ───────────────────────────────────────────────────────────────
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function ServicesScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const headerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(headerAnim, {
-      toValue: 1,
-      duration: 700,
-      useNativeDriver: true,
-      easing: Easing.out(Easing.cubic),
-    }).start();
+    Animated.timing(headerAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
   }, []);
 
   return (
@@ -259,195 +266,162 @@ export default function ServicesScreen() {
       <StatusBar barStyle="light-content" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-        {/* ── Hero ── */}
-        <Animated.View style={{
-          opacity: headerAnim,
-          transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-24, 0] }) }],
-        }}>
-          <LinearGradient
-            colors={['#1E0A4C', '#0055FF', '#0EA5E9']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={styles.hero}
-          >
-            <HeroDecor />
-            <View style={styles.heroInner}>
-              <View style={styles.heroBadge}>
-                <Text style={styles.heroBadgeText}>12 AI-Powered Tools</Text>
+        {/* ── Header ── */}
+        <Animated.View style={{ opacity: headerAnim, transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }}>
+          <LinearGradient colors={['#0055FF', '#0EA5E9']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+            <Svg style={StyleSheet.absoluteFill as any} width={W} height={160} pointerEvents="none">
+              <Ellipse cx={W * 0.85} cy={30} rx={80} ry={80} fill="rgba(255,255,255,0.08)" />
+              <Circle cx={W * 0.1} cy={130} r={50} fill="rgba(255,255,255,0.05)" />
+            </Svg>
+            <View style={styles.headerInner}>
+              <View style={styles.headerBadge}>
+                <Text style={styles.headerBadgeText}>Enterprise Solutions</Text>
               </View>
-              <Text style={styles.heroH1}>WeThink</Text>
-              <Text style={styles.heroH2}>Tool Suite</Text>
-              <Text style={styles.heroSub}>Enterprise intelligence at your fingertips</Text>
+              <Text style={styles.headerTitle}>Our Solutions</Text>
+              <Text style={styles.headerSubtitle}>AI-powered services built for enterprise scale</Text>
             </View>
           </LinearGradient>
         </Animated.View>
 
-        {/* ── Section: Featured ── */}
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Featured</Text>
-            <Text style={[styles.sectionSub, { color: colors.textMuted }]}>Most used tools</Text>
-          </View>
-          <View style={[styles.countBadge, { backgroundColor: colors.primary + '18' }]}>
-            <Text style={[styles.countText, { color: colors.primary }]}>6</Text>
-          </View>
-        </View>
-
-        <View style={styles.grid}>
-          {PRIMARY_TOOLS.map((tool, i) => (
-            <PrimaryCard key={tool.id} tool={tool} index={i} />
-          ))}
-        </View>
-
-        {/* ── Section: More Tools ── */}
-        <View style={[styles.sectionHeader, { marginTop: 28 }]}>
-          <View>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>More Tools</Text>
-            <Text style={[styles.sectionSub, { color: colors.textMuted }]}>Utilities & support</Text>
-          </View>
-          <View style={[styles.countBadge, { backgroundColor: colors.primary + '18' }]}>
-            <Text style={[styles.countText, { color: colors.primary }]}>6</Text>
+        {/* ── Service Cards ── */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>What We Build</Text>
+          <View style={styles.serviceList}>
+            {SERVICES.map((s, i) => (
+              <ServiceCard key={s.id} service={s} index={i} colors={colors} />
+            ))}
           </View>
         </View>
 
-        <View style={[styles.secList, { backgroundColor: colors.surface }]}>
-          {SECONDARY_TOOLS.map((tool, i) => (
-            <React.Fragment key={tool.id}>
-              <SecondaryItem tool={tool} index={i} />
-              {i < SECONDARY_TOOLS.length - 1 && (
-                <View style={[styles.sep, { backgroundColor: colors.borderLight }]} />
-              )}
-            </React.Fragment>
-          ))}
+        {/* ── Engagement Models ── */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Engagement Models</Text>
+          <Text style={[styles.sectionSub, { color: colors.textMuted }]}>How clients work with WeThink</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.engRow}>
+            {ENGAGEMENT_MODELS.map(m => (
+              <EngagementCard key={m.id} model={m} colors={colors} />
+            ))}
+          </ScrollView>
         </View>
 
-        {/* ── Footer note ── */}
-        <Text style={[styles.footer, { color: colors.textMuted }]}>
-          All tools powered by WeThink AI Platform
-        </Text>
-        <View style={{ height: 32 }} />
+        {/* ── Free Tools ── */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Try Our Free Tools</Text>
+          <Text style={[styles.sectionSub, { color: colors.textMuted }]}>AI-powered tools available right now</Text>
+          <View style={styles.toolGrid}>
+            {FREE_TOOLS.map(t => (
+              <ToolCard key={t.id} tool={t} />
+            ))}
+          </View>
+        </View>
+
+        {/* ── CTA ── */}
+        <View style={[styles.section, { paddingHorizontal: 24 }]}>
+          <LinearGradient colors={['#020818', '#0055FF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.ctaBanner}>
+            <Svg style={StyleSheet.absoluteFill as any} width={W - 48} height={110} pointerEvents="none">
+              <Circle cx={W - 60} cy={55} r={70} fill="rgba(255,255,255,0.04)" />
+            </Svg>
+            <Text style={styles.ctaTitle}>Custom solution needed?</Text>
+            <Text style={styles.ctaSub}>Book a free 30-min discovery call with our team</Text>
+            <TouchableOpacity
+              style={styles.ctaBtn}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/tools/consultation' as any); }}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.ctaBtnText}>Book Free Consultation</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </View>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingBottom: 24 },
+  section: { marginTop: 28, paddingHorizontal: 24 },
+  sectionTitle: { fontSize: 20, fontWeight: '800', letterSpacing: -0.5, marginBottom: 4 },
+  sectionSub: { fontSize: 13, fontWeight: '500', marginBottom: 16 },
 
-  // Hero
-  hero: {
-    height: 220,
-    paddingTop: Platform.OS === 'ios' ? 60 : (StatusBar.currentHeight ?? 24) + 16,
+  // Header
+  header: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 44,
+    paddingBottom: 32,
     overflow: 'hidden',
-    justifyContent: 'flex-end',
   },
-  heroInner: { paddingHorizontal: 24, paddingBottom: 24, zIndex: 1 },
-  heroBadge: {
+  headerInner: { paddingHorizontal: 24, zIndex: 1 },
+  headerBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 20,
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    marginBottom: 10,
+    paddingVertical: 5,
+    marginBottom: 12,
   },
-  heroBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
-  heroH1: { color: '#fff', fontSize: 38, fontWeight: '900', letterSpacing: -1, lineHeight: 40 },
-  heroH2: { color: 'rgba(255,255,255,0.85)', fontSize: 38, fontWeight: '900', letterSpacing: -1, lineHeight: 42 },
-  heroSub: { color: 'rgba(255,255,255,0.65)', fontSize: 13, marginTop: 6, fontWeight: '500' },
+  headerBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  headerTitle: { color: '#fff', fontSize: 34, fontWeight: '900', letterSpacing: -1, lineHeight: 38, marginBottom: 8 },
+  headerSubtitle: { color: 'rgba(255,255,255,0.75)', fontSize: 14, lineHeight: 20 },
 
-  // Section header
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    marginTop: 28,
-    marginBottom: 14,
-  },
-  sectionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.3 },
-  sectionSub: { fontSize: 12, fontWeight: '500', marginTop: 1 },
-  countBadge: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  countText: { fontSize: 14, fontWeight: '800' },
-
-  // Primary grid
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 24 },
-  cardOuter: {
-    width: CARD_W,
-    height: 176,
-    borderRadius: 22,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
-  },
-  card: { flex: 1, padding: 16, overflow: 'hidden' },
-  iconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  statBadge: {
-    position: 'absolute',
-    top: 14,
-    right: 14,
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    alignItems: 'center',
-  },
-  statNum: { color: '#fff', fontSize: 13, fontWeight: '900', lineHeight: 15 },
-  statLbl: { color: 'rgba(255,255,255,0.75)', fontSize: 9, fontWeight: '600', letterSpacing: 0.2 },
-  cardBottom: { position: 'absolute', bottom: 14, left: 16, right: 44 },
-  cardTitle: { color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: -0.2 },
-  cardSubtitle: { color: 'rgba(255,255,255,0.78)', fontSize: 11, marginTop: 2, lineHeight: 15 },
-  arrowBubble: {
-    position: 'absolute',
-    bottom: 14,
-    right: 14,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  arrowText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-
-  // Secondary list
-  secList: {
-    marginHorizontal: 24,
+  // Service cards
+  serviceList: { gap: 14, marginTop: 16 },
+  serviceCard: {
     borderRadius: 18,
-    overflow: 'hidden',
+    borderWidth: 1,
+    borderLeftWidth: 4,
+    padding: 18,
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  secItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-    borderLeftWidth: 3,
-  },
-  secIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secTitle: { fontSize: 14, fontWeight: '700' },
-  sep: { height: 1, marginLeft: 68 },
+  serviceCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  serviceIconWrap: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  exploreBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  exploreText: { fontSize: 14, fontWeight: '700' },
+  serviceName: { fontSize: 17, fontWeight: '800', letterSpacing: -0.3, marginBottom: 6 },
+  serviceDesc: { fontSize: 13, lineHeight: 19, marginBottom: 14 },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1 },
+  tagText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
 
-  // Footer
-  footer: { fontSize: 12, textAlign: 'center', marginTop: 24 },
+  // Engagement models
+  engRow: { paddingBottom: 4, gap: 12 },
+  engCard: {
+    width: 170,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    padding: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+    overflow: 'hidden',
+  },
+  popularBadge: { position: 'absolute', top: 0, right: 0, paddingHorizontal: 10, paddingVertical: 4, borderBottomLeftRadius: 12 },
+  popularBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800', letterSpacing: 0.3 },
+  engDot: { width: 10, height: 10, borderRadius: 5, marginBottom: 12 },
+  engName: { fontSize: 16, fontWeight: '800', letterSpacing: -0.2, marginBottom: 4 },
+  engDesc: { fontSize: 12, lineHeight: 17, marginBottom: 12 },
+  engRange: { fontSize: 13, fontWeight: '700' },
+
+  // Tool grid
+  toolGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 16 },
+  toolCard: { width: (W - 72) / 2 },
+  toolCardInner: { borderRadius: 16, overflow: 'hidden' },
+  toolGradient: { height: 76, padding: 14, overflow: 'hidden', justifyContent: 'flex-end' },
+  toolName: { color: '#fff', fontSize: 13, fontWeight: '800', lineHeight: 17 },
+  toolArrow: { position: 'absolute', top: 10, right: 10 },
+
+  // CTA
+  ctaBanner: { borderRadius: 22, padding: 24, overflow: 'hidden', gap: 6 },
+  ctaTitle: { color: '#fff', fontSize: 20, fontWeight: '900', letterSpacing: -0.4 },
+  ctaSub: { color: 'rgba(255,255,255,0.72)', fontSize: 13, lineHeight: 18, marginBottom: 8 },
+  ctaBtn: { alignSelf: 'flex-start', backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 11 },
+  ctaBtnText: { color: '#0055FF', fontSize: 14, fontWeight: '800' },
 });

@@ -1,553 +1,445 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Animated,
-  Easing,
-  ScrollView,
-  StyleSheet,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Modal,
-  Dimensions,
-  Platform,
-  StatusBar,
+  Animated, ScrollView, StyleSheet, View, Text,
+  TextInput, TouchableOpacity, Dimensions, Platform, StatusBar,
 } from 'react-native';
-import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { useTheme } from '../../context/ThemeContext';
-import { useCommunity, AI_SUMMARIES, Discussion, Poll } from '../../context/CommunityContext';
-import Svg, { Path, Line } from 'react-native-svg';
 
 const { width: W } = Dimensions.get('window');
 
-const TRENDING_TOPICS = ['#AIPolicy', '#UAE2031', '#Fintech', '#ClimateGulf', '#StartupDXB', '#Web3', '#HealthTech'];
-const SORT_TABS = ['Trending', 'Latest', 'Following'];
-const CATEGORY_COLORS: Record<string, string> = {
-  AI: '#7C3AED',
-  Tech: '#0EA5E9',
-  Business: '#059669',
-  UAE: '#D97706',
-  Global: '#DC2626',
-  Health: '#059669',
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const CATEGORIES = ['All', 'Case Studies', 'Market Reports', 'AI Trends', 'UAE Focus', 'Guides'];
+
+const FEATURED_ARTICLE = {
+  title: 'How UAE Banks Are Using AI to Fight Financial Crime — A 2025 Report',
+  tag: 'Market Reports',
+  tagColor: '#7C3AED',
+  readTime: '12 min read',
+  author: 'WeThink Research',
+  gradient: ['#020818', '#0D1B4B', '#0055FF'] as const,
 };
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
+const ARTICLES = [
+  {
+    id: '1',
+    headline: 'UAE AI Market to Hit $6.4B by 2026 — Full Analysis',
+    category: 'Market Reports',
+    categoryColor: '#7C3AED',
+    author: 'WeThink Research',
+    date: 'May 14, 2026',
+    readTime: '8 min',
+    reads: '2.4k',
+  },
+  {
+    id: '2',
+    headline: 'How DEWA Cut Operational Costs 23% with Predictive AI',
+    category: 'Case Studies',
+    categoryColor: '#059669',
+    author: 'WeThink Research',
+    date: 'May 10, 2026',
+    readTime: '6 min',
+    reads: '3.1k',
+  },
+  {
+    id: '3',
+    headline: 'Arabic NLP: The Untapped Opportunity in Gulf Tech',
+    category: 'AI Trends',
+    categoryColor: '#0EA5E9',
+    author: 'WeThink Research',
+    date: 'May 7, 2026',
+    readTime: '5 min',
+    reads: '1.8k',
+  },
+  {
+    id: '4',
+    headline: 'Dubai Smart City Initiative: AI Lessons Learned',
+    category: 'UAE Focus',
+    categoryColor: '#D97706',
+    author: 'WeThink Research',
+    date: 'May 3, 2026',
+    readTime: '7 min',
+    reads: '4.2k',
+  },
+  {
+    id: '5',
+    headline: 'Building AI Teams in the Gulf: Hiring Guide 2025',
+    category: 'Guides',
+    categoryColor: '#DC2626',
+    author: 'WeThink Research',
+    date: 'Apr 28, 2026',
+    readTime: '10 min',
+    reads: '5.7k',
+  },
+  {
+    id: '6',
+    headline: "Etisalat's Customer AI: From Pilot to 4M Users",
+    category: 'Case Studies',
+    categoryColor: '#059669',
+    author: 'WeThink Research',
+    date: 'Apr 22, 2026',
+    readTime: '5 min',
+    reads: '2.9k',
+  },
+];
 
-function PencilIcon({ color, size = 20 }: { color: string; size?: number }) {
+// ─── SVG Icons ────────────────────────────────────────────────────────────────
+
+function BookmarkIcon({ color, filled, size = 18 }: { color: string; filled: boolean; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.43741 22.1213 4.00001C22.1213 4.56261 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <Path
+        d="M19 21L12 16L5 21V5C5 4.46957 5.21071 3.96086 5.58579 3.58579C5.96086 3.21071 6.46957 3 7 3H17C17.5304 3 18.0391 3.21071 18.4142 3.58579C18.7893 3.96086 19 4.46957 19 5V21Z"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill={filled ? color : 'none'}
+      />
     </Svg>
   );
 }
 
-function BookmarkIcon({ color, size = 18, filled = false }: { color: string; size?: number; filled?: boolean }) {
+function ClockIcon({ color, size = 13 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M19 21L12 16L5 21V5C5 4.46957 5.21071 3.96086 5.58579 3.58579C5.96086 3.21071 6.46957 3 7 3H17C17.5304 3 18.0391 3.21071 18.4142 3.58579C18.7893 3.96086 19 4.46957 19 5V21Z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill={filled ? color : 'none'} />
+      <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.8" />
+      <Path d="M12 6V12L16 14" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
     </Svg>
   );
 }
 
-function ShareIcon({ color, size = 18 }: { color: string; size?: number }) {
+function EyeIcon({ color, size = 13 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M4 12V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V12" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M16 6L12 2L8 6" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <Line x1="12" y1="2" x2="12" y2="15" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <Path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth="1.8" />
     </Svg>
   );
 }
 
-function SparkleIcon({ color, size = 14 }: { color: string; size?: number }) {
+function MailIcon({ color, size = 20 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 2L13.5 9L20 10.5L13.5 12L12 19L10.5 12L4 10.5L10.5 9L12 2Z" stroke={color} strokeWidth="1.8" strokeLinejoin="round" fill={color + '40'} />
+      <Rect x="2" y="4" width="20" height="16" rx="2" stroke={color} strokeWidth="1.8" />
+      <Path d="M2 8L12 14L22 8" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
     </Svg>
   );
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-function SkeletonLine({ widthPct, colors }: { widthPct: number; colors: any }) {
-  const shimmer = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.loop(Animated.sequence([
-      Animated.timing(shimmer, { toValue: 1, duration: 900, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
-      Animated.timing(shimmer, { toValue: 0, duration: 900, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
-    ])).start();
-  }, [shimmer]);
-  const opacity = shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.7] });
-  return <Animated.View style={{ height: 14, width: `${widthPct}%` as `${number}%`, borderRadius: 7, backgroundColor: colors.border, opacity, marginBottom: 10 }} />;
-}
-
-// ─── AI Summary Modal ─────────────────────────────────────────────────────────
-
-function AISummaryModal({ visible, discussionId, onClose }: { visible: boolean; discussionId: string | null; onClose: () => void }) {
-  const { colors } = useTheme();
-  const [loading, setLoading] = useState(true);
-  const slideAnim = useRef(new Animated.Value(400)).current;
-  const backdropAnim = useRef(new Animated.Value(0)).current;
+// ─── Article Card ─────────────────────────────────────────────────────────────
+function ArticleCard({ article, index, colors }: { article: typeof ARTICLES[0]; index: number; colors: any }) {
+  const [bookmarked, setBookmarked] = useState(false);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const bookmarkScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    if (visible) {
-      setLoading(true);
-      Animated.parallel([
-        Animated.timing(slideAnim, { toValue: 0, duration: 380, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
-        Animated.timing(backdropAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-      ]).start();
-      const t = setTimeout(() => setLoading(false), 1500);
-      return () => clearTimeout(t);
-    } else {
-      Animated.parallel([
-        Animated.timing(slideAnim, { toValue: 400, duration: 300, useNativeDriver: true, easing: Easing.in(Easing.cubic) }),
-        Animated.timing(backdropAnim, { toValue: 0, duration: 250, useNativeDriver: true }),
-      ]).start();
-    }
-  }, [visible]);
-
-  const summaryPoints = discussionId ? (AI_SUMMARIES[discussionId] ?? []) : [];
-
-  return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
-      <Animated.View style={[styles.modalBackdrop, { opacity: backdropAnim, backgroundColor: colors.overlay }]}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} activeOpacity={1} />
-        <Animated.View style={[styles.modalSheet, { backgroundColor: colors.surface, transform: [{ translateY: slideAnim }] }]}>
-          <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
-          <View style={styles.modalHeader}>
-            <View style={styles.modalTitleRow}>
-              <View style={[styles.aiChip, { backgroundColor: colors.accentLight }]}>
-                <SparkleIcon color={colors.accent} size={14} />
-                <Text style={[styles.aiChipText, { color: colors.accent }]}>AI Summary</Text>
-              </View>
-            </View>
-            <TouchableOpacity onPress={onClose} style={[styles.modalCloseBtn, { backgroundColor: colors.borderLight }]}>
-              <Text style={[styles.modalCloseBtnText, { color: colors.textSecondary }]}>Done</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.modalSubtitle, { color: colors.textMuted }]}>Generated by WeThink AI · Based on 100+ comments</Text>
-          <View style={styles.modalContent}>
-            {loading ? (
-              <>
-                <SkeletonLine widthPct={90} colors={colors} />
-                <SkeletonLine widthPct={75} colors={colors} />
-                <SkeletonLine widthPct={85} colors={colors} />
-                <SkeletonLine widthPct={60} colors={colors} />
-              </>
-            ) : (
-              summaryPoints.length > 0 ? summaryPoints.map((point, i) => (
-                <View key={i} style={styles.summaryPoint}>
-                  <View style={[styles.summaryDot, { backgroundColor: colors.accent }]} />
-                  <Text style={[styles.summaryText, { color: colors.text }]}>{point}</Text>
-                </View>
-              )) : (
-                <Text style={[styles.summaryText, { color: colors.textSecondary }]}>No AI summary available for this post yet.</Text>
-              )
-            )}
-          </View>
-          {!loading && (
-            <Text style={[styles.modalDisclaimer, { color: colors.textMuted }]}>
-              AI summaries may not reflect all viewpoints. Always read the full discussion.
-            </Text>
-          )}
-        </Animated.View>
-      </Animated.View>
-    </Modal>
-  );
-}
-
-// ─── Poll Card ────────────────────────────────────────────────────────────────
-
-function PollCard({ poll, postId, colors }: { poll: Poll; postId: string; colors: any }) {
-  const { pollVotes, castVote } = useCommunity();
-  const voted = pollVotes[postId] ?? null;
-  const barAnims = useRef(poll.options.map(() => new Animated.Value(0))).current;
-
-  useEffect(() => {
-    if (voted !== null) {
-      poll.options.forEach((opt, i) => {
-        Animated.timing(barAnims[i], {
-          toValue: (opt.votes / poll.totalVotes) * 100,
-          duration: 600,
-          delay: i * 80,
-          useNativeDriver: false,
-          easing: Easing.out(Easing.cubic),
-        }).start();
-      });
-    }
-  }, [voted]);
-
-  const handleVote = useCallback((idx: number) => {
-    if (voted !== null) return;
-    castVote(postId, idx);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  }, [voted, postId, castVote]);
-
-  const BAR_COLORS = ['#7C3AED', '#0055FF', '#059669', '#D97706'];
-
-  return (
-    <View style={[styles.pollContainer, { backgroundColor: colors.surfaceSecondary, borderColor: colors.borderLight }]}>
-      <Text style={[styles.pollQuestion, { color: colors.text }]}>{poll.question}</Text>
-      {poll.options.map((opt, i) => {
-        const pct = Math.round((opt.votes / poll.totalVotes) * 100);
-        const isWinner = opt.votes === Math.max(...poll.options.map(o => o.votes));
-        return (
-          <TouchableOpacity key={i} onPress={() => handleVote(i)} activeOpacity={voted !== null ? 1 : 0.7} style={styles.pollOptionWrapper}>
-            <View style={[styles.pollOption, { borderColor: voted === i ? BAR_COLORS[i] : colors.border, backgroundColor: colors.card }]}>
-              <View style={styles.pollOptionTop}>
-                <Text style={[styles.pollOptionText, { color: voted !== null && isWinner ? BAR_COLORS[i] : colors.text, fontWeight: isWinner && voted !== null ? '700' : '500' }]}>
-                  {opt.text}
-                </Text>
-                {voted !== null && <Text style={[styles.pollPct, { color: BAR_COLORS[i] }]}>{pct}%</Text>}
-              </View>
-              {voted !== null && (
-                <Animated.View style={[styles.pollBar, { width: barAnims[i].interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }), backgroundColor: BAR_COLORS[i] + '30' }]} />
-              )}
-            </View>
-          </TouchableOpacity>
-        );
-      })}
-      <Text style={[styles.pollTotal, { color: colors.textMuted }]}>
-        {poll.totalVotes.toLocaleString()} votes · {voted !== null ? 'You voted' : 'Tap to vote'}
-      </Text>
-    </View>
-  );
-}
-
-// ─── Discussion Card ──────────────────────────────────────────────────────────
-
-function DiscussionCard({ item, onAISummary }: { item: Discussion; onAISummary: (id: string) => void }) {
-  const { colors } = useTheme();
-  const { likedIds, bookmarkedIds, toggleLike, toggleBookmark } = useCommunity();
-  const liked = likedIds.has(item.id);
-  const bookmarked = bookmarkedIds.has(item.id);
-  const likeCount = item.likes + (liked ? 1 : 0);
-  const likeScale = useRef(new Animated.Value(1)).current;
-  const cardAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(cardAnim, { toValue: 1, duration: 400, useNativeDriver: true, easing: Easing.out(Easing.cubic) }).start();
-  }, []);
-
-  const handleLike = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toggleLike(item.id);
-    Animated.sequence([
-      Animated.timing(likeScale, { toValue: 1.4, duration: 120, useNativeDriver: true }),
-      Animated.spring(likeScale, { toValue: 1, useNativeDriver: true, friction: 4 }),
+    Animated.parallel([
+      Animated.timing(opacityAnim, { toValue: 1, duration: 350, delay: index * 60, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 1, delay: index * 60, useNativeDriver: true, damping: 16, stiffness: 130 }),
     ]).start();
-  }, [item.id, toggleLike]);
+  }, []);
 
   const handleBookmark = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toggleBookmark(item.id);
-  }, [item.id, toggleBookmark]);
-
-  const catColor = CATEGORY_COLORS[item.category] ?? colors.primary;
-  const total = item.sentiment.pos + item.sentiment.neu + item.sentiment.neg;
-  const posW = (item.sentiment.pos / total) * 100;
-  const neuW = (item.sentiment.neu / total) * 100;
+    setBookmarked(prev => !prev);
+    Animated.sequence([
+      Animated.timing(bookmarkScale, { toValue: 1.35, duration: 120, useNativeDriver: true }),
+      Animated.spring(bookmarkScale, { toValue: 1, useNativeDriver: true, friction: 4 }),
+    ]).start();
+  }, []);
 
   return (
-    <Animated.View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.borderLight, opacity: cardAnim, transform: [{ translateY: cardAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
-      <View style={styles.cardAuthorRow}>
-        <View style={[styles.avatar, { backgroundColor: item.avatarColor }]}>
-          <Text style={styles.avatarInitials}>{item.initials}</Text>
+    <Animated.View style={[
+      styles.articleCard,
+      { backgroundColor: colors.surface, borderColor: colors.border },
+      { opacity: opacityAnim, transform: [{ translateY: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] },
+    ]}>
+      <TouchableOpacity
+        onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+        activeOpacity={0.85}
+      >
+        <View style={styles.articleTop}>
+          <View style={[styles.categoryBadge, { backgroundColor: article.categoryColor + '18', borderColor: article.categoryColor + '40' }]}>
+            <Text style={[styles.categoryText, { color: article.categoryColor }]}>{article.category}</Text>
+          </View>
+          <Animated.View style={{ transform: [{ scale: bookmarkScale }] }}>
+            <TouchableOpacity onPress={handleBookmark} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <BookmarkIcon color={bookmarked ? colors.primary : colors.textMuted} filled={bookmarked} />
+            </TouchableOpacity>
+          </Animated.View>
         </View>
-        <View style={styles.authorInfo}>
-          <Text style={[styles.authorName, { color: colors.text }]}>{item.author}</Text>
-          <Text style={[styles.authorTime, { color: colors.textMuted }]}>{item.time}</Text>
+
+        <Text style={[styles.articleHeadline, { color: colors.text }]} numberOfLines={2}>
+          {article.headline}
+        </Text>
+
+        <View style={styles.articleMeta}>
+          <View style={[styles.authorDot, { backgroundColor: article.categoryColor }]} />
+          <Text style={[styles.authorName, { color: colors.textSecondary }]}>{article.author}</Text>
+          <Text style={[styles.metaDot, { color: colors.textMuted }]}>·</Text>
+          <Text style={[styles.articleDate, { color: colors.textMuted }]}>{article.date}</Text>
         </View>
-        <View style={[styles.categoryBadge, { backgroundColor: catColor + '18', borderColor: catColor + '40' }]}>
-          <Text style={[styles.categoryText, { color: catColor }]}>{item.category}</Text>
+
+        <View style={styles.articleFooter}>
+          <View style={styles.metaItem}>
+            <ClockIcon color={colors.textMuted} />
+            <Text style={[styles.metaText, { color: colors.textMuted }]}>{article.readTime} read</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <EyeIcon color={colors.textMuted} />
+            <Text style={[styles.metaText, { color: colors.textMuted }]}>{article.reads} reads</Text>
+          </View>
         </View>
-      </View>
-
-      <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
-
-      {item.preview.length > 0 && (
-        <Text style={[styles.cardPreview, { color: colors.textSecondary }]} numberOfLines={3}>{item.preview}</Text>
-      )}
-
-      {item.isPoll && item.poll && <PollCard poll={item.poll} postId={item.id} colors={colors} />}
-
-      <TouchableOpacity onPress={() => onAISummary(item.id)} style={[styles.aiSummaryBtn, { backgroundColor: colors.accentLight, borderColor: colors.accent + '30' }]} activeOpacity={0.75}>
-        <SparkleIcon color={colors.accent} size={13} />
-        <Text style={[styles.aiSummaryText, { color: colors.accent }]}>AI Summary</Text>
       </TouchableOpacity>
-
-      <View style={styles.sentimentRow}>
-        <Text style={[styles.sentimentLabel, { color: colors.textMuted }]}>Sentiment</Text>
-        <View style={styles.sentimentBar}>
-          <View style={[styles.sentimentSegment, { width: `${posW}%`, backgroundColor: '#059669' }]} />
-          <View style={[styles.sentimentSegment, { width: `${neuW}%`, backgroundColor: '#94A3B8' }]} />
-          <View style={[styles.sentimentSegment, { width: `${100 - posW - neuW}%`, backgroundColor: '#DC2626' }]} />
-        </View>
-        <View style={styles.sentimentLegend}>
-          <Text style={[styles.sentimentLegendText, { color: '#059669' }]}>{item.sentiment.pos}%</Text>
-          <Text style={[styles.sentimentLegendText, { color: '#94A3B8' }]}>{item.sentiment.neu}%</Text>
-          <Text style={[styles.sentimentLegendText, { color: '#DC2626' }]}>{item.sentiment.neg}%</Text>
-        </View>
-      </View>
-
-      <View style={[styles.cardFooter, { borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.footerAction} activeOpacity={0.7}>
-          <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
-            <Path d="M21 15C21 16.1 20.1 17 19 17H7L3 21V5C3 3.9 3.9 3 5 3H19C20.1 3 21 3.9 21 5V15Z" stroke={colors.textMuted} strokeWidth="1.8" strokeLinejoin="round" />
-          </Svg>
-          <Text style={[styles.footerCount, { color: colors.textMuted }]}>{item.comments}</Text>
-        </TouchableOpacity>
-
-        <Animated.View style={{ transform: [{ scale: likeScale }] }}>
-          <TouchableOpacity style={styles.footerAction} onPress={handleLike} activeOpacity={0.7}>
-            <Text style={[styles.footerHeart, { color: liked ? '#DC2626' : colors.textMuted }]}>{liked ? '♥' : '♡'}</Text>
-            <Text style={[styles.footerCount, { color: liked ? '#DC2626' : colors.textMuted }]}>{likeCount}</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        <TouchableOpacity style={styles.footerAction} activeOpacity={0.7}>
-          <ShareIcon color={colors.textMuted} size={17} />
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={handleBookmark} style={styles.footerAction} activeOpacity={0.7}>
-          <BookmarkIcon color={bookmarked ? colors.primary : colors.textMuted} size={17} filled={bookmarked} />
-        </TouchableOpacity>
-      </View>
     </Animated.View>
   );
 }
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+// ─── Newsletter Signup ────────────────────────────────────────────────────────
+function NewsletterCard({ colors }: { colors: any }) {
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
 
-export default function CommunityScreen() {
+  const handleSubscribe = () => {
+    if (!email.trim()) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setSubscribed(true);
+  };
+
+  return (
+    <LinearGradient colors={['#0D1B4B', '#7C3AED']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.newsletterCard}>
+      <View style={styles.newsletterIcon}>
+        <MailIcon color="#fff" size={24} />
+      </View>
+      <Text style={styles.newsletterTitle}>Get Weekly AI Insights</Text>
+      <Text style={styles.newsletterSub}>Join 12,000 UAE business leaders</Text>
+      {subscribed ? (
+        <View style={styles.subscribedRow}>
+          <Text style={styles.subscribedText}>You're subscribed! Welcome aboard.</Text>
+        </View>
+      ) : (
+        <View style={styles.newsletterForm}>
+          <TextInput
+            style={styles.emailInput}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="your@email.com"
+            placeholderTextColor="rgba(255,255,255,0.45)"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <TouchableOpacity style={styles.subscribeBtn} onPress={handleSubscribe} activeOpacity={0.85}>
+            <Text style={styles.subscribeBtnText}>Subscribe</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </LinearGradient>
+  );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+export default function InsightsScreen() {
   const { colors } = useTheme();
-  const { posts } = useCommunity();
-  const [activeSort, setActiveSort] = useState('Trending');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [summaryId, setSummaryId] = useState<string | null>(null);
-  const [summaryVisible, setSummaryVisible] = useState(false);
-  const fabScale = useRef(new Animated.Value(1)).current;
+  const [activeCategory, setActiveCategory] = useState('All');
   const headerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(headerAnim, { toValue: 1, duration: 500, useNativeDriver: true, easing: Easing.out(Easing.cubic) }).start();
+    Animated.timing(headerAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
   }, []);
 
-  const openSummary = useCallback((id: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setSummaryId(id);
-    setSummaryVisible(true);
-  }, []);
-
-  const handleFAB = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Animated.sequence([
-      Animated.timing(fabScale, { toValue: 0.88, duration: 100, useNativeDriver: true }),
-      Animated.spring(fabScale, { toValue: 1, useNativeDriver: true, friction: 4 }),
-    ]).start();
-    router.push('/compose' as any);
-  }, [fabScale]);
-
-  const visiblePosts = (() => {
-    if (activeSort === 'Following') return [];
-    let filtered = posts;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      filtered = posts.filter(p =>
-        p.title.toLowerCase().includes(q) ||
-        p.author.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q) ||
-        p.preview.toLowerCase().includes(q)
-      );
-    }
-    if (activeSort === 'Latest') {
-      return [...filtered].sort((a, b) => {
-        const aIsNew = !isNaN(Number(a.id));
-        const bIsNew = !isNaN(Number(b.id));
-        if (aIsNew && bIsNew) return Number(b.id) - Number(a.id);
-        if (aIsNew) return -1;
-        if (bIsNew) return 1;
-        return 0;
-      });
-    }
-    return [...filtered].sort((a, b) => b.likes - a.likes);
-  })();
+  const filteredArticles = activeCategory === 'All'
+    ? ARTICLES
+    : ARTICLES.filter(a => a.category === activeCategory);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={colors.text === '#F1F5F9' ? 'light-content' : 'dark-content'} />
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="light-content" />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <Animated.View style={[styles.header, { opacity: headerAnim, transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-16, 0] }) }] }]}>
-          <View>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Community</Text>
-            <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>Join the conversation</Text>
-          </View>
-          <TouchableOpacity onPress={() => router.push('/compose' as any)} style={[styles.headerComposeBtn, { backgroundColor: colors.primary }]} activeOpacity={0.82}>
-            <PencilIcon color="#FFFFFF" size={18} />
-          </TouchableOpacity>
+        {/* ── Header ── */}
+        <Animated.View style={{ opacity: headerAnim, transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }}>
+          <LinearGradient colors={['#0D1B4B', '#0055FF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+            <View style={styles.headerInner}>
+              <View style={styles.headerBadge}>
+                <Text style={styles.headerBadgeText}>Thought Leadership</Text>
+              </View>
+              <Text style={styles.headerTitle}>Insights</Text>
+              <Text style={styles.headerSubtitle}>UAE AI trends, research & case studies</Text>
+            </View>
+          </LinearGradient>
         </Animated.View>
 
-        {/* Search bar */}
-        <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={{ fontSize: 16, color: colors.textMuted, marginRight: 8 }}>🔍</Text>
-          <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search discussions..."
-            placeholderTextColor={colors.textMuted}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={{ fontSize: 14, color: colors.textMuted, fontWeight: '600' }}>✕</Text>
+        {/* ── Category Filter ── */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catRow} style={styles.catScroll}>
+          {CATEGORIES.map(cat => (
+            <TouchableOpacity
+              key={cat}
+              onPress={() => { Haptics.selectionAsync(); setActiveCategory(cat); }}
+              style={[
+                styles.catChip,
+                activeCategory === cat
+                  ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                  : { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+              activeOpacity={0.75}
+            >
+              <Text style={[styles.catChipText, { color: activeCategory === cat ? '#fff' : colors.textSecondary }]}>
+                {cat}
+              </Text>
             </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* ── Featured Article ── */}
+        <View style={styles.featuredSection}>
+          <TouchableOpacity onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)} activeOpacity={0.9}>
+            <LinearGradient colors={FEATURED_ARTICLE.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.featuredCard}>
+              {/* Bottom overlay */}
+              <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} style={styles.featuredOverlay} />
+              <View style={[styles.categoryBadge, styles.featuredBadge, { backgroundColor: FEATURED_ARTICLE.tagColor }]}>
+                <Text style={[styles.categoryText, { color: '#fff' }]}>{FEATURED_ARTICLE.tag}</Text>
+              </View>
+              <View style={styles.featuredContent}>
+                <Text style={styles.featuredHeadline} numberOfLines={3}>{FEATURED_ARTICLE.title}</Text>
+                <View style={styles.featuredMeta}>
+                  <View style={styles.featuredAvatar}>
+                    <Text style={styles.featuredAvatarText}>WT</Text>
+                  </View>
+                  <Text style={styles.featuredAuthor}>{FEATURED_ARTICLE.author}</Text>
+                  <Text style={styles.featuredReadTime}>· {FEATURED_ARTICLE.readTime}</Text>
+                </View>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Article List ── */}
+        <View style={styles.articleSection}>
+          {filteredArticles.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>No articles in this category yet.</Text>
+            </View>
+          ) : (
+            filteredArticles.map((article, i) => (
+              <ArticleCard key={article.id} article={article} index={i} colors={colors} />
+            ))
           )}
         </View>
 
-        {/* Trending topics — hidden while searching */}
-        {searchQuery.length === 0 && (
-          <View>
-            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>TRENDING TOPICS</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.topicsRow}>
-              {TRENDING_TOPICS.map((topic, i) => (
-                <TouchableOpacity
-                  key={topic}
-                  onPress={() => setSearchQuery(topic.replace('#', ''))}
-                  style={[styles.topicPill, { backgroundColor: i % 3 === 0 ? colors.primaryLight : i % 3 === 1 ? colors.accentLight : colors.surfaceSecondary, borderColor: i % 3 === 0 ? colors.primary + '30' : i % 3 === 1 ? colors.accent + '30' : colors.border }]}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.topicText, { color: i % 3 === 0 ? colors.primary : i % 3 === 1 ? colors.accent : colors.textSecondary }]}>{topic}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* Sort tabs */}
-        <View style={[styles.sortRow, { borderBottomColor: colors.borderLight }]}>
-          {SORT_TABS.map(tab => (
-            <TouchableOpacity key={tab} onPress={() => { Haptics.selectionAsync(); setActiveSort(tab); }} style={styles.sortTab} activeOpacity={0.7}>
-              <Text style={[styles.sortTabText, { color: activeSort === tab ? colors.primary : colors.textMuted, fontWeight: activeSort === tab ? '700' : '500' }]}>{tab}</Text>
-              {activeSort === tab && <View style={[styles.sortTabIndicator, { backgroundColor: colors.primary }]} />}
-            </TouchableOpacity>
-          ))}
+        {/* ── Newsletter ── */}
+        <View style={styles.newsletterSection}>
+          <NewsletterCard colors={colors} />
         </View>
 
-        {/* Feed or empty states */}
-        {activeSort === 'Following' ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>👥</Text>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No followed topics yet</Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>Follow topics or authors to see their posts here.</Text>
-          </View>
-        ) : visiblePosts.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>🔍</Text>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No results for "{searchQuery}"</Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>Try a different search term or browse trending topics.</Text>
-          </View>
-        ) : (
-          <View style={styles.feed}>
-            {visiblePosts.map(item => (
-              <DiscussionCard key={item.id} item={item} onAISummary={openSummary} />
-            ))}
-          </View>
-        )}
-
-        <View style={{ height: 100 }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
-
-      {/* FAB */}
-      <Animated.View style={[styles.fab, { transform: [{ scale: fabScale }] }]}>
-        <TouchableOpacity onPress={handleFAB} activeOpacity={1}>
-          <LinearGradient colors={[colors.primary, colors.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.fabGradient}>
-            <PencilIcon color="#FFFFFF" size={22} />
-          </LinearGradient>
-        </TouchableOpacity>
-      </Animated.View>
-
-      <AISummaryModal visible={summaryVisible} discussionId={summaryId} onClose={() => setSummaryVisible(false)} />
     </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: { paddingTop: Platform.OS === 'ios' ? 56 : 40 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
-  headerTitle: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 14, marginTop: 2 },
-  headerComposeBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginBottom: 16, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14, borderWidth: 1 },
-  searchInput: { flex: 1, fontSize: 15, padding: 0 },
-  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, paddingHorizontal: 20, marginBottom: 10 },
-  topicsRow: { paddingHorizontal: 20, paddingBottom: 4, gap: 8 },
-  topicPill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
-  topicText: { fontSize: 13, fontWeight: '600' },
-  sortRow: { flexDirection: 'row', paddingHorizontal: 20, marginTop: 20, borderBottomWidth: 1 },
-  sortTab: { marginRight: 28, paddingBottom: 12, position: 'relative', alignItems: 'center' },
-  sortTabText: { fontSize: 15 },
-  sortTabIndicator: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 2.5, borderRadius: 2 },
-  feed: { paddingHorizontal: 16, paddingTop: 16, gap: 14 },
-  emptyState: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 40, gap: 8 },
-  emptyEmoji: { fontSize: 44, marginBottom: 4 },
-  emptyTitle: { fontSize: 17, fontWeight: '700', textAlign: 'center' },
-  emptySubtitle: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
-  card: { borderRadius: 18, borderWidth: 1, padding: 16, shadowColor: '#0A1628', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  cardAuthorRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  avatarInitials: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  authorInfo: { flex: 1, marginLeft: 10 },
-  authorName: { fontSize: 14, fontWeight: '700' },
-  authorTime: { fontSize: 12, marginTop: 1 },
+  root: { flex: 1 },
+  scroll: { paddingBottom: 24 },
+
+  // Header
+  header: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 44,
+    paddingBottom: 32,
+    overflow: 'hidden',
+  },
+  headerInner: { paddingHorizontal: 24, zIndex: 1 },
+  headerBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    marginBottom: 12,
+  },
+  headerBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  headerTitle: { color: '#fff', fontSize: 34, fontWeight: '900', letterSpacing: -1, lineHeight: 38, marginBottom: 8 },
+  headerSubtitle: { color: 'rgba(255,255,255,0.75)', fontSize: 14, lineHeight: 20 },
+
+  // Category filter
+  catScroll: { marginTop: 20 },
+  catRow: { paddingHorizontal: 24, paddingBottom: 4, gap: 8 },
+  catChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  catChipText: { fontSize: 13, fontWeight: '600' },
+
+  // Featured
+  featuredSection: { marginTop: 20, paddingHorizontal: 24 },
+  featuredCard: { borderRadius: 20, height: 200, overflow: 'hidden', justifyContent: 'flex-end' },
+  featuredOverlay: { ...StyleSheet.absoluteFillObject, top: '40%' },
+  featuredBadge: { position: 'absolute', top: 16, left: 16, borderColor: 'transparent' },
+  featuredContent: { padding: 18 },
+  featuredHeadline: { color: '#fff', fontSize: 17, fontWeight: '900', lineHeight: 23, marginBottom: 10, letterSpacing: -0.3 },
+  featuredMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  featuredAvatar: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#0055FF', alignItems: 'center', justifyContent: 'center' },
+  featuredAvatarText: { color: '#fff', fontSize: 9, fontWeight: '800' },
+  featuredAuthor: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '600' },
+  featuredReadTime: { color: 'rgba(255,255,255,0.65)', fontSize: 12 },
+
+  // Article list
+  articleSection: { marginTop: 20, paddingHorizontal: 24, gap: 12 },
+  articleCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  articleTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   categoryBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
-  categoryText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.4 },
-  cardTitle: { fontSize: 16, fontWeight: '800', lineHeight: 22, marginBottom: 8, letterSpacing: -0.2 },
-  cardPreview: { fontSize: 14, lineHeight: 20, marginBottom: 12 },
-  pollContainer: { borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 12, gap: 8 },
-  pollQuestion: { fontSize: 14, fontWeight: '700', marginBottom: 6, lineHeight: 20 },
-  pollOptionWrapper: { marginBottom: 4 },
-  pollOption: { borderRadius: 10, borderWidth: 1.5, overflow: 'hidden', paddingHorizontal: 12, paddingVertical: 10, position: 'relative' },
-  pollOptionTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 1 },
-  pollOptionText: { fontSize: 13, flex: 1 },
-  pollPct: { fontSize: 13, fontWeight: '700', marginLeft: 8 },
-  pollBar: { position: 'absolute', top: 0, left: 0, bottom: 0, borderRadius: 8 },
-  pollTotal: { fontSize: 12, marginTop: 4 },
-  aiSummaryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1, marginBottom: 12 },
-  aiSummaryText: { fontSize: 12, fontWeight: '700' },
-  sentimentRow: { marginBottom: 14, gap: 6 },
-  sentimentLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5 },
-  sentimentBar: { flexDirection: 'row', height: 6, borderRadius: 3, overflow: 'hidden', gap: 1 },
-  sentimentSegment: { height: '100%', borderRadius: 3 },
-  sentimentLegend: { flexDirection: 'row', gap: 12 },
-  sentimentLegendText: { fontSize: 11, fontWeight: '600' },
-  cardFooter: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, paddingTop: 12, gap: 20 },
-  footerAction: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  footerCount: { fontSize: 13, fontWeight: '600' },
-  footerHeart: { fontSize: 18, lineHeight: 22 },
-  fab: { position: 'absolute', bottom: Platform.OS === 'ios' ? 108 : 80, right: 20, borderRadius: 30, shadowColor: '#0055FF', shadowOpacity: 0.4, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 10 },
-  fabGradient: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center' },
-  modalBackdrop: { flex: 1, justifyContent: 'flex-end' },
-  modalSheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: Platform.OS === 'ios' ? 40 : 28, minHeight: 340 },
-  modalHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 4 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 12 },
-  modalTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  aiChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  aiChipText: { fontSize: 14, fontWeight: '700' },
-  modalCloseBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  modalCloseBtnText: { fontSize: 14, fontWeight: '600' },
-  modalSubtitle: { fontSize: 12, paddingHorizontal: 20, marginTop: 4, marginBottom: 20 },
-  modalContent: { paddingHorizontal: 20, gap: 4 },
-  summaryPoint: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginBottom: 10 },
-  summaryDot: { width: 7, height: 7, borderRadius: 4, marginTop: 7 },
-  summaryText: { flex: 1, fontSize: 15, lineHeight: 22 },
-  modalDisclaimer: { fontSize: 11, paddingHorizontal: 20, marginTop: 20, lineHeight: 16 },
+  categoryText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+  articleHeadline: { fontSize: 15, fontWeight: '800', lineHeight: 21, letterSpacing: -0.2, marginBottom: 10 },
+  articleMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  authorDot: { width: 6, height: 6, borderRadius: 3 },
+  authorName: { fontSize: 12, fontWeight: '600' },
+  metaDot: { fontSize: 12 },
+  articleDate: { fontSize: 12 },
+  articleFooter: { flexDirection: 'row', gap: 16 },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metaText: { fontSize: 11, fontWeight: '600' },
+  emptyState: { alignItems: 'center', paddingVertical: 40 },
+  emptyText: { fontSize: 14 },
+
+  // Newsletter
+  newsletterSection: { marginTop: 24, paddingHorizontal: 24 },
+  newsletterCard: { borderRadius: 22, padding: 24, gap: 8 },
+  newsletterIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  newsletterTitle: { color: '#fff', fontSize: 20, fontWeight: '900', letterSpacing: -0.4 },
+  newsletterSub: { color: 'rgba(255,255,255,0.72)', fontSize: 13, marginBottom: 8 },
+  newsletterForm: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  emailInput: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    color: '#fff',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  subscribeBtn: { backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 18, paddingVertical: 11, justifyContent: 'center' },
+  subscribeBtnText: { color: '#7C3AED', fontSize: 14, fontWeight: '800' },
+  subscribedRow: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginTop: 4 },
+  subscribedText: { color: '#fff', fontSize: 13, fontWeight: '600', textAlign: 'center' },
 });

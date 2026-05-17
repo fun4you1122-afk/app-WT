@@ -1,7 +1,15 @@
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { HomeIcon, CommunityIcon, ChatIcon, ServicesIcon, ProfileIcon, AnalyticsIcon, PortfolioIcon } from '../../components/TabIcons';
+import {
+  HomeIcon,
+  ServicesIcon,
+  BookOpenIcon,
+  ConsultIcon,
+  InfoCircleIcon,
+  AnalyticsIcon,
+  PortfolioIcon,
+} from '../../components/TabIcons';
 
 export default function TabLayout() {
   const { colors } = useTheme();
@@ -25,11 +33,32 @@ export default function TabLayout() {
       tabBarActiveTintColor: colors.primary,
       tabBarInactiveTintColor: colors.textMuted,
     }}>
-      <Tabs.Screen name="dashboard" options={{ tabBarIcon: ({ color, focused }) => <HomeIcon color={color} size={26} focused={focused} /> }} />
-      <Tabs.Screen name="community" options={{ tabBarIcon: ({ color, focused }) => <CommunityIcon color={color} size={26} focused={focused} /> }} />
-      <Tabs.Screen name="services" options={{ tabBarIcon: ({ color, focused }) => <ServicesIcon color={color} size={26} focused={focused} /> }} />
-      <Tabs.Screen name="chat" options={{ tabBarIcon: ({ color, focused }) => <ChatIcon color={color} size={26} focused={focused} /> }} />
-      <Tabs.Screen name="profile" options={{ tabBarIcon: ({ color, focused }) => <ProfileIcon color={color} size={26} focused={focused} /> }} />
+      {/* Home — client showcase */}
+      <Tabs.Screen
+        name="dashboard"
+        options={{ tabBarIcon: ({ color, focused }) => <HomeIcon color={color} size={26} focused={focused} /> }}
+      />
+      {/* Solutions — service offerings */}
+      <Tabs.Screen
+        name="services"
+        options={{ tabBarIcon: ({ color, focused }) => <ServicesIcon color={color} size={26} focused={focused} /> }}
+      />
+      {/* Insights — thought leadership */}
+      <Tabs.Screen
+        name="community"
+        options={{ tabBarIcon: ({ color, focused }) => <BookOpenIcon color={color} size={26} focused={focused} /> }}
+      />
+      {/* Consult — booking + AI chat */}
+      <Tabs.Screen
+        name="chat"
+        options={{ tabBarIcon: ({ color, focused }) => <ConsultIcon color={color} size={26} focused={focused} /> }}
+      />
+      {/* About — company profile */}
+      <Tabs.Screen
+        name="profile"
+        options={{ tabBarIcon: ({ color, focused }) => <InfoCircleIcon color={color} size={26} focused={focused} /> }}
+      />
+      {/* Hidden screens */}
       <Tabs.Screen name="analytics" options={{ href: null }} />
       <Tabs.Screen name="portfolio" options={{ href: null }} />
     </Tabs>
