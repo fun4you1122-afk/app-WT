@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Animated, ScrollView, StyleSheet, View, Text,
-  TextInput, TouchableOpacity, Dimensions, Platform, StatusBar,
+  TextInput, TouchableOpacity, Dimensions, Platform, StatusBar, Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -29,6 +29,7 @@ const FEATURED_ARTICLE = {
   readTime: '8 min read',
   author: 'WeThink Research',
   gradient: ['#020818', '#0D1B4B', '#0055FF'] as const,
+  url: 'https://www.reuters.com/technology/artificial-intelligence/',
 };
 
 const ARTICLES = [
@@ -41,6 +42,7 @@ const ARTICLES = [
     date: 'May 14, 2026',
     readTime: '8 min',
     reads: '4.2k',
+    url: 'https://www.khaleejtimes.com/uae/technology',
   },
   {
     id: '2',
@@ -51,6 +53,7 @@ const ARTICLES = [
     date: 'May 10, 2026',
     readTime: '6 min',
     reads: '2.8k',
+    url: 'https://www.dewa.gov.ae/en/about-dewa/news-and-media/press-and-news',
   },
   {
     id: '3',
@@ -61,6 +64,7 @@ const ARTICLES = [
     date: 'May 7, 2026',
     readTime: '5 min',
     reads: '3.1k',
+    url: 'https://huggingface.co/CAMeL-Lab',
   },
   {
     id: '4',
@@ -71,6 +75,7 @@ const ARTICLES = [
     date: 'May 3, 2026',
     readTime: '7 min',
     reads: '1.9k',
+    url: 'https://www.smartdubai.ae/initiatives',
   },
   {
     id: '5',
@@ -81,16 +86,18 @@ const ARTICLES = [
     date: 'Apr 28, 2026',
     readTime: '10 min',
     reads: '2.3k',
+    url: 'https://www.linkedin.com/learning/topics/artificial-intelligence',
   },
   {
     id: '6',
-    headline: "Etisalat's Customer AI: From 500-User Pilot to 4M Active Users",
+    headline: "e& (Etisalat) Customer AI: From 500-User Pilot to 4M Active Users",
     category: 'Case Studies',
     categoryColor: GREEN,
     author: 'WeThink Research',
     date: 'Apr 22, 2026',
     readTime: '5 min',
     reads: '5.7k',
+    url: 'https://www.eand.com/en/media/press-releases.html',
   },
 ];
 
@@ -154,7 +161,7 @@ function FeaturedCard() {
   return (
     <Animated.View style={{ opacity, transform: [{ scale }] }}>
       <TouchableOpacity
-        onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
+        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); Linking.openURL(FEATURED_ARTICLE.url); }}
         activeOpacity={0.9}
       >
         <LinearGradient
@@ -263,7 +270,7 @@ function ArticleCard({
       ]}
     >
       <TouchableOpacity
-        onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(article.url); }}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={1}

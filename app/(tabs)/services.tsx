@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import {
   Animated, ScrollView, StyleSheet, View, Text,
-  TouchableOpacity, Dimensions, Platform, StatusBar,
+  TouchableOpacity, Dimensions, Platform, StatusBar, Linking,
 } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -91,12 +91,12 @@ const ENGAGEMENT_MODELS = [
 ];
 
 const FREE_TOOLS = [
-  { id: 'ai-chat', name: 'AI Assistant', color: PURPLE, gradient: ['#2E1B5E', '#7C3AED'] as const },
-  { id: 'cost-estimator', name: 'Cost Estimator', color: GREEN, gradient: ['#064E3B', '#059669'] as const },
-  { id: 'roi-calculator', name: 'ROI Calculator', color: AMBER, gradient: ['#451A03', '#D97706'] as const },
-  { id: 'quiz', name: 'Readiness Quiz', color: BLUE, gradient: ['#0D1B4B', '#0055FF'] as const },
-  { id: 'project-tracker', name: 'Project Tracker', color: RED, gradient: ['#450A0A', '#DC2626'] as const },
-  { id: 'consultation', name: 'Book a Call', color: TEAL, gradient: ['#0C4A6E', '#0EA5E9'] as const },
+  { id: 'ai-chat', name: 'ChatGPT', sub: 'OpenAI', color: PURPLE, gradient: ['#2E1B5E', '#7C3AED'] as const, url: 'https://chatgpt.com' },
+  { id: 'gemini', name: 'Gemini', sub: 'Google AI', color: BLUE, gradient: ['#0D1B4B', '#0055FF'] as const, url: 'https://gemini.google.com' },
+  { id: 'huggingface', name: 'Hugging Face', sub: 'Open AI Models', color: AMBER, gradient: ['#451A03', '#D97706'] as const, url: 'https://huggingface.co' },
+  { id: 'uaeai', name: 'UAE AI Office', sub: 'National Strategy', color: GREEN, gradient: ['#064E3B', '#059669'] as const, url: 'https://ai.gov.ae' },
+  { id: 'perplexity', name: 'Perplexity AI', sub: 'AI Search', color: TEAL, gradient: ['#0C4A6E', '#0EA5E9'] as const, url: 'https://www.perplexity.ai' },
+  { id: 'consultation', name: 'Book a Call', sub: 'With WeThink', color: RED, gradient: ['#450A0A', '#DC2626'] as const, url: 'mailto:info@wethink.ae' },
 ];
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
@@ -335,7 +335,7 @@ function ToolCard({ tool }: { tool: typeof FREE_TOOLS[0] }) {
       <TouchableOpacity
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          router.push(('/tools/' + tool.id) as any);
+          Linking.openURL(tool.url);
         }}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -357,7 +357,8 @@ function ToolCard({ tool }: { tool: typeof FREE_TOOLS[0] }) {
             <Circle cx={cardW} cy={0} r={55} fill="rgba(255,255,255,0.06)" />
             <Circle cx={0} cy={84} r={35} fill="rgba(0,0,0,0.1)" />
           </Svg>
-          <Text style={styles.toolName} numberOfLines={2}>{tool.name}</Text>
+          <Text style={styles.toolName} numberOfLines={1}>{tool.name}</Text>
+          <Text style={styles.toolSub} numberOfLines={1}>{tool.sub}</Text>
           <View style={styles.toolArrowWrap}>
             <ToolDiagonalArrow color="rgba(255,255,255,0.9)" />
           </View>
@@ -624,6 +625,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   toolName: { color: '#fff', fontSize: 13, fontWeight: '800', lineHeight: 17 },
+  toolSub: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '500', marginTop: 2 },
   toolArrowWrap: { position: 'absolute', top: 10, right: 10 },
 
   // CTA

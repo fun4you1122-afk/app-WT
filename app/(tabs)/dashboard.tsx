@@ -30,9 +30,9 @@ const INDUSTRIES = [
 
 const STATS = [
   { target: 247, suffix: '', label: 'Projects Delivered', color: BLUE },
-  { target: 180, suffix: '+', label: 'Clients', color: PURPLE },
+  { target: 180, suffix: '+', label: 'Enterprise Clients', color: PURPLE },
   { target: 6, suffix: '', label: 'Countries', color: GREEN },
-  { target: 99, suffix: '.9% Uptime', label: 'Uptime', color: AMBER },
+  { target: 99, suffix: '.9%', label: 'Uptime SLA', color: AMBER },
 ];
 
 const WHY_ITEMS = [
@@ -728,14 +728,21 @@ function HeroContent({ scrollY, isDark }: { scrollY: Animated.Value; isDark: boo
   );
 }
 
-// ─── Stats Strip ──────────────────────────────────────────────────────────────
+// ─── Stats Grid (2×2) ────────────────────────────────────────────────────────
 
 function StatsStrip({ colors }: { colors: any }) {
+  const cardW = (W - 48 - 12) / 2;
   return (
-    <View style={[styles.statsStrip, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+    <View style={styles.statsGrid}>
       {STATS.map((s, i) => (
-        <React.Fragment key={s.label}>
-          {i > 0 && <View style={[styles.statsDivider, { backgroundColor: colors.borderLight }]} />}
+        <View
+          key={s.label}
+          style={[
+            styles.statCard,
+            { width: cardW, backgroundColor: colors.surface, shadowColor: colors.shadow },
+          ]}
+        >
+          <View style={[styles.statAccentBar, { backgroundColor: s.color }]} />
           <AnimatedCounter
             target={s.target}
             suffix={s.suffix}
@@ -743,7 +750,7 @@ function StatsStrip({ colors }: { colors: any }) {
             color={s.color}
             duration={1200 + i * 150}
           />
-        </React.Fragment>
+        </View>
       ))}
     </View>
   );
@@ -1028,21 +1035,36 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,85,255,0.12)',
   },
 
-  // Stats Strip
-  statsStrip: {
+  // Stats Grid
+  statsGrid: {
     marginHorizontal: 24,
-    borderRadius: 22,
     flexDirection: 'row',
-    paddingVertical: 6,
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  statCard: {
+    borderRadius: 20,
+    paddingTop: 14,
+    paddingBottom: 18,
+    paddingHorizontal: 16,
     shadowOpacity: 0.07,
-    shadowRadius: 14,
+    shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
+    overflow: 'hidden',
   },
-  counterItem: { flex: 1, alignItems: 'center', paddingVertical: 18 },
-  counterValue: { fontSize: 30, fontWeight: '900', letterSpacing: -1 },
-  counterLabel: { fontSize: 10, fontWeight: '600', color: '#94A3B8', marginTop: 4, textAlign: 'center' },
-  statsDivider: { width: 1, marginVertical: 14 },
+  statAccentBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  counterItem: { alignItems: 'flex-start' },
+  counterValue: { fontSize: 36, fontWeight: '900', letterSpacing: -1.5 },
+  counterLabel: { fontSize: 11, fontWeight: '600', color: '#94A3B8', marginTop: 4 },
 
   // Industry Cards
   industryGrid: {
