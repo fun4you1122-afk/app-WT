@@ -228,9 +228,21 @@ const IMPACT_DATA = [
   { value: '99.9%', label: 'SLA Uptime', sub: 'All Projects', color: AMBER, gradient: ['#451A03', '#D97706'] as const },
 ];
 
+interface Particle {
+  id: number;
+  x: number;
+  y: number;
+  anim: Animated.Value;
+  opacAnim: Animated.Value;
+  angle: number;
+  color: string;
+}
+
 function ImpactCard({ item, index }: { item: typeof IMPACT_DATA[0]; index: number }) {
   const scale = useRef(new Animated.Value(0.88)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const particleIdRef = useRef(0);
 
   useEffect(() => {
     Animated.parallel([
@@ -239,23 +251,190 @@ function ImpactCard({ item, index }: { item: typeof IMPACT_DATA[0]; index: numbe
     ]).start();
   }, []);
 
+  const handlePress = (evt: any) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const { locationX, locationY } = evt.nativeEvent;
+    const colors = [item.color, '#fff', TEAL, PURPLE, BLUE];
+    const newParticles: Particle[] = Array.from({ length: 14 }, (_, i) => {
+      const id = particleIdRef.current++;
+      const anim = new Animated.Value(0);
+      const opacAnim = new Animated.Value(1);
+      Animated.parallel([
+        Animated.timing(anim, { toValue: 1, duration: 650, useNativeDriver: true }),
+        Animated.timing(opacAnim, { toValue: 0, duration: 650, useNativeDriver: true }),
+      ]).start(() => setParticles(prev => prev.filter(p => p.id !== id)));
+      return { id, x: locationX, y: locationY, anim, opacAnim, angle: (i / 14) * Math.PI * 2, color: colors[i % colors.length] };
+    });
+    setParticles(prev => [...prev, ...newParticles]);
+  };
+
   return (
     <Animated.View style={{ opacity, transform: [{ scale }] }}>
-      <LinearGradient
-        colors={item.gradient}
-        style={styles.impactCard}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <Svg style={StyleSheet.absoluteFill as any} width={150} height={110} pointerEvents="none">
-          <Circle cx={150} cy={0} r={80} stroke="rgba(255,255,255,0.07)" strokeWidth="1" fill="none" />
-          <Circle cx={0} cy={110} r={50} fill="rgba(255,255,255,0.04)" />
-        </Svg>
-        <Text style={styles.impactValue}>{item.value}</Text>
-        <Text style={styles.impactLabel}>{item.label}</Text>
-        <Text style={styles.impactSub}>{item.sub}</Text>
-      </LinearGradient>
+      <TouchableOpacity onPress={handlePress} activeOpacity={0.88}>
+        <LinearGradient colors={item.gradient} style={styles.impactCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          <Svg style={StyleSheet.absoluteFill as any} width={150} height={110} pointerEvents="none">
+            <Circle cx={150} cy={0} r={80} stroke="rgba(255,255,255,0.07)" strokeWidth="1" fill="none" />
+            <Circle cx={0} cy={110} r={50} fill="rgba(255,255,255,0.04)" />
+          </Svg>
+          <Text style={styles.impactValue}>{item.value}</Text>
+          <Text style={styles.impactLabel}>{item.label}</Text>
+          <Text style={styles.impactSub}>{item.sub}</Text>
+          {particles.map(p => (
+            <Animated.View key={p.id} pointerEvents="none" style={{
+              position: 'absolute', left: p.x - 3, top: p.y - 3, width: 6, height: 6,
+              borderRadius: 3, backgroundColor: p.color, opacity: p.opacAnim,
+              transform: [
+                { translateX: p.anim.interpolate({ inputRange: [0, 1], outputRange: [0, Math.cos(p.angle) * 48] }) },
+                { translateY: p.anim.interpolate({ inputRange: [0, 1], outputRange: [0, Math.sin(p.angle) * 48] }) },
+              ],
+            }} />
+          ))}
+        </LinearGradient>
+      </TouchableOpacity>
     </Animated.View>
+  );
+}
+
+// ─── Wireframe Globe ─────────────────────────────────────────────────────────
+
+function WireframeGlobe({ size = 210 }: { size: number }) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const R = size * 0.38;
+  const angle = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [dots, setDots] = useState([
+    { x: cx + R, y: cy, color: BLUE },
+    { x: cx - R * 0.5, y: cy - R * 0.85, color: PURPLE },
+    { x: cx + R * 0.3, y: cy + R * 0.95, color: TEAL },
+  ]);
+
+  useEffect(() => {
+    const id = angle.addListener(({ value }) => {
+      setDots([
+        { x: cx + R * Math.cos(value), y: cy + R * 0.3 * Math.sin(value), color: BLUE },
+        { x: cx + R * 0.7 * Math.cos(value + (Math.PI * 2) / 3), y: cy + R * Math.sin(value + (Math.PI * 2) / 3), color: PURPLE },
+        { x: cx + R * 0.5 * Math.cos(value + (Math.PI * 4) / 3), y: cy + R * 0.4 * Math.sin(value + (Math.PI * 4) / 3), color: TEAL },
+      ]);
+    });
+    Animated.loop(Animated.timing(angle, { toValue: Math.PI * 2, duration: 7000, useNativeDriver: false })).start();
+    Animated.loop(Animated.sequence([
+      Animated.timing(pulseAnim, { toValue: 1.5, duration: 2000, useNativeDriver: true }),
+      Animated.timing(pulseAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
+    ])).start();
+    return () => angle.removeListener(id);
+  }, []);
+
+  const latAngles = [-55, -30, -5, 20, 45, 70];
+
+  return (
+    <View pointerEvents="none" style={{ width: size, height: size }}>
+      <Svg width={size} height={size}>
+        <Circle cx={cx} cy={cy} r={R + 22} fill="rgba(0,85,255,0.04)" />
+        <Circle cx={cx} cy={cy} r={R + 12} stroke="rgba(0,85,255,0.12)" strokeWidth="1" fill="none" />
+        <Circle cx={cx} cy={cy} r={R} fill="rgba(0,85,255,0.04)" />
+        <Circle cx={cx} cy={cy} r={R} stroke="rgba(0,85,255,0.5)" strokeWidth="1" fill="none" />
+        {latAngles.map((deg, i) => {
+          const rad = (deg * Math.PI) / 180;
+          const latY = cy + R * Math.sin(rad);
+          const latRx = R * Math.cos(Math.abs(rad));
+          const latRy = latRx * 0.28;
+          return latRx > 4 ? (
+            <Ellipse key={i} cx={cx} cy={latY} rx={latRx} ry={latRy}
+              stroke={i % 2 === 0 ? 'rgba(14,165,233,0.3)' : 'rgba(0,85,255,0.2)'}
+              strokeWidth="0.7" fill="none" />
+          ) : null;
+        })}
+        <Ellipse cx={cx} cy={cy} rx={R * 0.25} ry={R} stroke="rgba(124,58,237,0.3)" strokeWidth="0.7" fill="none" />
+        <Ellipse cx={cx} cy={cy} rx={R * 0.55} ry={R} stroke="rgba(0,85,255,0.2)" strokeWidth="0.7" fill="none" />
+        <Ellipse cx={cx} cy={cy} rx={R * 0.85} ry={R} stroke="rgba(14,165,233,0.15)" strokeWidth="0.7" fill="none" />
+        <Circle cx={cx + R * 0.55} cy={cy - R * 0.25} r={2.5} fill={TEAL} opacity={0.85} />
+        <Circle cx={cx - R * 0.4} cy={cy + R * 0.15} r={2} fill={AMBER} opacity={0.85} />
+        <Circle cx={cx + R * 0.15} cy={cy + R * 0.55} r={2.5} fill={GREEN} opacity={0.85} />
+        <Circle cx={cx - R * 0.55} cy={cy - R * 0.4} r={2} fill={PURPLE} opacity={0.85} />
+        {dots.map((d, i) => (
+          <React.Fragment key={i}>
+            <Circle cx={d.x} cy={d.y} r={i === 0 ? 5 : 3.5} fill={d.color} opacity={0.95} />
+            <Circle cx={d.x} cy={d.y} r={i === 0 ? 11 : 7} fill={d.color} opacity={0.18} />
+          </React.Fragment>
+        ))}
+      </Svg>
+      <Animated.View style={{
+        position: 'absolute',
+        left: cx - R - 22,
+        top: cy - R - 22,
+        width: (R + 22) * 2,
+        height: (R + 22) * 2,
+        borderRadius: (R + 22),
+        borderWidth: 1,
+        borderColor: 'rgba(0,85,255,0.3)',
+        transform: [{ scale: pulseAnim }],
+        opacity: pulseAnim.interpolate({ inputRange: [1, 1.5], outputRange: [0.6, 0] }),
+      }} />
+    </View>
+  );
+}
+
+// ─── Data Ticker ──────────────────────────────────────────────────────────────
+
+function DataTicker() {
+  const anim = useRef(new Animated.Value(0)).current;
+  const TICKER = '  247 PROJECTS  ◆  AED 340M+ FRAUD PREVENTED  ◆  180+ CLIENTS  ◆  4M USERS SERVED  ◆  6 COUNTRIES  ◆  99.9% UPTIME  ◆  ISO 27001 CERTIFIED  ◆  ';
+
+  useEffect(() => {
+    const run = () => {
+      anim.setValue(0);
+      Animated.timing(anim, { toValue: 1, duration: 22000, useNativeDriver: true }).start(({ finished }) => {
+        if (finished) run();
+      });
+    };
+    run();
+  }, []);
+
+  const translateX = anim.interpolate({ inputRange: [0, 1], outputRange: [W, -W * 2.5] });
+
+  return (
+    <View style={{ overflow: 'hidden', height: 22, marginTop: 10 }}>
+      <Animated.View style={{ transform: [{ translateX }] }}>
+        <Text style={{ color: 'rgba(255,255,255,0.38)', fontSize: 10, letterSpacing: 1.8, fontWeight: '700' }}>
+          {TICKER}{TICKER}
+        </Text>
+      </Animated.View>
+    </View>
+  );
+}
+
+// ─── Shimmer Headline ─────────────────────────────────────────────────────────
+
+function ShimmerHeadline({ text }: { text: string }) {
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmerAnim, { toValue: 1, duration: 2200, useNativeDriver: true }),
+        Animated.delay(2500),
+        Animated.timing(shimmerAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  const translateX = shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [-100, W] });
+
+  return (
+    <View style={{ overflow: 'hidden' }}>
+      <Text style={styles.heroHeadline}>{text}</Text>
+      <Animated.View style={{
+        position: 'absolute', top: 0, bottom: 0, width: 90,
+        transform: [{ translateX }],
+      }}>
+        <LinearGradient
+          colors={['transparent', 'rgba(255,255,255,0.22)', 'transparent']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={{ flex: 1 }}
+        />
+      </Animated.View>
+    </View>
   );
 }
 
@@ -698,7 +877,7 @@ function HeroContent({ scrollY, isDark }: { scrollY: Animated.Value; isDark: boo
         </View>
 
         <Animated.View style={{ opacity: fadeIn, transform: [{ translateY: slideUp }] }}>
-          <Text style={styles.heroHeadline}>{"The Middle East's\nLeading AI Partner"}</Text>
+          <ShimmerHeadline text={"The Middle East's\nLeading AI Partner"} />
           <Text style={styles.heroSub}>
             Transforming enterprises across UAE, Saudi Arabia & beyond
           </Text>
@@ -722,7 +901,13 @@ function HeroContent({ scrollY, isDark }: { scrollY: Animated.Value; isDark: boo
           <Animated.Text style={[styles.scrollHint, { opacity: hintOpacity }]}>
             ↓ Scroll to explore
           </Animated.Text>
+          <DataTicker />
         </Animated.View>
+      </View>
+
+      {/* Globe — right side decorative */}
+      <View style={styles.globeWrap} pointerEvents="none">
+        <WireframeGlobe size={210} />
       </View>
     </View>
   );
@@ -1213,6 +1398,13 @@ const styles = StyleSheet.create({
   },
   whyTitle: { fontSize: 14, fontWeight: '800', letterSpacing: -0.2 },
   whyDesc: { fontSize: 12, lineHeight: 17, fontWeight: '500' },
+
+  globeWrap: {
+    position: 'absolute',
+    right: -30,
+    bottom: 60,
+    opacity: 0.55,
+  },
 
   // CTA Banner
   ctaBanner: {

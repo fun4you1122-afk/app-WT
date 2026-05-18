@@ -9,6 +9,8 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import Svg, { Path, Circle, Rect, Ellipse, G } from 'react-native-svg';
 
+const AnimSvgCircle = Animated.createAnimatedComponent(Circle);
+
 const { width: W } = Dimensions.get('window');
 
 // ─── Brand Colors ─────────────────────────────────────────────────────────────
@@ -235,6 +237,125 @@ function ContactRow({
   );
 }
 
+// ─── Counter Ring ─────────────────────────────────────────────────────────────
+
+function CounterRing({ value, max, label, color, size = 104 }: {
+  value: number; max: number; label: string; color: string; size?: number;
+}) {
+  const progress = useRef(new Animated.Value(0)).current;
+  const countAnim = useRef(new Animated.Value(0)).current;
+  const [displayVal, setDisplayVal] = useState('0');
+  const R = size * 0.38;
+  const circumference = 2 * Math.PI * R;
+
+  useEffect(() => {
+    Animated.timing(progress, { toValue: value / max, duration: 1600, useNativeDriver: false }).start();
+    const id = countAnim.addListener(({ value: v }) => setDisplayVal(Math.round(v).toString()));
+    Animated.timing(countAnim, { toValue: value, duration: 1600, useNativeDriver: false }).start();
+    return () => countAnim.removeListener(id);
+  }, []);
+
+  const strokeDashoffset = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [circumference, circumference * 0.08],
+  });
+
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={size} height={size} style={{ position: 'absolute' }}>
+        <Circle
+          cx={size / 2} cy={size / 2} r={R}
+          stroke="rgba(148,163,184,0.15)"
+          strokeWidth="6"
+          fill="none"
+        />
+        <AnimSvgCircle
+          cx={size / 2} cy={size / 2} r={R}
+          stroke={color}
+          strokeWidth="6"
+          fill="none"
+          strokeDasharray={`${circumference} ${circumference}`}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          transform={`rotate(-90, ${size / 2}, ${size / 2})`}
+        />
+      </Svg>
+      <Text style={{ fontSize: 20, fontWeight: '900', color, letterSpacing: -0.5 }}>
+        {displayVal}
+      </Text>
+      <Text style={{ fontSize: 9, fontWeight: '600', color: '#94A3B8', textAlign: 'center', marginTop: 2, paddingHorizontal: 4 }} numberOfLines={2}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+// ─── Flip Cert Card ───────────────────────────────────────────────────────────
+
+function FlipCertCard({ cert, colors }: { cert: typeof CERTIFICATIONS[0]; colors: any }) {
+  const [flipped, setFlipped] = useState(false);
+  const flipAnim = useRef(new Animated.Value(0)).current;
+
+  const handleFlip = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Animated.spring(flipAnim, {
+      toValue: flipped ? 0 : 1,
+      useNativeDriver: true,
+      damping: 14,
+      stiffness: 120,
+    }).start(() => setFlipped(!flipped));
+  };
+
+  const frontRotate = flipAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
+  const backRotate = flipAnim.interpolate({ inputRange: [0, 1], outputRange: ['180deg', '360deg'] });
+  const cardW = (W - 72) / 3;
+
+  return (
+    <TouchableOpacity onPress={handleFlip} activeOpacity={1} style={{ width: cardW, height: 130 }}>
+      {/* Front */}
+      <Animated.View style={[{
+        position: 'absolute', width: cardW, height: 130,
+        borderRadius: 16, overflow: 'hidden',
+        backgroundColor: colors.surface,
+        borderWidth: 1, borderColor: colors.border,
+        alignItems: 'center', justifyContent: 'center', gap: 8, padding: 10,
+        backfaceVisibility: 'hidden',
+      }, { transform: [{ rotateY: frontRotate }] }]}>
+        <LinearGradient colors={[cert.color + '22', cert.color + '08']} style={{
+          width: 44, height: 44, borderRadius: 22,
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <ShieldCheckIcon color={cert.color} size={22} />
+        </LinearGradient>
+        <Text style={{ fontSize: 11, fontWeight: '800', color: colors.text, textAlign: 'center', lineHeight: 14 }} numberOfLines={2}>
+          {cert.name}
+        </Text>
+        <Text style={{ fontSize: 9, color: colors.textMuted, textAlign: 'center' }}>Tap to learn more</Text>
+      </Animated.View>
+
+      {/* Back */}
+      <Animated.View style={[{
+        position: 'absolute', width: cardW, height: 130,
+        borderRadius: 16, overflow: 'hidden',
+        alignItems: 'center', justifyContent: 'center', padding: 12,
+        backfaceVisibility: 'hidden',
+      }, { transform: [{ rotateY: backRotate }] }]}>
+        <LinearGradient colors={[cert.color + 'DD', cert.color]} style={{
+          ...StyleSheet.absoluteFillObject as any,
+          borderRadius: 16,
+        }} />
+        <Text style={{ fontSize: 12, fontWeight: '900', color: '#fff', textAlign: 'center', marginBottom: 6 }}>
+          {cert.name}
+        </Text>
+        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.8)', textAlign: 'center', lineHeight: 15 }}>
+          {cert.sub}
+        </Text>
+        <Text style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', marginTop: 6 }}>✓ Verified</Text>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function AboutScreen() {
@@ -344,22 +465,17 @@ export default function AboutScreen() {
           </LinearGradient>
         </Animated.View>
 
-        {/* ── Stats Row ── */}
-        <Animated.View
-          style={[
-            styles.statsBar,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-            { opacity: contentAnim },
-          ]}
-        >
-          {COMPANY_STATS.map((stat, i) => (
-            <React.Fragment key={stat.label}>
-              {i > 0 && <View style={[styles.statDivider, { backgroundColor: colors.borderLight }]} />}
-              <View style={styles.statItem}>
-                <AnimatedCounter target={stat.value} suffix={stat.suffix} color={stat.color} />
-                <Text style={[styles.statLabel, { color: colors.textMuted }]}>{stat.label}</Text>
-              </View>
-            </React.Fragment>
+        {/* ── Stats Rings ── */}
+        <Animated.View style={[styles.ringsRow, { opacity: contentAnim }]}>
+          {COMPANY_STATS.map((stat) => (
+            <CounterRing
+              key={stat.label}
+              value={stat.value}
+              max={stat.value * 1.2}
+              label={stat.label}
+              color={stat.color}
+              size={80}
+            />
           ))}
         </Animated.View>
 
@@ -437,27 +553,7 @@ export default function AboutScreen() {
           </View>
           <View style={styles.certRow}>
             {CERTIFICATIONS.map(cert => (
-              <View
-                key={cert.name}
-                style={[
-                  styles.certCard,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                <LinearGradient
-                  colors={[cert.color + '20', cert.color + '08']}
-                  style={styles.certIconWrap}
-                >
-                  <ShieldCheckIcon color={cert.color} size={22} />
-                </LinearGradient>
-                <Text style={[styles.certName, { color: colors.text }]} numberOfLines={2}>
-                  {cert.name}
-                </Text>
-                <Text style={[styles.certSub, { color: colors.textMuted }]}>{cert.sub}</Text>
-              </View>
+              <FlipCertCard key={cert.name} cert={cert} colors={colors} />
             ))}
           </View>
         </View>
@@ -635,6 +731,18 @@ const styles = StyleSheet.create({
   },
   foundedDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#22C55E' },
   foundedText: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '700' },
+
+  // Stats Rings
+  ringsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    marginHorizontal: 24,
+    marginTop: -16,
+    borderRadius: 20,
+  },
 
   // Stats
   statsBar: {
