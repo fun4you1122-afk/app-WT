@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
-  Animated, ScrollView, StyleSheet, View, Text,
+  Animated, ScrollView, StyleSheet, View, Text, Image,
   TouchableOpacity, Dimensions, Platform, RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -898,10 +898,11 @@ function HeroContent({ scrollY, isDark }: { scrollY: Animated.Value; isDark: boo
         {/* Top bar */}
         <View style={styles.heroTopBar}>
           <View style={styles.heroLogoRow}>
-            <LinearGradient colors={[PURPLE, BLUE]} style={styles.heroLogoBadge} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-              <Text style={styles.heroLogoInitials}>WT</Text>
-            </LinearGradient>
-            <Text style={styles.heroLogoText}>WeThink.ae</Text>
+            <Image
+              source={require('../../assets/images/wethink-logo.png')}
+              style={styles.heroLogoImage}
+              resizeMode="contain"
+            />
           </View>
           <TouchableOpacity
             style={styles.heroGearBtn}
@@ -1179,16 +1180,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 24,
   },
-  heroLogoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  heroLogoBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
+  heroLogoRow: { flexDirection: 'row', alignItems: 'center' },
+  heroLogoImage: {
+    width: 130,
+    height: 36,
   },
-  heroLogoInitials: { color: '#fff', fontSize: 11, fontWeight: '900' },
-  heroLogoText: { fontSize: 16, fontWeight: '700', color: '#fff', letterSpacing: -0.3 },
   heroGearBtn: {
     width: 36,
     height: 36,

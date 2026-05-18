@@ -437,46 +437,106 @@ function CounterRing({ value, max, label, color, size = 104 }: {
 }) {
   const progress = useRef(new Animated.Value(0)).current;
   const countAnim = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0.4)).current;
   const [displayVal, setDisplayVal] = useState('0');
-  const R = size * 0.38;
+  const R = size * 0.4;
   const circumference = 2 * Math.PI * R;
+  const strokeW = size * 0.09;
 
   useEffect(() => {
-    Animated.timing(progress, { toValue: value / max, duration: 1600, useNativeDriver: false }).start();
+    // count-up + arc fill
+    Animated.timing(progress, {
+      toValue: value / max,
+      duration: 1800,
+      useNativeDriver: false,
+      easing: Easing.out(Easing.cubic),
+    }).start();
     const id = countAnim.addListener(({ value: v }) => setDisplayVal(Math.round(v).toString()));
-    Animated.timing(countAnim, { toValue: value, duration: 1600, useNativeDriver: false }).start();
+    Animated.timing(countAnim, {
+      toValue: value,
+      duration: 1800,
+      useNativeDriver: false,
+      easing: Easing.out(Easing.cubic),
+    }).start();
+    // pulsing glow
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, { toValue: 1, duration: 1200, useNativeDriver: false }),
+        Animated.timing(glowAnim, { toValue: 0.4, duration: 1200, useNativeDriver: false }),
+      ])
+    ).start();
     return () => countAnim.removeListener(id);
   }, []);
 
   const strokeDashoffset = progress.interpolate({
     inputRange: [0, 1],
-    outputRange: [circumference, circumference * 0.08],
+    outputRange: [circumference, circumference * 0.05],
   });
 
   return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg width={size} height={size} style={{ position: 'absolute' }}>
-        <Circle
-          cx={size / 2} cy={size / 2} r={R}
-          stroke="rgba(148,163,184,0.15)"
-          strokeWidth="6"
-          fill="none"
-        />
-        <AnimSvgCircle
-          cx={size / 2} cy={size / 2} r={R}
-          stroke={color}
-          strokeWidth="6"
-          fill="none"
-          strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          transform={`rotate(-90, ${size / 2}, ${size / 2})`}
-        />
-      </Svg>
-      <Text style={{ fontSize: 20, fontWeight: '900', color, letterSpacing: -0.5 }}>
-        {displayVal}
-      </Text>
-      <Text style={{ fontSize: 9, fontWeight: '600', color: '#94A3B8', textAlign: 'center', marginTop: 2, paddingHorizontal: 4 }} numberOfLines={2}>
+    <View style={{
+      width: size,
+      alignItems: 'center',
+    }}>
+      {/* Glow halo behind ring */}
+      <Animated.View style={{
+        position: 'absolute',
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: color,
+        opacity: glowAnim.interpolate({ inputRange: [0.4, 1], outputRange: [0.07, 0.18] }),
+        top: 0,
+      }} />
+
+      <View style={{
+        width: size,
+        height: size,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        {/* Ring SVG */}
+        <Svg width={size} height={size} style={{ position: 'absolute' }}>
+          {/* Dark filled center */}
+          <Circle
+            cx={size / 2} cy={size / 2} r={R - strokeW / 2}
+            fill={color + '18'}
+          />
+          {/* Track */}
+          <Circle
+            cx={size / 2} cy={size / 2} r={R}
+            stroke={color + '28'}
+            strokeWidth={strokeW}
+            fill="none"
+          />
+          {/* Progress arc */}
+          <AnimSvgCircle
+            cx={size / 2} cy={size / 2} r={R}
+            stroke={color}
+            strokeWidth={strokeW}
+            fill="none"
+            strokeDasharray={`${circumference} ${circumference}`}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            transform={`rotate(-90, ${size / 2}, ${size / 2})`}
+          />
+        </Svg>
+
+        {/* Center text */}
+        <Text style={{ fontSize: size * 0.22, fontWeight: '900', color, letterSpacing: -0.5 }}>
+          {displayVal}
+        </Text>
+      </View>
+
+      {/* Label below ring */}
+      <Text style={{
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#94A3B8',
+        textAlign: 'center',
+        marginTop: 6,
+        letterSpacing: 0.3,
+      }} numberOfLines={1}>
         {label}
       </Text>
     </View>
@@ -678,7 +738,7 @@ export default function AboutScreen() {
               max={stat.value * 1.2}
               label={stat.label}
               color={stat.color}
-              size={80}
+              size={76}
             />
           ))}
         </Animated.View>
@@ -886,8 +946,8 @@ const styles = StyleSheet.create({
 
   // Hero
   hero: {
-    height: 240 + (Platform.OS === 'ios' ? 44 : StatusBar.currentHeight ?? 24),
-    paddingTop: Platform.OS === 'ios' ? 56 : (StatusBar.currentHeight ?? 24) + 12,
+    height: 280 + (Platform.OS === 'ios' ? 44 : StatusBar.currentHeight ?? 24),
+    paddingTop: Platform.OS === 'ios' ? 90 : (StatusBar.currentHeight ?? 24) + 36,
     alignItems: 'center',
     overflow: 'hidden',
     paddingBottom: 32,
@@ -940,12 +1000,15 @@ const styles = StyleSheet.create({
   ringsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-    marginHorizontal: 24,
-    marginTop: -16,
-    borderRadius: 20,
+    alignItems: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 24,
+    marginHorizontal: 20,
+    marginTop: -20,
+    borderRadius: 24,
+    backgroundColor: 'rgba(13,27,75,0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,85,255,0.18)',
   },
 
   // Stats
