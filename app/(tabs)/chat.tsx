@@ -69,7 +69,7 @@ function getAIResponse(text: string): string {
   }
 
   if (lower.includes('contact') || lower.includes('email') || lower.includes('phone') || lower.includes('reach')) {
-    return "Reach us at:\n\n📧 hello@wethink.ae\n📞 +971 4 330 9000\n📍 Dubai Internet City, UAE\n\nOr tap 'Schedule Now' above to book a call!";
+    return "Reach us at:\n\nEmail: info@wethink.ae\nPhone: 0503125078\nInstagram: @wethink.ae\nLocation: Dubai Internet City, UAE\n\nOr tap 'Schedule Now' above to book a call!";
   }
 
   return "Great question! Our team of 200+ AI specialists can help. Would you like to book a free 30-minute call with one of our consultants? They can answer this in detail and suggest the best approach for your situation.";
@@ -363,17 +363,14 @@ function BookingCard({ colors }: { colors: any }) {
       </Text>
 
       <View style={styles.bookingAvatarRow}>
-        {['RA', 'KM', 'SC'].map((init, i) => (
-          <LinearGradient
-            key={i}
-            colors={i === 0 ? [BLUE, '#0033CC'] : i === 1 ? [PURPLE, '#5B21B6'] : ['#059669', '#047857']}
-            style={[styles.consultantAvatar, { marginLeft: i > 0 ? -10 : 0, zIndex: 3 - i }]}
-          >
-            <Text style={styles.consultantAvatarText}>{init}</Text>
-          </LinearGradient>
-        ))}
+        <LinearGradient
+          colors={[BLUE, '#0033CC']}
+          style={[styles.consultantAvatar, { zIndex: 1 }]}
+        >
+          <Text style={styles.consultantAvatarText}>RA</Text>
+        </LinearGradient>
         <Text style={[styles.bookingAvatarLabel, { color: colors.textMuted }]}>
-          {'  '}Senior Consultants
+          {'  '}Rasha Aljalam, CEO
         </Text>
       </View>
 

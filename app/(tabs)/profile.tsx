@@ -37,22 +37,6 @@ const LEADERSHIP = [
     gradient: ['#0D1B4B', '#0055FF'] as const,
     accentColor: BLUE,
   },
-  {
-    initials: 'KM',
-    name: 'Khalid Al-Mansouri',
-    role: 'CTO',
-    credential: 'Arabic NLP pioneer, ex-Google Brain',
-    gradient: ['#2E1B5E', '#7C3AED'] as const,
-    accentColor: PURPLE,
-  },
-  {
-    initials: 'SC',
-    name: 'Sarah Chen',
-    role: 'Head of Delivery',
-    credential: 'Delivered 80+ AI projects across GCC',
-    gradient: ['#064E3B', '#059669'] as const,
-    accentColor: GREEN,
-  },
 ];
 
 const CLIENTS = [
@@ -103,6 +87,16 @@ function PhoneIcon({ color, size = 18 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.95 13a19.79 19.79 0 01-3.07-8.67A2 2 0 012.86 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+function InstagramIcon({ color, size = 18 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="2" y="2" width="20" height="20" rx="5" stroke={color} strokeWidth="1.8" />
+      <Circle cx="12" cy="12" r="4" stroke={color} strokeWidth="1.8" />
+      <Circle cx="17.5" cy="6.5" r="1" fill={color} />
     </Svg>
   );
 }
@@ -226,6 +220,7 @@ function ContactRow({
             {icon === 'map' && <MapPinIcon color={colors.primary} />}
             {icon === 'mail' && <MailIcon color={colors.primary} />}
             {icon === 'phone' && <PhoneIcon color={colors.primary} />}
+            {icon === 'instagram' && <InstagramIcon color={colors.primary} />}
           </View>
           <Text style={[styles.contactLabel, { color: colors.text }]} numberOfLines={1}>
             {label}
@@ -488,15 +483,22 @@ export default function AboutScreen() {
             />
             <ContactRow
               icon="mail"
-              label="hello@wethink.ae"
-              onPress={() => Linking.openURL('mailto:hello@wethink.ae')}
+              label="info@wethink.ae"
+              onPress={() => Linking.openURL('mailto:info@wethink.ae')}
               colors={colors}
               isLast={false}
             />
             <ContactRow
               icon="phone"
-              label="+971 4 330 9000"
-              onPress={() => Linking.openURL('tel:+97143309000')}
+              label="0503125078"
+              onPress={() => Linking.openURL('tel:0503125078')}
+              colors={colors}
+              isLast={false}
+            />
+            <ContactRow
+              icon="instagram"
+              label="@wethink.ae"
+              onPress={() => Linking.openURL('https://instagram.com/wethink.ae')}
               colors={colors}
               isLast={true}
             />

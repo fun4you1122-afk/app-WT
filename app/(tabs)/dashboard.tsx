@@ -137,6 +137,128 @@ function getWhyIcon(iconType: string, color: string) {
   }
 }
 
+// ─── Neural Network Visualization ────────────────────────────────────────────
+
+const NODES = [
+  { x: 0.15, y: 0.18 }, { x: 0.5, y: 0.08 }, { x: 0.85, y: 0.22 },
+  { x: 0.08, y: 0.5 },  { x: 0.38, y: 0.42 }, { x: 0.62, y: 0.38 }, { x: 0.92, y: 0.55 },
+  { x: 0.22, y: 0.72 }, { x: 0.5, y: 0.82 },  { x: 0.78, y: 0.68 },
+];
+const EDGES = [
+  [0,1],[1,2],[0,3],[1,4],[1,5],[2,6],[3,4],[4,5],[5,6],[3,7],[4,8],[5,9],[6,9],[7,8],[8,9],
+];
+
+function NeuralNetwork({ height }: { height: number }) {
+  const pulseAnims = useRef(NODES.map(() => new Animated.Value(0))).current;
+  const edgeAnims = useRef(EDGES.map(() => new Animated.Value(0))).current;
+
+  useEffect(() => {
+    NODES.forEach((_, i) => {
+      const loop = () =>
+        Animated.sequence([
+          Animated.delay(i * 180),
+          Animated.timing(pulseAnims[i], { toValue: 1, duration: 700, useNativeDriver: true }),
+          Animated.timing(pulseAnims[i], { toValue: 0.3, duration: 1400, useNativeDriver: true }),
+        ]);
+      Animated.loop(loop()).start();
+    });
+    EDGES.forEach((_, i) => {
+      const loop = () =>
+        Animated.sequence([
+          Animated.delay(i * 120 + 400),
+          Animated.timing(edgeAnims[i], { toValue: 1, duration: 900, useNativeDriver: true }),
+          Animated.timing(edgeAnims[i], { toValue: 0.15, duration: 1600, useNativeDriver: true }),
+        ]);
+      Animated.loop(loop()).start();
+    });
+  }, []);
+
+  return (
+    <View style={[StyleSheet.absoluteFillObject, { height }]} pointerEvents="none">
+      <Svg width={W} height={height}>
+        {EDGES.map(([a, b], i) => {
+          const na = NODES[a], nb = NODES[b];
+          return (
+            <Line
+              key={i}
+              x1={na.x * W} y1={na.y * height}
+              x2={nb.x * W} y2={nb.y * height}
+              stroke="rgba(99,102,241,0.35)"
+              strokeWidth="1"
+            />
+          );
+        })}
+        {NODES.map((n, i) => (
+          <Circle
+            key={i}
+            cx={n.x * W}
+            cy={n.y * height}
+            r={4}
+            fill={i % 3 === 0 ? BLUE : i % 3 === 1 ? PURPLE : TEAL}
+            opacity={0.85}
+          />
+        ))}
+      </Svg>
+      {NODES.map((n, i) => (
+        <Animated.View
+          key={i}
+          style={{
+            position: 'absolute',
+            left: n.x * W - 10,
+            top: n.y * height - 10,
+            width: 20,
+            height: 20,
+            borderRadius: 10,
+            backgroundColor: i % 3 === 0 ? BLUE : i % 3 === 1 ? PURPLE : TEAL,
+            opacity: pulseAnims[i],
+            transform: [{ scale: pulseAnims[i].interpolate({ inputRange: [0, 1], outputRange: [0.5, 2.5] }) }],
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
+// ─── Impact Cards (horizontal scroll) ────────────────────────────────────────
+
+const IMPACT_DATA = [
+  { value: 'AED 340M+', label: 'Fraud Prevented', sub: 'Emirates NBD', color: BLUE, gradient: ['#0D1B4B', '#0055FF'] as const },
+  { value: '4M+', label: 'Users Served', sub: 'Etisalat AI', color: PURPLE, gradient: ['#2E1B5E', '#7C3AED'] as const },
+  { value: '23%', label: 'Cost Reduction', sub: 'DEWA Analytics', color: GREEN, gradient: ['#064E3B', '#059669'] as const },
+  { value: '99.9%', label: 'SLA Uptime', sub: 'All Projects', color: AMBER, gradient: ['#451A03', '#D97706'] as const },
+];
+
+function ImpactCard({ item, index }: { item: typeof IMPACT_DATA[0]; index: number }) {
+  const scale = useRef(new Animated.Value(0.88)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(scale, { toValue: 1, delay: index * 100, useNativeDriver: true, damping: 13, stiffness: 120 }),
+      Animated.timing(opacity, { toValue: 1, duration: 350, delay: index * 100, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View style={{ opacity, transform: [{ scale }] }}>
+      <LinearGradient
+        colors={item.gradient}
+        style={styles.impactCard}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Svg style={StyleSheet.absoluteFill as any} width={150} height={110} pointerEvents="none">
+          <Circle cx={150} cy={0} r={80} stroke="rgba(255,255,255,0.07)" strokeWidth="1" fill="none" />
+          <Circle cx={0} cy={110} r={50} fill="rgba(255,255,255,0.04)" />
+        </Svg>
+        <Text style={styles.impactValue}>{item.value}</Text>
+        <Text style={styles.impactLabel}>{item.label}</Text>
+        <Text style={styles.impactSub}>{item.sub}</Text>
+      </LinearGradient>
+    </Animated.View>
+  );
+}
+
 // ─── ParticleField ────────────────────────────────────────────────────────────
 
 const PARTICLE_CONFIG = [
@@ -420,18 +542,10 @@ function SuccessStory() {
 
           <View style={styles.storyFooter}>
             <View style={styles.avatarRow}>
-              {['RA', 'KM', 'SC'].map((init, i) => (
-                <View
-                  key={i}
-                  style={[
-                    styles.teamAvatar,
-                    { marginLeft: i > 0 ? -10 : 0, zIndex: 3 - i },
-                  ]}
-                >
-                  <Text style={styles.teamAvatarText}>{init}</Text>
-                </View>
-              ))}
-              <Text style={styles.teamLabel}>  AI Task Force</Text>
+              <View style={[styles.teamAvatar, { zIndex: 1 }]}>
+                <Text style={styles.teamAvatarText}>RA</Text>
+              </View>
+              <Text style={styles.teamLabel}>  Rasha Aljalam, CEO</Text>
             </View>
             <Text style={styles.storyLink}>Read Full Story →</Text>
           </View>
@@ -511,7 +625,7 @@ function HeroContent({ scrollY, isDark }: { scrollY: Animated.Value; isDark: boo
     ])).start();
   }, []);
 
-  const HERO_H = 320;
+  const HERO_H = 440;
 
   const heroTranslate = scrollY.interpolate({
     inputRange: [0, 300],
@@ -559,6 +673,8 @@ function HeroContent({ scrollY, isDark }: { scrollY: Animated.Value; isDark: boo
           <Circle cx={W * 0.5} cy={320} r={90} stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" />
         </Svg>
 
+        {/* Neural Network */}
+        <NeuralNetwork height={HERO_H} />
         {/* Particles */}
         <ParticleField height={HERO_H} />
       </Animated.View>
@@ -724,6 +840,20 @@ export default function Dashboard() {
           <StatsStrip colors={colors} />
         </View>
 
+        {/* Impact Numbers */}
+        <View style={styles.section}>
+          <SectionHeader title="Proven Impact" colors={colors} />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.impactRow}
+          >
+            {IMPACT_DATA.map((item, i) => (
+              <ImpactCard key={i} item={item} index={i} />
+            ))}
+          </ScrollView>
+        </View>
+
         {/* Industry Grid — 3D Tilt Cards */}
         <View style={styles.section}>
           <SectionHeader title="Industries We Serve" colors={colors} />
@@ -769,7 +899,7 @@ export default function Dashboard() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const HERO_H = 320;
+const HERO_H = 440;
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
@@ -830,12 +960,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.15)',
   },
   heroHeadline: {
-    fontSize: 34,
+    fontSize: 40,
     fontWeight: '900',
     color: '#fff',
-    letterSpacing: -1,
-    lineHeight: 40,
-    marginBottom: 10,
+    letterSpacing: -1.5,
+    lineHeight: 46,
+    marginBottom: 12,
   },
   heroSub: {
     fontSize: 14,
@@ -909,9 +1039,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
-  counterItem: { flex: 1, alignItems: 'center', paddingVertical: 16 },
-  counterValue: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
-  counterLabel: { fontSize: 10, fontWeight: '600', color: '#94A3B8', marginTop: 3, textAlign: 'center' },
+  counterItem: { flex: 1, alignItems: 'center', paddingVertical: 18 },
+  counterValue: { fontSize: 30, fontWeight: '900', letterSpacing: -1 },
+  counterLabel: { fontSize: 10, fontWeight: '600', color: '#94A3B8', marginTop: 4, textAlign: 'center' },
   statsDivider: { width: 1, marginVertical: 14 },
 
   // Industry Cards
@@ -1009,6 +1139,25 @@ const styles = StyleSheet.create({
   teamAvatarText: { color: '#fff', fontSize: 8, fontWeight: '800' },
   teamLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 11, fontWeight: '600' },
   storyLink: { color: '#fff', fontSize: 13, fontWeight: '800' },
+
+  // Impact Cards
+  impactRow: { paddingHorizontal: 24, gap: 12, paddingBottom: 4 },
+  impactCard: {
+    width: 150,
+    height: 110,
+    borderRadius: 20,
+    padding: 16,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  impactValue: { fontSize: 24, fontWeight: '900', color: '#fff', letterSpacing: -0.5, marginBottom: 2 },
+  impactLabel: { fontSize: 12, fontWeight: '700', color: 'rgba(255,255,255,0.9)' },
+  impactSub: { fontSize: 10, fontWeight: '500', color: 'rgba(255,255,255,0.55)', marginTop: 1 },
 
   // Glass Why Cards
   whyRow: { paddingHorizontal: 24, gap: 12, paddingBottom: 4 },
