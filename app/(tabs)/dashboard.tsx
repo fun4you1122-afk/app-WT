@@ -325,15 +325,16 @@ function WireframeGlobe({ size = 210 }: { size: number }) {
     return () => angle.removeListener(id);
   }, []);
 
-  const latAngles = [-55, -30, -5, 20, 45, 70];
+  const latAngles = [-65, -48, -30, -14, 4, 20, 36, 52, 68];
 
   return (
     <View pointerEvents="none" style={{ width: size, height: size }}>
       <Svg width={size} height={size}>
-        <Circle cx={cx} cy={cy} r={R + 22} fill="rgba(0,85,255,0.04)" />
-        <Circle cx={cx} cy={cy} r={R + 12} stroke="rgba(0,85,255,0.12)" strokeWidth="1" fill="none" />
-        <Circle cx={cx} cy={cy} r={R} fill="rgba(0,85,255,0.04)" />
-        <Circle cx={cx} cy={cy} r={R} stroke="rgba(0,85,255,0.5)" strokeWidth="1" fill="none" />
+        <Circle cx={cx} cy={cy} r={R + 30} fill="rgba(0,85,255,0.05)" />
+        <Circle cx={cx} cy={cy} r={R + 18} stroke="rgba(0,85,255,0.18)" strokeWidth="1" fill="none" />
+        <Circle cx={cx} cy={cy} r={R + 8} stroke="rgba(14,165,233,0.12)" strokeWidth="1" fill="none" />
+        <Circle cx={cx} cy={cy} r={R} fill="rgba(0,85,255,0.05)" />
+        <Circle cx={cx} cy={cy} r={R} stroke="rgba(0,170,255,0.65)" strokeWidth="1.2" fill="none" />
         {latAngles.map((deg, i) => {
           const rad = (deg * Math.PI) / 180;
           const latY = cy + R * Math.sin(rad);
@@ -341,13 +342,14 @@ function WireframeGlobe({ size = 210 }: { size: number }) {
           const latRy = latRx * 0.28;
           return latRx > 4 ? (
             <Ellipse key={i} cx={cx} cy={latY} rx={latRx} ry={latRy}
-              stroke={i % 2 === 0 ? 'rgba(14,165,233,0.3)' : 'rgba(0,85,255,0.2)'}
-              strokeWidth="0.7" fill="none" />
+              stroke={i % 3 === 0 ? 'rgba(14,165,233,0.45)' : 'rgba(0,120,255,0.28)'}
+              strokeWidth="0.8" fill="none" />
           ) : null;
         })}
-        <Ellipse cx={cx} cy={cy} rx={R * 0.25} ry={R} stroke="rgba(124,58,237,0.3)" strokeWidth="0.7" fill="none" />
-        <Ellipse cx={cx} cy={cy} rx={R * 0.55} ry={R} stroke="rgba(0,85,255,0.2)" strokeWidth="0.7" fill="none" />
-        <Ellipse cx={cx} cy={cy} rx={R * 0.85} ry={R} stroke="rgba(14,165,233,0.15)" strokeWidth="0.7" fill="none" />
+        <Ellipse cx={cx} cy={cy} rx={R * 0.18} ry={R} stroke="rgba(124,58,237,0.45)" strokeWidth="0.8" fill="none" />
+        <Ellipse cx={cx} cy={cy} rx={R * 0.42} ry={R} stroke="rgba(0,120,255,0.35)" strokeWidth="0.8" fill="none" />
+        <Ellipse cx={cx} cy={cy} rx={R * 0.68} ry={R} stroke="rgba(14,165,233,0.28)" strokeWidth="0.8" fill="none" />
+        <Ellipse cx={cx} cy={cy} rx={R * 0.9} ry={R} stroke="rgba(0,85,255,0.2)" strokeWidth="0.8" fill="none" />
         <Circle cx={cx + R * 0.55} cy={cy - R * 0.25} r={2.5} fill={TEAL} opacity={0.85} />
         <Circle cx={cx - R * 0.4} cy={cy + R * 0.15} r={2} fill={AMBER} opacity={0.85} />
         <Circle cx={cx + R * 0.15} cy={cy + R * 0.55} r={2.5} fill={GREEN} opacity={0.85} />
@@ -940,9 +942,9 @@ function HeroContent({ scrollY, isDark }: { scrollY: Animated.Value; isDark: boo
         </Animated.View>
       </View>
 
-      {/* Globe — right side decorative */}
+      {/* Globe — top-right hero background */}
       <View style={styles.globeWrap} pointerEvents="none">
-        <WireframeGlobe size={210} />
+        <WireframeGlobe size={320} />
       </View>
     </View>
   );
@@ -1487,9 +1489,9 @@ const styles = StyleSheet.create({
 
   globeWrap: {
     position: 'absolute',
-    right: -30,
-    bottom: 60,
-    opacity: 0.55,
+    right: -70,
+    top: -30,
+    opacity: 0.78,
   },
 
   // CTA Banner
