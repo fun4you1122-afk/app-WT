@@ -108,6 +108,54 @@ function ChevronRightIcon({ color }: { color: string }) {
   );
 }
 
+// ─── Animated Waveform ───────────────────────────────────────────────────────
+
+function Waveform() {
+  const bars = Array.from({ length: 18 }, (_, i) =>
+    useRef(new Animated.Value(0.3)).current
+  );
+
+  useEffect(() => {
+    bars.forEach((bar, i) => {
+      const animate = () => {
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(bar, {
+              toValue: 0.2 + Math.random() * 0.8,
+              duration: 250 + Math.random() * 300,
+              useNativeDriver: true,
+            }),
+            Animated.timing(bar, {
+              toValue: 0.15 + Math.random() * 0.4,
+              duration: 200 + Math.random() * 250,
+              useNativeDriver: true,
+            }),
+          ])
+        ).start();
+      };
+      setTimeout(animate, i * 60);
+    });
+  }, []);
+
+  return (
+    <View style={styles.waveform}>
+      {bars.map((bar, i) => (
+        <Animated.View
+          key={i}
+          style={[
+            styles.waveBar,
+            {
+              transform: [{ scaleY: bar }],
+              backgroundColor: i % 3 === 0 ? BLUE : i % 3 === 1 ? PURPLE : '#0EA5E9',
+              opacity: 0.7 + (i % 4) * 0.075,
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
 // ─── Pulsing Availability Dot ─────────────────────────────────────────────────
 
 function PulsingDot() {
@@ -369,9 +417,16 @@ function BookingCard({ colors }: { colors: any }) {
         >
           <Text style={styles.consultantAvatarText}>RA</Text>
         </LinearGradient>
-        <Text style={[styles.bookingAvatarLabel, { color: colors.textMuted }]}>
-          {'  '}Rasha Aljalam, CEO
-        </Text>
+        <View style={{ flex: 1, marginLeft: 10 }}>
+          <Text style={[styles.bookingAvatarLabel, { color: colors.text, fontWeight: '700', marginBottom: 4 }]}>
+            Rasha Aljalam
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={styles.availDot} />
+            <Waveform />
+            <Text style={[styles.bookingAvatarLabel, { color: '#22c55e' }]}>Available now</Text>
+          </View>
+        </View>
       </View>
 
       <TouchableOpacity
@@ -690,6 +745,9 @@ const styles = StyleSheet.create({
   },
   consultantAvatarText: { color: '#fff', fontSize: 9, fontWeight: '900' },
   bookingAvatarLabel: { fontSize: 12, fontWeight: '600' },
+  availDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#22c55e' },
+  waveform: { flexDirection: 'row', alignItems: 'center', gap: 2, height: 18 },
+  waveBar: { width: 2.5, height: 14, borderRadius: 2 },
   scheduleBtn: { borderRadius: 14, overflow: 'hidden' },
   scheduleBtnGradient: {
     flexDirection: 'row',

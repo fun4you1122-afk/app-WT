@@ -303,24 +303,35 @@ function WireframeGlobe({ size = 210 }: { size: number }) {
   const R = size * 0.38;
   const angle = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const [dots, setDots] = useState([
-    { x: cx + R, y: cy, color: BLUE },
-    { x: cx - R * 0.5, y: cy - R * 0.85, color: PURPLE },
-    { x: cx + R * 0.3, y: cy + R * 0.95, color: TEAL },
-  ]);
+  const [state, setState] = useState({
+    dots: [
+      { x: cx + R, y: cy, color: BLUE },
+      { x: cx - R * 0.5, y: cy - R * 0.85, color: PURPLE },
+      { x: cx + R * 0.3, y: cy + R * 0.95, color: TEAL },
+    ],
+    lons: [0.18, 0.42, 0.68, 0.9],
+  });
 
   useEffect(() => {
     const id = angle.addListener(({ value }) => {
-      setDots([
-        { x: cx + R * Math.cos(value), y: cy + R * 0.3 * Math.sin(value), color: BLUE },
-        { x: cx + R * 0.7 * Math.cos(value + (Math.PI * 2) / 3), y: cy + R * Math.sin(value + (Math.PI * 2) / 3), color: PURPLE },
-        { x: cx + R * 0.5 * Math.cos(value + (Math.PI * 4) / 3), y: cy + R * 0.4 * Math.sin(value + (Math.PI * 4) / 3), color: TEAL },
-      ]);
+      setState({
+        dots: [
+          { x: cx + R * Math.cos(value), y: cy + R * 0.3 * Math.sin(value), color: BLUE },
+          { x: cx + R * 0.7 * Math.cos(value + (Math.PI * 2) / 3), y: cy + R * Math.sin(value + (Math.PI * 2) / 3), color: PURPLE },
+          { x: cx + R * 0.5 * Math.cos(value + (Math.PI * 4) / 3), y: cy + R * 0.4 * Math.sin(value + (Math.PI * 4) / 3), color: TEAL },
+        ],
+        lons: [
+          Math.abs(Math.cos(value + 0)) * R,
+          Math.abs(Math.cos(value + Math.PI * 0.5)) * R,
+          Math.abs(Math.cos(value + Math.PI)) * R,
+          Math.abs(Math.cos(value + Math.PI * 1.5)) * R,
+        ],
+      });
     });
-    Animated.loop(Animated.timing(angle, { toValue: Math.PI * 2, duration: 7000, useNativeDriver: false })).start();
+    Animated.loop(Animated.timing(angle, { toValue: Math.PI * 2, duration: 8000, useNativeDriver: false })).start();
     Animated.loop(Animated.sequence([
-      Animated.timing(pulseAnim, { toValue: 1.5, duration: 2000, useNativeDriver: true }),
-      Animated.timing(pulseAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
+      Animated.timing(pulseAnim, { toValue: 1.5, duration: 2200, useNativeDriver: true }),
+      Animated.timing(pulseAnim, { toValue: 1, duration: 2200, useNativeDriver: true }),
     ])).start();
     return () => angle.removeListener(id);
   }, []);
@@ -346,15 +357,15 @@ function WireframeGlobe({ size = 210 }: { size: number }) {
               strokeWidth="0.8" fill="none" />
           ) : null;
         })}
-        <Ellipse cx={cx} cy={cy} rx={R * 0.18} ry={R} stroke="rgba(124,58,237,0.45)" strokeWidth="0.8" fill="none" />
-        <Ellipse cx={cx} cy={cy} rx={R * 0.42} ry={R} stroke="rgba(0,120,255,0.35)" strokeWidth="0.8" fill="none" />
-        <Ellipse cx={cx} cy={cy} rx={R * 0.68} ry={R} stroke="rgba(14,165,233,0.28)" strokeWidth="0.8" fill="none" />
-        <Ellipse cx={cx} cy={cy} rx={R * 0.9} ry={R} stroke="rgba(0,85,255,0.2)" strokeWidth="0.8" fill="none" />
+        <Ellipse cx={cx} cy={cy} rx={state.lons[0]} ry={R} stroke="rgba(124,58,237,0.5)" strokeWidth="0.9" fill="none" />
+        <Ellipse cx={cx} cy={cy} rx={state.lons[1]} ry={R} stroke="rgba(0,120,255,0.4)" strokeWidth="0.9" fill="none" />
+        <Ellipse cx={cx} cy={cy} rx={state.lons[2]} ry={R} stroke="rgba(14,165,233,0.32)" strokeWidth="0.9" fill="none" />
+        <Ellipse cx={cx} cy={cy} rx={state.lons[3]} ry={R} stroke="rgba(0,85,255,0.25)" strokeWidth="0.9" fill="none" />
         <Circle cx={cx + R * 0.55} cy={cy - R * 0.25} r={2.5} fill={TEAL} opacity={0.85} />
         <Circle cx={cx - R * 0.4} cy={cy + R * 0.15} r={2} fill={AMBER} opacity={0.85} />
         <Circle cx={cx + R * 0.15} cy={cy + R * 0.55} r={2.5} fill={GREEN} opacity={0.85} />
         <Circle cx={cx - R * 0.55} cy={cy - R * 0.4} r={2} fill={PURPLE} opacity={0.85} />
-        {dots.map((d, i) => (
+        {state.dots.map((d, i) => (
           <React.Fragment key={i}>
             <Circle cx={d.x} cy={d.y} r={i === 0 ? 5 : 3.5} fill={d.color} opacity={0.95} />
             <Circle cx={d.x} cy={d.y} r={i === 0 ? 11 : 7} fill={d.color} opacity={0.18} />
