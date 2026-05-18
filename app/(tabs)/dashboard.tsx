@@ -4,33 +4,41 @@ import {
   TouchableOpacity, Dimensions, Platform, RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Svg, { Circle, Ellipse, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Ellipse, Path, Rect, Line } from 'react-native-svg';
 import { useTheme } from '../../context/ThemeContext';
 
 const { width: W } = Dimensions.get('window');
 
+// ─── Brand Colors ─────────────────────────────────────────────────────────────
+const BLUE = '#0055FF';
+const PURPLE = '#7C3AED';
+const TEAL = '#0EA5E9';
+const GREEN = '#059669';
+const AMBER = '#D97706';
+
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const INDUSTRIES = [
-  { name: 'Banking & Finance', count: '12 projects', color: '#0055FF', gradient: ['#0D1B4B', '#0055FF'] as const, iconType: 'bank' },
-  { name: 'Government & Smart City', count: '18 projects', color: '#7C3AED', gradient: ['#2E1B5E', '#7C3AED'] as const, iconType: 'gov' },
-  { name: 'Energy & Utilities', count: '9 projects', color: '#059669', gradient: ['#064E3B', '#059669'] as const, iconType: 'energy' },
-  { name: 'Telecom & Media', count: '14 projects', color: '#D97706', gradient: ['#451A03', '#D97706'] as const, iconType: 'telecom' },
+  { name: 'Banking & Finance', count: '12 projects', color: BLUE, gradient: ['#0D1B4B', '#0055FF'] as const, iconType: 'bank' },
+  { name: 'Government & Smart City', count: '18 projects', color: PURPLE, gradient: ['#2E1B5E', '#7C3AED'] as const, iconType: 'gov' },
+  { name: 'Energy & Utilities', count: '9 projects', color: GREEN, gradient: ['#064E3B', '#059669'] as const, iconType: 'energy' },
+  { name: 'Telecom & Media', count: '14 projects', color: AMBER, gradient: ['#451A03', '#D97706'] as const, iconType: 'telecom' },
 ];
 
 const STATS = [
-  { value: '247', label: 'Projects', color: '#0055FF' },
-  { value: '180+', label: 'Clients', color: '#7C3AED' },
-  { value: 'AED 4.2B', label: 'Value', color: '#059669' },
-  { value: '99.9%', label: 'Uptime', color: '#D97706' },
+  { target: 247, suffix: '', label: 'Projects Delivered', color: BLUE },
+  { target: 180, suffix: '+', label: 'Clients', color: PURPLE },
+  { target: 6, suffix: '', label: 'Countries', color: GREEN },
+  { target: 99, suffix: '.9% Uptime', label: 'Uptime', color: AMBER },
 ];
 
 const WHY_ITEMS = [
-  { title: 'UAE-Native AI', desc: 'Built for Gulf regulations & Arabic NLP', iconType: 'flag' },
-  { title: 'Enterprise Grade', desc: 'ISO 27001 certified, 99.9% SLA', iconType: 'shield' },
-  { title: 'Full-Stack Team', desc: '200+ engineers, data scientists & consultants', iconType: 'team' },
+  { title: 'UAE-Native AI', desc: 'Built for Gulf regulations & Arabic NLP', iconType: 'flag', color: BLUE },
+  { title: 'Enterprise Grade', desc: 'ISO 27001 certified, 99.9% SLA guaranteed', iconType: 'shield', color: PURPLE },
+  { title: 'Full-Stack Team', desc: '200+ engineers, data scientists & consultants', iconType: 'team', color: GREEN },
 ];
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
@@ -129,117 +137,211 @@ function getWhyIcon(iconType: string, color: string) {
   }
 }
 
-// ─── Hero Section ─────────────────────────────────────────────────────────────
-function HeroSection() {
-  const orb1Scale = useRef(new Animated.Value(1)).current;
-  const orb2Scale = useRef(new Animated.Value(1)).current;
-  const fadeIn = useRef(new Animated.Value(0)).current;
-  const slideUp = useRef(new Animated.Value(24)).current;
+// ─── ParticleField ────────────────────────────────────────────────────────────
+
+const PARTICLE_CONFIG = [
+  { x: 0.08, y: 0.15, size: 2, color: BLUE, opacity: 0.5, dur: 5200 },
+  { x: 0.85, y: 0.08, size: 3, color: PURPLE, opacity: 0.6, dur: 7800 },
+  { x: 0.45, y: 0.3, size: 2, color: TEAL, opacity: 0.4, dur: 6400 },
+  { x: 0.72, y: 0.55, size: 4, color: BLUE, opacity: 0.35, dur: 9100 },
+  { x: 0.2, y: 0.65, size: 2, color: GREEN, opacity: 0.45, dur: 5800 },
+  { x: 0.93, y: 0.35, size: 3, color: PURPLE, opacity: 0.55, dur: 8300 },
+  { x: 0.35, y: 0.78, size: 2, color: TEAL, opacity: 0.4, dur: 6900 },
+  { x: 0.6, y: 0.12, size: 3, color: AMBER, opacity: 0.5, dur: 7200 },
+  { x: 0.15, y: 0.42, size: 2, color: BLUE, opacity: 0.45, dur: 10500 },
+  { x: 0.78, y: 0.82, size: 4, color: GREEN, opacity: 0.3, dur: 8700 },
+  { x: 0.52, y: 0.55, size: 2, color: PURPLE, opacity: 0.5, dur: 6100 },
+  { x: 0.28, y: 0.22, size: 3, color: TEAL, opacity: 0.4, dur: 9500 },
+  { x: 0.67, y: 0.7, size: 2, color: BLUE, opacity: 0.55, dur: 7600 },
+  { x: 0.04, y: 0.85, size: 3, color: AMBER, opacity: 0.35, dur: 11200 },
+  { x: 0.9, y: 0.62, size: 2, color: PURPLE, opacity: 0.5, dur: 8000 },
+  { x: 0.41, y: 0.48, size: 4, color: GREEN, opacity: 0.3, dur: 6700 },
+  { x: 0.56, y: 0.9, size: 2, color: TEAL, opacity: 0.45, dur: 9800 },
+  { x: 0.25, y: 0.05, size: 3, color: BLUE, opacity: 0.6, dur: 5500 },
+  { x: 0.82, y: 0.25, size: 2, color: AMBER, opacity: 0.4, dur: 12000 },
+  { x: 0.12, y: 0.95, size: 3, color: GREEN, opacity: 0.35, dur: 7400 },
+];
+
+function ParticleField({ height }: { height: number }) {
+  const anims = useRef(
+    PARTICLE_CONFIG.map(() => ({
+      x: new Animated.Value(0),
+      y: new Animated.Value(0),
+      opacity: new Animated.Value(0),
+    }))
+  ).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeIn, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.spring(slideUp, { toValue: 0, useNativeDriver: true, damping: 16, stiffness: 120 }),
-    ]).start();
-    Animated.loop(Animated.sequence([
-      Animated.timing(orb1Scale, { toValue: 1.15, duration: 2800, useNativeDriver: true }),
-      Animated.timing(orb1Scale, { toValue: 1, duration: 2800, useNativeDriver: true }),
-    ])).start();
-    Animated.loop(Animated.sequence([
-      Animated.timing(orb2Scale, { toValue: 1.1, duration: 3400, useNativeDriver: true }),
-      Animated.timing(orb2Scale, { toValue: 1, duration: 3400, useNativeDriver: true }),
-    ])).start();
+    PARTICLE_CONFIG.forEach((p, i) => {
+      const { x, y, opacity } = anims[i];
+
+      // Fade in
+      Animated.timing(opacity, {
+        toValue: p.opacity,
+        duration: 1000 + i * 80,
+        useNativeDriver: true,
+      }).start();
+
+      // X drift loop
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(x, { toValue: (Math.random() - 0.5) * 30, duration: p.dur, useNativeDriver: true }),
+          Animated.timing(x, { toValue: (Math.random() - 0.5) * 25, duration: p.dur * 0.9, useNativeDriver: true }),
+          Animated.timing(x, { toValue: 0, duration: p.dur * 1.1, useNativeDriver: true }),
+        ])
+      ).start();
+
+      // Y drift loop (offset timing)
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(y, { toValue: (Math.random() - 0.5) * 20, duration: p.dur * 1.2, useNativeDriver: true }),
+          Animated.timing(y, { toValue: (Math.random() - 0.5) * 15, duration: p.dur, useNativeDriver: true }),
+          Animated.timing(y, { toValue: 0, duration: p.dur * 0.8, useNativeDriver: true }),
+        ])
+      ).start();
+    });
   }, []);
 
-  const ctaPress = (route: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push(route as any);
-  };
-
   return (
-    <LinearGradient
-      colors={['#020818', '#0D1B4B', '#0055FF']}
-      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-      style={styles.hero}
-    >
-      <Animated.View style={[styles.orb, styles.orb1, { transform: [{ scale: orb1Scale }] }]} />
-      <Animated.View style={[styles.orb, styles.orb2, { transform: [{ scale: orb2Scale }] }]} />
-      <Svg style={StyleSheet.absoluteFill as any} width={W} height={300} pointerEvents="none">
-        <Ellipse cx={W * 0.85} cy={50} rx={90} ry={90} fill="rgba(124,58,237,0.2)" />
-        <Ellipse cx={W * 0.1} cy={240} rx={70} ry={70} fill="rgba(14,165,233,0.13)" />
-        <Circle cx={W * 0.5} cy={300} r={120} stroke="rgba(255,255,255,0.04)" strokeWidth="1" fill="none" />
-        <Circle cx={W * 0.5} cy={300} r={80} stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" />
-        <Circle cx={W * 0.15} cy={80} r={8} fill="rgba(255,255,255,0.06)" />
-        <Circle cx={W * 0.88} cy={200} r={5} fill="rgba(255,255,255,0.08)" />
-      </Svg>
-
-      {/* Top bar */}
-      <View style={styles.heroTopBar}>
-        <Text style={styles.heroLogo}>WeThink</Text>
-        <TouchableOpacity
-          style={styles.heroGearBtn}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/settings' as any); }}
-        >
-          <GearIcon color="#fff" size={20} />
-        </TouchableOpacity>
-      </View>
-
-      <Animated.View style={{ opacity: fadeIn, transform: [{ translateY: slideUp }] }}>
-        <Text style={styles.heroHeadline}>{"Transform Your\nBusiness with AI"}</Text>
-        <Text style={styles.heroSub}>Enterprise AI consulting trusted by UAE's leading organizations</Text>
-        <View style={styles.heroCtas}>
-          <TouchableOpacity style={styles.ctaSolid} onPress={() => ctaPress('/tools/consultation')} activeOpacity={0.88}>
-            <Text style={styles.ctaSolidText}>Book Free Consultation</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.ctaOutline} onPress={() => ctaPress('/(tabs)/services')} activeOpacity={0.88}>
-            <Text style={styles.ctaOutlineText}>Explore Solutions</Text>
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
-    </LinearGradient>
-  );
-}
-
-// ─── Impact Strip ─────────────────────────────────────────────────────────────
-function ImpactStrip({ colors }: { colors: any }) {
-  return (
-    <View style={[styles.impactWrap, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.impactRow}>
-        {STATS.map(s => (
-          <View key={s.label} style={[styles.impactChip, { borderRightColor: colors.border }]}>
-            <Text style={[styles.impactValue, { color: s.color }]}>{s.value}</Text>
-            <Text style={[styles.impactLabel, { color: colors.textMuted }]}>{s.label}</Text>
-          </View>
-        ))}
-      </ScrollView>
+    <View style={[StyleSheet.absoluteFillObject, { height }]} pointerEvents="none">
+      {PARTICLE_CONFIG.map((p, i) => (
+        <Animated.View
+          key={i}
+          style={{
+            position: 'absolute',
+            left: p.x * W,
+            top: p.y * height,
+            width: p.size,
+            height: p.size,
+            borderRadius: p.size / 2,
+            backgroundColor: p.color,
+            opacity: anims[i].opacity,
+            transform: [
+              { translateX: anims[i].x },
+              { translateY: anims[i].y },
+            ],
+          }}
+        />
+      ))}
     </View>
   );
 }
 
-// ─── Industry Card ────────────────────────────────────────────────────────────
-function IndustryCard({ item, index }: { item: typeof INDUSTRIES[0]; index: number }) {
-  const scale = useRef(new Animated.Value(0.85)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+// ─── AnimatedCounter ──────────────────────────────────────────────────────────
+
+function AnimatedCounter({
+  target, suffix, label, color, duration = 1400,
+}: {
+  target: number; suffix: string; label: string; color: string; duration?: number;
+}) {
+  const anim = useRef(new Animated.Value(0)).current;
+  const [display, setDisplay] = useState('0');
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 1, delay: index * 80, useNativeDriver: true, damping: 13, stiffness: 120 }),
-      Animated.timing(opacity, { toValue: 1, duration: 300, delay: index * 80, useNativeDriver: true }),
-    ]).start();
+    const id = anim.addListener(({ value }) => setDisplay(Math.round(value).toString()));
+    Animated.timing(anim, {
+      toValue: target,
+      duration,
+      useNativeDriver: false,
+    }).start();
+    return () => anim.removeListener(id);
   }, []);
 
   return (
-    <Animated.View style={{ opacity, transform: [{ scale }], width: (W - 60) / 2 }}>
-      <TouchableOpacity onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} activeOpacity={0.88}>
-        <LinearGradient colors={item.gradient} style={styles.industryCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-          <Svg style={StyleSheet.absoluteFill as any} width={(W - 60) / 2} height={110} pointerEvents="none">
-            <Circle cx={(W - 60) / 2} cy={0} r={60} stroke="rgba(255,255,255,0.07)" strokeWidth="1" fill="none" />
+    <View style={styles.counterItem}>
+      <Text style={[styles.counterValue, { color }]}>
+        {display}{suffix}
+      </Text>
+      <Text style={styles.counterLabel}>{label}</Text>
+    </View>
+  );
+}
+
+// ─── Industry Card (3D Tilt) ──────────────────────────────────────────────────
+
+function IndustryCard({ item, index }: { item: typeof INDUSTRIES[0]; index: number }) {
+  const scale = useRef(new Animated.Value(0.9)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const tiltX = useRef(new Animated.Value(0)).current;
+  const tiltY = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(scale, {
+        toValue: 1, delay: index * 90, useNativeDriver: true, damping: 13, stiffness: 120,
+      }),
+      Animated.timing(opacity, {
+        toValue: 1, duration: 350, delay: index * 90, useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const handlePressIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Animated.parallel([
+      Animated.spring(tiltX, { toValue: 8, useNativeDriver: true, damping: 10, stiffness: 200 }),
+      Animated.spring(tiltY, { toValue: -5, useNativeDriver: true, damping: 10, stiffness: 200 }),
+    ]).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.parallel([
+      Animated.spring(tiltX, { toValue: 0, useNativeDriver: true, damping: 12, stiffness: 200 }),
+      Animated.spring(tiltY, { toValue: 0, useNativeDriver: true, damping: 12, stiffness: 200 }),
+    ]).start();
+  };
+
+  const cardW = (W - 60) / 2;
+
+  return (
+    <Animated.View
+      style={[
+        { opacity, width: cardW },
+        {
+          transform: [
+            { scale },
+            { perspective: 800 },
+            {
+              rotateX: tiltY.interpolate({
+                inputRange: [-10, 10],
+                outputRange: ['-10deg', '10deg'],
+              }),
+            },
+            {
+              rotateY: tiltX.interpolate({
+                inputRange: [-10, 10],
+                outputRange: ['-10deg', '10deg'],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      {/* Shadow layer for depth */}
+      <View style={[styles.industryCardShadow, { width: cardW }]} />
+      <TouchableOpacity
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+      >
+        <LinearGradient
+          colors={item.gradient}
+          style={[styles.industryCard, { width: cardW }]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Svg style={StyleSheet.absoluteFill as any} width={cardW} height={120} pointerEvents="none">
+            <Circle cx={cardW} cy={0} r={70} stroke="rgba(255,255,255,0.07)" strokeWidth="1" fill="none" />
+            <Circle cx={cardW * 0.1} cy={120} r={40} stroke="rgba(255,255,255,0.04)" strokeWidth="1" fill="none" />
           </Svg>
-          <View style={styles.industryIcon}>
-            {getIndustryIcon(item.iconType, 'rgba(255,255,255,0.9)')}
+          <View style={styles.industryIconWrap}>
+            {getIndustryIcon(item.iconType, 'rgba(255,255,255,0.95)')}
           </View>
           <Text style={styles.industryName} numberOfLines={2}>{item.name}</Text>
-          <Text style={styles.industryCount}>{item.count}</Text>
+          <View style={styles.industryCountRow}>
+            <View style={[styles.industryCountDot, { backgroundColor: item.color }]} />
+            <Text style={styles.industryCount}>{item.count}</Text>
+          </View>
         </LinearGradient>
       </TouchableOpacity>
     </Animated.View>
@@ -247,40 +349,91 @@ function IndustryCard({ item, index }: { item: typeof INDUSTRIES[0]; index: numb
 }
 
 // ─── Success Story ────────────────────────────────────────────────────────────
+
 function SuccessStory() {
   const scale = useRef(new Animated.Value(0.96)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const [progressWidth, setProgressWidth] = useState(0);
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(scale, { toValue: 1, delay: 200, useNativeDriver: true, damping: 14, stiffness: 110 }),
-      Animated.timing(opacity, { toValue: 1, duration: 400, delay: 200, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 1, delay: 250, useNativeDriver: true, damping: 14, stiffness: 110 }),
+      Animated.timing(opacity, { toValue: 1, duration: 400, delay: 250, useNativeDriver: true }),
     ]).start();
+
+    // Progress bar fill
+    Animated.timing(progressAnim, {
+      toValue: 1,
+      duration: 1600,
+      delay: 600,
+      useNativeDriver: false,
+    }).start();
   }, []);
+
+  const cardW = W - 48;
 
   return (
     <Animated.View style={{ opacity, transform: [{ scale }] }}>
-      <TouchableOpacity onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)} activeOpacity={0.9}>
+      <TouchableOpacity
+        onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
+        activeOpacity={0.92}
+      >
         <LinearGradient
-          colors={['#065F46', '#059669', '#34D399']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          colors={['#065F46', '#059669', '#10B981']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={styles.storyCard}
         >
-          <Svg style={StyleSheet.absoluteFill as any} width={W - 48} height={160} pointerEvents="none">
-            <Circle cx={W - 80} cy={-20} r={100} stroke="rgba(255,255,255,0.07)" strokeWidth="1" fill="none" />
-            <Circle cx={W - 80} cy={-20} r={60} stroke="rgba(255,255,255,0.05)" strokeWidth="1" fill="none" />
+          <Svg style={StyleSheet.absoluteFill as any} width={cardW} height={180} pointerEvents="none">
+            <Circle cx={cardW - 20} cy={-20} r={110} stroke="rgba(255,255,255,0.06)" strokeWidth="1" fill="none" />
+            <Circle cx={cardW - 20} cy={-20} r={70} stroke="rgba(255,255,255,0.04)" strokeWidth="1" fill="none" />
+            <Circle cx={30} cy={180} r={60} fill="rgba(0,0,0,0.08)" />
           </Svg>
+
           <View style={styles.storyBadge}>
-            <Text style={styles.storyBadgeText}>Case Study</Text>
+            <Text style={styles.storyBadgeText}>CASE STUDY</Text>
           </View>
+
           <Text style={styles.storyClient}>Emirates NBD</Text>
-          <Text style={styles.storyHeadline}>AI Fraud Detection saved{'\n'}AED 340M in 12 months</Text>
-          <View style={styles.progressTrack}>
-            <View style={styles.progressFill} />
+          <Text style={styles.storyHeadline}>
+            {"AI Fraud Detection prevented\nAED 340M in losses — 12 months"}
+          </Text>
+
+          {/* Animated Progress Bar */}
+          <View
+            style={styles.progressTrack}
+            onLayout={(e) => setProgressWidth(e.nativeEvent.layout.width)}
+          >
+            <Animated.View
+              style={[
+                styles.progressFill,
+                {
+                  width: progressAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, progressWidth],
+                  }),
+                },
+              ]}
+            />
           </View>
+
           <View style={styles.storyFooter}>
-            <Text style={styles.storyCompletedText}>100% Complete</Text>
-            <Text style={styles.storyLink}>View Story →</Text>
+            <View style={styles.avatarRow}>
+              {['RA', 'KM', 'SC'].map((init, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.teamAvatar,
+                    { marginLeft: i > 0 ? -10 : 0, zIndex: 3 - i },
+                  ]}
+                >
+                  <Text style={styles.teamAvatarText}>{init}</Text>
+                </View>
+              ))}
+              <Text style={styles.teamLabel}>  AI Task Force</Text>
+            </View>
+            <Text style={styles.storyLink}>Read Full Story →</Text>
           </View>
         </LinearGradient>
       </TouchableOpacity>
@@ -288,61 +441,257 @@ function SuccessStory() {
   );
 }
 
-// ─── Why WeThink ──────────────────────────────────────────────────────────────
-function WhyWeThink({ colors }: { colors: any }) {
+// ─── Glass Why Card ───────────────────────────────────────────────────────────
+
+function GlassWhyCard({ item, isDark }: { item: typeof WHY_ITEMS[0]; isDark: boolean }) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () =>
+    Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, damping: 14 }).start();
+  const handlePressOut = () =>
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 12 }).start();
+
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.whyRow}>
-      {WHY_ITEMS.map((item, i) => (
-        <View key={i} style={[styles.whyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.whyIconWrap}>
-            {getWhyIcon(item.iconType, colors.primary)}
+    <Animated.View style={[styles.glassCardOuter, { transform: [{ scale }] }]}>
+      <TouchableOpacity
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+      >
+        <BlurView
+          intensity={25}
+          tint={isDark ? 'dark' : 'light'}
+          style={styles.glassCardBlur}
+        >
+          <View style={[styles.glassCardInner, {
+            backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.6)',
+            borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
+          }]}>
+            <View style={[styles.whyIconCircle, { backgroundColor: item.color + '20' }]}>
+              {getWhyIcon(item.iconType, item.color)}
+            </View>
+            <Text style={[styles.whyTitle, { color: isDark ? '#fff' : '#0A1628' }]}>{item.title}</Text>
+            <Text style={[styles.whyDesc, { color: isDark ? 'rgba(255,255,255,0.6)' : '#475569' }]}>{item.desc}</Text>
           </View>
-          <Text style={[styles.whyTitle, { color: colors.text }]}>{item.title}</Text>
-          <Text style={[styles.whyDesc, { color: colors.textMuted }]}>{item.desc}</Text>
+        </BlurView>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
+// ─── Hero Section (with parallax) ────────────────────────────────────────────
+
+function HeroContent({ scrollY, isDark }: { scrollY: Animated.Value; isDark: boolean }) {
+  const orb1Scale = useRef(new Animated.Value(1)).current;
+  const orb2Scale = useRef(new Animated.Value(1)).current;
+  const orb3Scale = useRef(new Animated.Value(1)).current;
+  const fadeIn = useRef(new Animated.Value(0)).current;
+  const slideUp = useRef(new Animated.Value(32)).current;
+  const hintOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeIn, { toValue: 1, duration: 700, useNativeDriver: true }),
+      Animated.spring(slideUp, { toValue: 0, useNativeDriver: true, damping: 16, stiffness: 110 }),
+    ]).start();
+
+    Animated.timing(hintOpacity, { toValue: 0.65, duration: 600, delay: 1400, useNativeDriver: true }).start();
+
+    Animated.loop(Animated.sequence([
+      Animated.timing(orb1Scale, { toValue: 1.2, duration: 3200, useNativeDriver: true }),
+      Animated.timing(orb1Scale, { toValue: 1, duration: 3200, useNativeDriver: true }),
+    ])).start();
+    Animated.loop(Animated.sequence([
+      Animated.timing(orb2Scale, { toValue: 1.15, duration: 4100, useNativeDriver: true }),
+      Animated.timing(orb2Scale, { toValue: 1, duration: 4100, useNativeDriver: true }),
+    ])).start();
+    Animated.loop(Animated.sequence([
+      Animated.timing(orb3Scale, { toValue: 1.1, duration: 5600, useNativeDriver: true }),
+      Animated.timing(orb3Scale, { toValue: 1, duration: 5600, useNativeDriver: true }),
+    ])).start();
+  }, []);
+
+  const HERO_H = 320;
+
+  const heroTranslate = scrollY.interpolate({
+    inputRange: [0, 300],
+    outputRange: [0, -100],
+    extrapolate: 'clamp',
+  });
+
+  const ctaPress = (route: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push(route as any);
+  };
+
+  return (
+    <View style={[styles.heroOuter, { height: HERO_H }]}>
+      <LinearGradient
+        colors={['#020818', '#0A1628', '#0D1B4B']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0.8, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Parallax content */}
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          { transform: [{ translateY: heroTranslate }] },
+        ]}
+      >
+        {/* Glowing orbs */}
+        <Animated.View style={[styles.orb, styles.orb1, { transform: [{ scale: orb1Scale }] }]} />
+        <Animated.View style={[styles.orb, styles.orb2, { transform: [{ scale: orb2Scale }] }]} />
+        <Animated.View style={[styles.orb, styles.orb3, { transform: [{ scale: orb3Scale }] }]} />
+
+        {/* SVG decorative ellipses */}
+        <Svg
+          style={StyleSheet.absoluteFill as any}
+          width={W}
+          height={HERO_H}
+          pointerEvents="none"
+        >
+          <Ellipse cx={W * 0.88} cy={50} rx={100} ry={100} fill="rgba(124,58,237,0.18)" />
+          <Ellipse cx={W * 0.08} cy={260} rx={80} ry={80} fill="rgba(14,165,233,0.12)" />
+          <Ellipse cx={W * 0.5} cy={320} rx={150} ry={60} fill="rgba(0,85,255,0.08)" />
+          <Circle cx={W * 0.5} cy={320} r={130} stroke="rgba(255,255,255,0.04)" strokeWidth="1" fill="none" />
+          <Circle cx={W * 0.5} cy={320} r={90} stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" />
+        </Svg>
+
+        {/* Particles */}
+        <ParticleField height={HERO_H} />
+      </Animated.View>
+
+      {/* Hero UI (not parallaxed — stays in place) */}
+      <View style={styles.heroContent}>
+        {/* Top bar */}
+        <View style={styles.heroTopBar}>
+          <View style={styles.heroLogoRow}>
+            <LinearGradient colors={[PURPLE, BLUE]} style={styles.heroLogoBadge} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+              <Text style={styles.heroLogoInitials}>WT</Text>
+            </LinearGradient>
+            <Text style={styles.heroLogoText}>WeThink.ae</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.heroGearBtn}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/settings' as any); }}
+          >
+            <GearIcon color="#fff" size={18} />
+          </TouchableOpacity>
         </View>
+
+        <Animated.View style={{ opacity: fadeIn, transform: [{ translateY: slideUp }] }}>
+          <Text style={styles.heroHeadline}>{"The Middle East's\nLeading AI Partner"}</Text>
+          <Text style={styles.heroSub}>
+            Transforming enterprises across UAE, Saudi Arabia & beyond
+          </Text>
+          <View style={styles.heroCtas}>
+            <TouchableOpacity
+              style={styles.ctaSolid}
+              onPress={() => ctaPress('/tools/consultation')}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.ctaSolidText}>Book Free Call</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.ctaOutline}
+              onPress={() => ctaPress('/(tabs)/services')}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.ctaOutlineText}>Our Solutions →</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Animated.Text style={[styles.scrollHint, { opacity: hintOpacity }]}>
+            ↓ Scroll to explore
+          </Animated.Text>
+        </Animated.View>
+      </View>
+    </View>
+  );
+}
+
+// ─── Stats Strip ──────────────────────────────────────────────────────────────
+
+function StatsStrip({ colors }: { colors: any }) {
+  return (
+    <View style={[styles.statsStrip, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+      {STATS.map((s, i) => (
+        <React.Fragment key={s.label}>
+          {i > 0 && <View style={[styles.statsDivider, { backgroundColor: colors.borderLight }]} />}
+          <AnimatedCounter
+            target={s.target}
+            suffix={s.suffix}
+            label={s.label}
+            color={s.color}
+            duration={1200 + i * 150}
+          />
+        </React.Fragment>
       ))}
-    </ScrollView>
+    </View>
   );
 }
 
 // ─── CTA Banner ───────────────────────────────────────────────────────────────
+
 function CTABanner() {
+  const scale = useRef(new Animated.Value(0.96)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(scale, { toValue: 1, delay: 100, useNativeDriver: true, damping: 14, stiffness: 100 }),
+      Animated.timing(opacity, { toValue: 1, duration: 500, delay: 100, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
   return (
-    <LinearGradient
-      colors={['#1E0A4C', '#7C3AED']}
-      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-      style={styles.ctaBanner}
-    >
-      <Svg style={StyleSheet.absoluteFill as any} width={W - 48} height={140} pointerEvents="none">
-        <Circle cx={W - 60} cy={70} r={80} fill="rgba(255,255,255,0.04)" />
-        <Circle cx={20} cy={20} r={50} fill="rgba(255,255,255,0.03)" />
-      </Svg>
-      <Text style={styles.ctaBannerTitle}>Ready to transform?</Text>
-      <Text style={styles.ctaBannerSub}>Join 180+ organizations powered by WeThink AI</Text>
-      <TouchableOpacity
-        style={styles.ctaBannerBtn}
-        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/(tabs)/chat' as any); }}
-        activeOpacity={0.88}
+    <Animated.View style={{ opacity, transform: [{ scale }] }}>
+      <LinearGradient
+        colors={['#1E0A4C', '#3B0764', '#7C3AED']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.ctaBanner}
       >
-        <Text style={styles.ctaBannerBtnText}>Schedule a Call</Text>
-      </TouchableOpacity>
-    </LinearGradient>
+        <Svg style={StyleSheet.absoluteFill as any} width={W - 48} height={160} pointerEvents="none">
+          <Circle cx={W - 80} cy={80} r={90} fill="rgba(255,255,255,0.04)" />
+          <Circle cx={20} cy={20} r={55} fill="rgba(255,255,255,0.03)" />
+          <Ellipse cx={W * 0.5 - 24} cy={160} rx={120} ry={40} fill="rgba(0,0,0,0.15)" />
+        </Svg>
+        <Text style={styles.ctaBannerTitle}>Ready to transform your business?</Text>
+        <Text style={styles.ctaBannerSub}>
+          Join 180+ organizations powered by WeThink AI
+        </Text>
+        <TouchableOpacity
+          style={styles.ctaBannerBtn}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/(tabs)/chat' as any); }}
+          activeOpacity={0.88}
+        >
+          <Text style={styles.ctaBannerBtnText}>Schedule Free Consultation</Text>
+        </TouchableOpacity>
+      </LinearGradient>
+    </Animated.View>
   );
 }
 
 // ─── Section Header ───────────────────────────────────────────────────────────
+
 function SectionHeader({ title, colors }: { title: string; colors: any }) {
   return (
     <View style={styles.sectionHeader}>
+      <View style={[styles.sectionAccentLine, { backgroundColor: colors.primary }]} />
       <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
     </View>
   );
 }
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
+
 export default function Dashboard() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -351,17 +700,31 @@ export default function Dashboard() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <ScrollView
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+          />
+        }
         contentContainerStyle={styles.scroll}
       >
-        <HeroSection />
+        {/* Hero with parallax */}
+        <HeroContent scrollY={scrollY} isDark={isDark} />
 
+        {/* Stats Strip */}
         <View style={styles.section}>
-          <ImpactStrip colors={colors} />
+          <StatsStrip colors={colors} />
         </View>
 
+        {/* Industry Grid — 3D Tilt Cards */}
         <View style={styles.section}>
           <SectionHeader title="Industries We Serve" colors={colors} />
           <View style={styles.industryGrid}>
@@ -371,6 +734,7 @@ export default function Dashboard() {
           </View>
         </View>
 
+        {/* Success Story */}
         <View style={styles.section}>
           <SectionHeader title="Success Story" colors={colors} />
           <View style={styles.padH}>
@@ -378,89 +742,338 @@ export default function Dashboard() {
           </View>
         </View>
 
+        {/* Why WeThink — Glass Cards */}
         <View style={styles.section}>
           <SectionHeader title="Why WeThink" colors={colors} />
-          <WhyWeThink colors={colors} />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.whyRow}
+          >
+            {WHY_ITEMS.map((item, i) => (
+              <GlassWhyCard key={i} item={item} isDark={isDark} />
+            ))}
+          </ScrollView>
         </View>
 
+        {/* CTA Banner */}
         <View style={[styles.section, styles.padH]}>
           <CTABanner />
         </View>
 
-        <View style={{ height: 32 }} />
-      </ScrollView>
+        <View style={{ height: 40 }} />
+      </Animated.ScrollView>
     </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
+
+const HERO_H = 320;
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingBottom: 24 },
   section: { marginTop: 28 },
   padH: { paddingHorizontal: 24 },
-  sectionHeader: { paddingHorizontal: 24, marginBottom: 16 },
-  sectionTitle: { fontSize: 20, fontWeight: '800', letterSpacing: -0.5 },
+
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginBottom: 18,
+    gap: 10,
+  },
+  sectionAccentLine: {
+    width: 4,
+    height: 22,
+    borderRadius: 2,
+  },
+  sectionTitle: { fontSize: 21, fontWeight: '900', letterSpacing: -0.5 },
 
   // Hero
-  hero: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 44,
-    paddingBottom: 36,
-    paddingHorizontal: 24,
-    minHeight: 280,
+  heroOuter: {
+    width: W,
     overflow: 'hidden',
   },
-  orb: { position: 'absolute', borderRadius: 999 },
-  orb1: { width: 220, height: 220, top: -80, right: -60, backgroundColor: 'rgba(124,58,237,0.2)' },
-  orb2: { width: 160, height: 160, bottom: -30, left: -50, backgroundColor: 'rgba(14,165,233,0.14)' },
-  heroTopBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 },
-  heroLogo: { fontSize: 20, fontWeight: '900', color: '#fff', letterSpacing: -0.5 },
-  heroGearBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
-  heroHeadline: { fontSize: 36, fontWeight: '900', color: '#fff', letterSpacing: -1, lineHeight: 42, marginBottom: 10 },
-  heroSub: { fontSize: 14, color: 'rgba(255,255,255,0.7)', lineHeight: 20, marginBottom: 24 },
+  heroContent: {
+    paddingTop: Platform.OS === 'ios' ? 56 : 40,
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  heroTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  heroLogoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  heroLogoBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroLogoInitials: { color: '#fff', fontSize: 11, fontWeight: '900' },
+  heroLogoText: { fontSize: 16, fontWeight: '700', color: '#fff', letterSpacing: -0.3 },
+  heroGearBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  heroHeadline: {
+    fontSize: 34,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: -1,
+    lineHeight: 40,
+    marginBottom: 10,
+  },
+  heroSub: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.65)',
+    lineHeight: 20,
+    marginBottom: 22,
+  },
   heroCtas: { flexDirection: 'row', gap: 12 },
-  ctaSolid: { flex: 1, backgroundColor: '#fff', borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
-  ctaSolidText: { fontSize: 13, fontWeight: '800', color: '#0055FF' },
-  ctaOutline: { flex: 1, borderRadius: 12, paddingVertical: 13, alignItems: 'center', borderWidth: 1.5, borderColor: '#fff' },
+  ctaSolid: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    paddingVertical: 13,
+    alignItems: 'center',
+    shadowColor: '#fff',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  ctaSolidText: { fontSize: 13, fontWeight: '800', color: BLUE },
+  ctaOutline: {
+    flex: 1,
+    borderRadius: 25,
+    paddingVertical: 13,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.7)',
+  },
   ctaOutlineText: { fontSize: 13, fontWeight: '800', color: '#fff' },
+  scrollHint: {
+    marginTop: 16,
+    fontSize: 11,
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '500',
+    letterSpacing: 0.3,
+  },
 
-  // Impact strip
-  impactWrap: { marginHorizontal: 24, borderRadius: 18, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  impactRow: { paddingHorizontal: 8, paddingVertical: 4 },
-  impactChip: { paddingHorizontal: 20, paddingVertical: 16, alignItems: 'center', minWidth: 90 },
-  impactValue: { fontSize: 20, fontWeight: '900', letterSpacing: -0.5 },
-  impactLabel: { fontSize: 11, fontWeight: '600', marginTop: 2 },
+  // Orbs
+  orb: { position: 'absolute', borderRadius: 999 },
+  orb1: {
+    width: 240,
+    height: 240,
+    top: -100,
+    right: -80,
+    backgroundColor: 'rgba(124,58,237,0.22)',
+  },
+  orb2: {
+    width: 180,
+    height: 180,
+    bottom: -60,
+    left: -70,
+    backgroundColor: 'rgba(14,165,233,0.15)',
+  },
+  orb3: {
+    width: 120,
+    height: 120,
+    top: 100,
+    left: W * 0.4,
+    backgroundColor: 'rgba(0,85,255,0.12)',
+  },
 
-  // Industry grid
-  industryGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 24, gap: 12 },
-  industryCard: { height: 110, borderRadius: 18, padding: 14, overflow: 'hidden', justifyContent: 'flex-end', gap: 4 },
-  industryIcon: { position: 'absolute', top: 14, left: 14, opacity: 0.9 },
-  industryName: { fontSize: 13, fontWeight: '800', color: '#fff', lineHeight: 17, letterSpacing: -0.2 },
-  industryCount: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.65)' },
+  // Stats Strip
+  statsStrip: {
+    marginHorizontal: 24,
+    borderRadius: 22,
+    flexDirection: 'row',
+    paddingVertical: 6,
+    shadowOpacity: 0.07,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  counterItem: { flex: 1, alignItems: 'center', paddingVertical: 16 },
+  counterValue: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
+  counterLabel: { fontSize: 10, fontWeight: '600', color: '#94A3B8', marginTop: 3, textAlign: 'center' },
+  statsDivider: { width: 1, marginVertical: 14 },
 
-  // Success story
-  storyCard: { borderRadius: 20, padding: 22, height: 160, overflow: 'hidden', justifyContent: 'flex-end', gap: 6 },
-  storyBadge: { position: 'absolute', top: 18, left: 22, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
-  storyBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 0.3 },
-  storyClient: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.75)' },
-  storyHeadline: { fontSize: 16, fontWeight: '900', color: '#fff', letterSpacing: -0.3, lineHeight: 21 },
-  progressTrack: { height: 4, backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 2, overflow: 'hidden' },
-  progressFill: { width: '100%', height: '100%', backgroundColor: '#fff', borderRadius: 2 },
-  storyFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
-  storyCompletedText: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '600' },
+  // Industry Cards
+  industryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  industryCardShadow: {
+    position: 'absolute',
+    bottom: -6,
+    left: 8,
+    right: 8,
+    height: 120,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  industryCard: {
+    height: 120,
+    borderRadius: 20,
+    padding: 16,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+  industryIconWrap: { position: 'absolute', top: 14, left: 14 },
+  industryName: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#fff',
+    lineHeight: 17,
+    letterSpacing: -0.2,
+    marginBottom: 4,
+  },
+  industryCountRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  industryCountDot: { width: 5, height: 5, borderRadius: 2.5 },
+  industryCount: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
+
+  // Success Story
+  storyCard: {
+    borderRadius: 22,
+    padding: 22,
+    paddingTop: 50,
+    minHeight: 190,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+  storyBadge: {
+    position: 'absolute',
+    top: 18,
+    left: 22,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  storyBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  storyClient: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.75)', marginBottom: 4 },
+  storyHeadline: {
+    fontSize: 17,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: -0.3,
+    lineHeight: 23,
+    marginBottom: 14,
+  },
+  progressTrack: {
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 2,
+  },
+  storyFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  avatarRow: { flexDirection: 'row', alignItems: 'center' },
+  teamAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  teamAvatarText: { color: '#fff', fontSize: 8, fontWeight: '800' },
+  teamLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 11, fontWeight: '600' },
   storyLink: { color: '#fff', fontSize: 13, fontWeight: '800' },
 
-  // Why WeThink
-  whyRow: { paddingHorizontal: 24, gap: 12 },
-  whyCard: { width: 180, borderRadius: 18, borderWidth: 1, padding: 18, gap: 8 },
-  whyIconWrap: { marginBottom: 4 },
+  // Glass Why Cards
+  whyRow: { paddingHorizontal: 24, gap: 12, paddingBottom: 4 },
+  glassCardOuter: {
+    width: 175,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  glassCardBlur: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  glassCardInner: {
+    padding: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 8,
+  },
+  whyIconCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
   whyTitle: { fontSize: 14, fontWeight: '800', letterSpacing: -0.2 },
-  whyDesc: { fontSize: 12, lineHeight: 16, fontWeight: '500' },
+  whyDesc: { fontSize: 12, lineHeight: 17, fontWeight: '500' },
 
   // CTA Banner
-  ctaBanner: { borderRadius: 22, padding: 28, alignItems: 'center', overflow: 'hidden', gap: 8 },
-  ctaBannerTitle: { fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: -0.5 },
-  ctaBannerSub: { fontSize: 13, color: 'rgba(255,255,255,0.75)', textAlign: 'center', lineHeight: 18 },
-  ctaBannerBtn: { marginTop: 12, backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 32, paddingVertical: 13 },
-  ctaBannerBtnText: { color: '#7C3AED', fontSize: 15, fontWeight: '800' },
+  ctaBanner: {
+    borderRadius: 24,
+    padding: 28,
+    alignItems: 'center',
+    overflow: 'hidden',
+    gap: 8,
+  },
+  ctaBannerTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: -0.4,
+    textAlign: 'center',
+  },
+  ctaBannerSub: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.72)',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  ctaBannerBtn: {
+    marginTop: 12,
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    paddingHorizontal: 28,
+    paddingVertical: 13,
+    shadowColor: '#fff',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  ctaBannerBtnText: { color: PURPLE, fontSize: 14, fontWeight: '800' },
 });
