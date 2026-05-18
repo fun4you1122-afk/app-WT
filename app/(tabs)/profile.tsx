@@ -11,6 +11,173 @@ import Svg, { Path, Circle, Rect, Ellipse, G } from 'react-native-svg';
 
 const AnimSvgCircle = Animated.createAnimatedComponent(Circle);
 
+// ─── New Animated Components ──────────────────────────────────────────────────
+
+function GlitchBadge({ text }: { text: string }) {
+  const sweepAnim = useRef(new Animated.Value(-1)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(sweepAnim, { toValue: 2, duration: 1800, useNativeDriver: true, delay: 0 }),
+        Animated.timing(sweepAnim, { toValue: -1, duration: 0, useNativeDriver: true }),
+        Animated.delay(2200),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  return (
+    <View style={{ alignSelf: 'flex-start', marginBottom: 12 }}>
+      <View style={{
+        borderRadius: 20,
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        overflow: 'hidden',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+      }}>
+        {/* sweep shimmer line */}
+        <Animated.View style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          width: 30,
+          backgroundColor: 'rgba(255,255,255,0.25)',
+          transform: [{ translateX: sweepAnim.interpolate({ inputRange: [-1, 2], outputRange: [-30, 120] }) }],
+        }} />
+        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22C55E' }} />
+        <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 1.2 }}>{text}</Text>
+      </View>
+    </View>
+  );
+}
+
+function WaveformBar({ barCount = 14, color = '#fff', height = 36 }: { barCount?: number; color?: string; height?: number }) {
+  const anims = useRef(Array.from({ length: barCount }, () => new Animated.Value(Math.random() * 0.6 + 0.2))).current;
+
+  useEffect(() => {
+    const animations = anims.map((anim, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, {
+            toValue: Math.random() * 0.7 + 0.3,
+            duration: 300 + Math.random() * 400,
+            useNativeDriver: true,
+            delay: i * 40,
+          }),
+          Animated.timing(anim, {
+            toValue: Math.random() * 0.3 + 0.1,
+            duration: 300 + Math.random() * 300,
+            useNativeDriver: true,
+          }),
+        ])
+      )
+    );
+    animations.forEach(a => a.start());
+    return () => animations.forEach(a => a.stop());
+  }, []);
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, height }}>
+      {anims.map((anim, i) => (
+        <Animated.View
+          key={i}
+          style={{
+            width: 3,
+            height: height,
+            borderRadius: 2,
+            backgroundColor: color,
+            opacity: 0.85,
+            transform: [{ scaleY: anim }],
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
+function MorphingBlob({ color, size = 160, opacity = 0.15 }: { color: string; size?: number; opacity?: number }) {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.15, duration: 2200, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0.9, duration: 2200, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  return (
+    <Animated.View style={{
+      width: size, height: size,
+      borderRadius: size / 2,
+      backgroundColor: color,
+      opacity,
+      transform: [{ scale: pulseAnim }],
+    }} />
+  );
+}
+
+function CircuitLines({ width: W2, height: H2 = 120, color = 'rgba(255,255,255,0.12)' }: { width: number; height?: number; color?: string }) {
+  return (
+    <Svg width={W2} height={H2} style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
+      {/* Horizontal lines */}
+      <Path d={`M 0 ${H2*0.3} H ${W2*0.3} V ${H2*0.7} H ${W2*0.6} V ${H2*0.4} H ${W2}`} stroke={color} strokeWidth="1" fill="none" />
+      <Path d={`M 0 ${H2*0.7} H ${W2*0.4} V ${H2*0.5} H ${W2}`} stroke={color} strokeWidth="1" fill="none" />
+      {/* Vertical bits */}
+      <Path d={`M ${W2*0.3} 0 V ${H2*0.3}`} stroke={color} strokeWidth="1" fill="none" />
+      <Path d={`M ${W2*0.6} ${H2*0.4} V ${H2}`} stroke={color} strokeWidth="1" fill="none" />
+      {/* Nodes */}
+      <Circle cx={W2*0.3} cy={H2*0.3} r={3} fill={color} />
+      <Circle cx={W2*0.6} cy={H2*0.4} r={3} fill={color} />
+      <Circle cx={W2*0.4} cy={H2*0.7} r={2} fill={color} />
+      <Circle cx={W2*0.3} cy={H2*0.7} r={2} fill={color} />
+    </Svg>
+  );
+}
+
+function ScanBeam({ width: W2, height: H2 }: { width: number; height: number }) {
+  const scanAnim = useRef(new Animated.Value(-2)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scanAnim, { toValue: H2 + 2, duration: 2400, useNativeDriver: true }),
+        Animated.delay(1600),
+        Animated.timing(scanAnim, { toValue: -2, duration: 0, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        left: 0, right: 0,
+        height: 2,
+        backgroundColor: 'rgba(0,200,255,0.35)',
+        shadowColor: '#00C8FF',
+        shadowOpacity: 0.8,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 0 },
+        transform: [{ translateY: scanAnim }],
+      }}
+    />
+  );
+}
+
 const { width: W } = Dimensions.get('window');
 
 // ─── Brand Colors ─────────────────────────────────────────────────────────────
@@ -149,6 +316,18 @@ function AnimatedCounter({
 
 function LeaderCard({ person, colors }: { person: typeof LEADERSHIP[0]; colors: any }) {
   const scale = useRef(new Animated.Value(1)).current;
+  const glowOpacity = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowOpacity, { toValue: 1, duration: 1200, useNativeDriver: true }),
+        Animated.timing(glowOpacity, { toValue: 0.4, duration: 1200, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
 
   const handlePressIn = () =>
     Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, damping: 14 }).start();
@@ -163,6 +342,17 @@ function LeaderCard({ person, colors }: { person: typeof LEADERSHIP[0]; colors: 
         activeOpacity={1}
         style={[styles.leaderCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
       >
+        {/* Pulsing glow behind avatar */}
+        <Animated.View style={{
+          position: 'absolute',
+          top: 8,
+          alignSelf: 'center',
+          width: 80,
+          height: 80,
+          borderRadius: 28,
+          backgroundColor: person.accentColor + '30',
+          opacity: glowOpacity,
+        }} />
         <LinearGradient
           colors={person.gradient}
           style={styles.leaderAvatarWrap}
@@ -185,6 +375,9 @@ function LeaderCard({ person, colors }: { person: typeof LEADERSHIP[0]; colors: 
           <Text style={[styles.credentialText, { color: person.accentColor }]}>
             {person.credential}
           </Text>
+        </View>
+        <View style={{ marginTop: 12, alignSelf: 'center' }}>
+          <WaveformBar barCount={8} color={person.accentColor} height={24} />
         </View>
       </TouchableOpacity>
     </Animated.View>
@@ -436,6 +629,17 @@ export default function AboutScreen() {
               <Circle cx={W * 0.82} cy={180} r={8} fill="rgba(255,255,255,0.06)" />
               <Circle cx={W * 0.42} cy={30} r={5} fill="rgba(255,255,255,0.1)" />
             </Svg>
+            <CircuitLines width={W} height={240} />
+            <ScanBeam width={W} height={240} />
+            {/* Morphing blobs */}
+            <View style={{ position: 'absolute', top: -40, right: -40, overflow: 'hidden' }}>
+              <MorphingBlob color={BLUE} size={160} opacity={0.15} />
+            </View>
+            <View style={{ position: 'absolute', bottom: -20, left: -20, overflow: 'hidden' }}>
+              <MorphingBlob color={PURPLE} size={120} opacity={0.12} />
+            </View>
+
+            <GlitchBadge text="ABOUT US" />
 
             {/* Animated WT Logo */}
             <Animated.View

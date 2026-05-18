@@ -9,6 +9,173 @@ import * as Haptics from 'expo-haptics';
 import Svg, { Path, Circle, Ellipse, Rect, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { useTheme } from '../../context/ThemeContext';
 
+// ─── New Animated Components ──────────────────────────────────────────────────
+
+function GlitchBadge({ text }: { text: string }) {
+  const sweepAnim = useRef(new Animated.Value(-1)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(sweepAnim, { toValue: 2, duration: 1800, useNativeDriver: true, delay: 0 }),
+        Animated.timing(sweepAnim, { toValue: -1, duration: 0, useNativeDriver: true }),
+        Animated.delay(2200),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  return (
+    <View style={{ alignSelf: 'flex-start', marginBottom: 12 }}>
+      <View style={{
+        borderRadius: 20,
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        overflow: 'hidden',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+      }}>
+        {/* sweep shimmer line */}
+        <Animated.View style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          width: 30,
+          backgroundColor: 'rgba(255,255,255,0.25)',
+          transform: [{ translateX: sweepAnim.interpolate({ inputRange: [-1, 2], outputRange: [-30, 120] }) }],
+        }} />
+        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22C55E' }} />
+        <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 1.2 }}>{text}</Text>
+      </View>
+    </View>
+  );
+}
+
+function WaveformBar({ barCount = 14, color = '#fff', height = 36 }: { barCount?: number; color?: string; height?: number }) {
+  const anims = useRef(Array.from({ length: barCount }, () => new Animated.Value(Math.random() * 0.6 + 0.2))).current;
+
+  useEffect(() => {
+    const animations = anims.map((anim, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, {
+            toValue: Math.random() * 0.7 + 0.3,
+            duration: 300 + Math.random() * 400,
+            useNativeDriver: true,
+            delay: i * 40,
+          }),
+          Animated.timing(anim, {
+            toValue: Math.random() * 0.3 + 0.1,
+            duration: 300 + Math.random() * 300,
+            useNativeDriver: true,
+          }),
+        ])
+      )
+    );
+    animations.forEach(a => a.start());
+    return () => animations.forEach(a => a.stop());
+  }, []);
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, height }}>
+      {anims.map((anim, i) => (
+        <Animated.View
+          key={i}
+          style={{
+            width: 3,
+            height: height,
+            borderRadius: 2,
+            backgroundColor: color,
+            opacity: 0.85,
+            transform: [{ scaleY: anim }],
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
+function MorphingBlob({ color, size = 160, opacity = 0.15 }: { color: string; size?: number; opacity?: number }) {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.15, duration: 2200, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0.9, duration: 2200, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  return (
+    <Animated.View style={{
+      width: size, height: size,
+      borderRadius: size / 2,
+      backgroundColor: color,
+      opacity,
+      transform: [{ scale: pulseAnim }],
+    }} />
+  );
+}
+
+function CircuitLines({ width: W2, height: H2 = 120, color = 'rgba(255,255,255,0.12)' }: { width: number; height?: number; color?: string }) {
+  return (
+    <Svg width={W2} height={H2} style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
+      {/* Horizontal lines */}
+      <Path d={`M 0 ${H2*0.3} H ${W2*0.3} V ${H2*0.7} H ${W2*0.6} V ${H2*0.4} H ${W2}`} stroke={color} strokeWidth="1" fill="none" />
+      <Path d={`M 0 ${H2*0.7} H ${W2*0.4} V ${H2*0.5} H ${W2}`} stroke={color} strokeWidth="1" fill="none" />
+      {/* Vertical bits */}
+      <Path d={`M ${W2*0.3} 0 V ${H2*0.3}`} stroke={color} strokeWidth="1" fill="none" />
+      <Path d={`M ${W2*0.6} ${H2*0.4} V ${H2}`} stroke={color} strokeWidth="1" fill="none" />
+      {/* Nodes */}
+      <Circle cx={W2*0.3} cy={H2*0.3} r={3} fill={color} />
+      <Circle cx={W2*0.6} cy={H2*0.4} r={3} fill={color} />
+      <Circle cx={W2*0.4} cy={H2*0.7} r={2} fill={color} />
+      <Circle cx={W2*0.3} cy={H2*0.7} r={2} fill={color} />
+    </Svg>
+  );
+}
+
+function ScanBeam({ width: W2, height: H2 }: { width: number; height: number }) {
+  const scanAnim = useRef(new Animated.Value(-2)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scanAnim, { toValue: H2 + 2, duration: 2400, useNativeDriver: true }),
+        Animated.delay(1600),
+        Animated.timing(scanAnim, { toValue: -2, duration: 0, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        left: 0, right: 0,
+        height: 2,
+        backgroundColor: 'rgba(0,200,255,0.35)',
+        shadowColor: '#00C8FF',
+        shadowOpacity: 0.8,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 0 },
+        transform: [{ translateY: scanAnim }],
+      }}
+    />
+  );
+}
+
 const { width: W } = Dimensions.get('window');
 
 // ─── Brand Colors ─────────────────────────────────────────────────────────────
@@ -324,11 +491,11 @@ function ToolCard({ tool }: { tool: typeof FREE_TOOLS[0] }) {
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () =>
-    Animated.spring(scale, { toValue: 0.93, useNativeDriver: true, damping: 15, stiffness: 300 }).start();
+    Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, damping: 15, stiffness: 300 }).start();
   const handlePressOut = () =>
     Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 12, stiffness: 250 }).start();
 
-  const cardW = (W - 72) / 2;
+  const cardW = W - 48;
 
   return (
     <Animated.View style={[styles.toolCard, { width: cardW, transform: [{ scale }] }]}>
@@ -340,29 +507,31 @@ function ToolCard({ tool }: { tool: typeof FREE_TOOLS[0] }) {
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={1}
-        style={styles.toolCardInner}
+        style={[styles.toolCardInner, {
+          width: cardW,
+          backgroundColor: '#0F172A',
+          borderColor: tool.color + '40',
+          borderWidth: 1,
+          borderRadius: 16,
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          gap: 14,
+        }]}
       >
-        <LinearGradient
-          colors={tool.gradient}
-          style={[styles.toolGradient, { width: cardW }]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Svg
-            style={StyleSheet.absoluteFill as any}
-            width={cardW}
-            height={84}
-            pointerEvents="none"
-          >
-            <Circle cx={cardW} cy={0} r={55} fill="rgba(255,255,255,0.06)" />
-            <Circle cx={0} cy={84} r={35} fill="rgba(0,0,0,0.1)" />
-          </Svg>
-          <Text style={styles.toolName} numberOfLines={1}>{tool.name}</Text>
-          <Text style={styles.toolSub} numberOfLines={1}>{tool.sub}</Text>
-          <View style={styles.toolArrowWrap}>
-            <ToolDiagonalArrow color="rgba(255,255,255,0.9)" />
-          </View>
-        </LinearGradient>
+        <View style={{
+          width: 40, height: 40, borderRadius: 12,
+          backgroundColor: tool.color + '20',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: tool.color }} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.toolName, { color: '#fff' }]} numberOfLines={1}>{tool.name}</Text>
+          <Text style={[styles.toolSub, { color: 'rgba(148,163,184,0.8)', marginTop: 2 }]} numberOfLines={1}>{tool.sub}</Text>
+        </View>
+        <ToolDiagonalArrow color={tool.color} />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -401,14 +570,21 @@ export default function ServicesScreen() {
               <Circle cx={W * 0.55} cy={-10} r={40} fill="rgba(255,255,255,0.06)" />
               <Circle cx={W * 0.3} cy={190} r={30} stroke="rgba(255,255,255,0.1)" strokeWidth="1" fill="none" />
             </Svg>
+            <CircuitLines width={W} height={180} />
+            {/* Morphing blobs */}
+            <View style={{ position: 'absolute', top: -40, right: -40, overflow: 'hidden' }}>
+              <MorphingBlob color={BLUE} size={140} opacity={0.12} />
+            </View>
+            <View style={{ position: 'absolute', bottom: -20, left: -20, overflow: 'hidden' }}>
+              <MorphingBlob color={PURPLE} size={100} opacity={0.10} />
+            </View>
             <View style={styles.headerInner}>
-              <View style={styles.headerBadge}>
-                <Text style={styles.headerBadgeText}>Enterprise Solutions</Text>
-              </View>
+              <GlitchBadge text="ENTERPRISE SOLUTIONS" />
               <Text style={styles.headerTitle}>Our Solutions</Text>
               <Text style={styles.headerSubtitle}>
                 AI-powered services built for enterprise scale across the Gulf
               </Text>
+              <WaveformBar barCount={28} color="rgba(255,255,255,0.5)" height={32} />
             </View>
           </LinearGradient>
         </Animated.View>
@@ -615,17 +791,17 @@ const styles = StyleSheet.create({
   engRange: { fontSize: 13, fontWeight: '800' },
 
   // Tool Grid
-  toolGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  toolGrid: { flexDirection: 'column', gap: 10 },
   toolCard: {},
-  toolCardInner: { borderRadius: 16, overflow: 'hidden' },
+  toolCardInner: {},
   toolGradient: {
     height: 84,
     padding: 14,
     overflow: 'hidden',
     justifyContent: 'flex-end',
   },
-  toolName: { color: '#fff', fontSize: 13, fontWeight: '800', lineHeight: 17 },
-  toolSub: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '500', marginTop: 2 },
+  toolName: { fontSize: 14, fontWeight: '800', lineHeight: 17 },
+  toolSub: { fontSize: 11, fontWeight: '500' },
   toolArrowWrap: { position: 'absolute', top: 10, right: 10 },
 
   // CTA
