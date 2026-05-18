@@ -404,10 +404,31 @@ function DataTicker() {
   );
 }
 
+// ─── Hero Badge ───────────────────────────────────────────────────────────────
+
+function HeroBadge() {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(Animated.sequence([
+      Animated.timing(pulseAnim, { toValue: 0.3, duration: 700, useNativeDriver: true }),
+      Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+    ])).start();
+  }, []);
+
+  return (
+    <View style={styles.heroBadge}>
+      <Animated.View style={[styles.heroBadgeDot, { opacity: pulseAnim }]} />
+      <Text style={styles.heroBadgeText}>UAE'S #1 ENTERPRISE AI FIRM</Text>
+    </View>
+  );
+}
+
 // ─── Shimmer Headline ─────────────────────────────────────────────────────────
 
 function ShimmerHeadline({ text }: { text: string }) {
   const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const lines = text.split('\n');
 
   useEffect(() => {
     Animated.loop(
@@ -422,14 +443,15 @@ function ShimmerHeadline({ text }: { text: string }) {
   const translateX = shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [-100, W] });
 
   return (
-    <View style={{ overflow: 'hidden' }}>
-      <Text style={styles.heroHeadline}>{text}</Text>
+    <View style={{ overflow: 'hidden', marginBottom: 10 }}>
+      <Text style={styles.heroHeadline}>{lines[0]}</Text>
+      <Text style={[styles.heroHeadline, { color: BLUE }]}>{lines[1]}</Text>
       <Animated.View style={{
         position: 'absolute', top: 0, bottom: 0, width: 90,
         transform: [{ translateX }],
       }}>
         <LinearGradient
-          colors={['transparent', 'rgba(255,255,255,0.22)', 'transparent']}
+          colors={['transparent', 'rgba(255,255,255,0.18)', 'transparent']}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
           style={{ flex: 1 }}
         />
@@ -877,9 +899,11 @@ function HeroContent({ scrollY, isDark }: { scrollY: Animated.Value; isDark: boo
         </View>
 
         <Animated.View style={{ opacity: fadeIn, transform: [{ translateY: slideUp }] }}>
+          {/* Hero badge */}
+          <HeroBadge />
           <ShimmerHeadline text={"The Middle East's\nLeading AI Partner"} />
           <Text style={styles.heroSub}>
-            Transforming enterprises across UAE, Saudi Arabia & beyond
+            Transforming enterprises across the GCC with cutting-edge AI
           </Text>
           <View style={styles.heroCtas}>
             <TouchableOpacity
@@ -894,13 +918,24 @@ function HeroContent({ scrollY, isDark }: { scrollY: Animated.Value; isDark: boo
               onPress={() => ctaPress('/(tabs)/services')}
               activeOpacity={0.88}
             >
-              <Text style={styles.ctaOutlineText}>Our Solutions →</Text>
+              <Text style={styles.ctaOutlineText}>Solutions →</Text>
             </TouchableOpacity>
           </View>
 
-          <Animated.Text style={[styles.scrollHint, { opacity: hintOpacity }]}>
-            ↓ Scroll to explore
-          </Animated.Text>
+          {/* Inline stat pills */}
+          <View style={styles.heroPills}>
+            {[
+              { label: '99.9% Uptime', color: GREEN },
+              { label: '247 Projects', color: PURPLE },
+              { label: '6 Countries', color: TEAL },
+            ].map((pill) => (
+              <View key={pill.label} style={[styles.heroPill, { borderColor: pill.color + '40' }]}>
+                <View style={[styles.heroPillDot, { backgroundColor: pill.color }]} />
+                <Text style={[styles.heroPillText, { color: pill.color }]}>{pill.label}</Text>
+              </View>
+            ))}
+          </View>
+
           <DataTicker />
         </Animated.View>
       </View>
@@ -1151,13 +1186,64 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.15)',
   },
+  heroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(14,165,233,0.35)',
+    backgroundColor: 'rgba(14,165,233,0.1)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    marginBottom: 14,
+  },
+  heroBadgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: TEAL,
+  },
+  heroBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: TEAL,
+    letterSpacing: 1.4,
+  },
+  heroPills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 14,
+    marginBottom: 4,
+  },
+  heroPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
+  heroPillDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  heroPillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
   heroHeadline: {
-    fontSize: 40,
+    fontSize: 38,
     fontWeight: '900',
     color: '#fff',
     letterSpacing: -1.5,
-    lineHeight: 46,
-    marginBottom: 12,
+    lineHeight: 44,
   },
   heroSub: {
     fontSize: 14,

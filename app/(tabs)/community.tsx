@@ -23,81 +23,76 @@ const RED = '#DC2626';
 const CATEGORIES = ['All', 'Case Studies', 'Market Reports', 'AI Trends', 'UAE Focus', 'Guides'];
 
 const FEATURED_ARTICLE = {
-  title: 'How UAE Banks Are Using AI to Fight Financial Crime — 2025 Report',
-  tag: 'Market Reports',
+  title: 'The Future of AI in Enterprise: 2025 Global Trends Report',
+  tag: 'Featured',
+  source: 'Reuters AI',
   tagColor: PURPLE,
-  readTime: '8 min read',
+  readTime: '12 min read',
   author: 'WeThink Research',
-  gradient: ['#020818', '#0D1B4B', '#0055FF'] as const,
+  gradient: ['#0055FF', '#4338ca', '#7C3AED'] as const,
   url: 'https://www.reuters.com/technology/artificial-intelligence/',
 };
 
 const ARTICLES = [
   {
     id: '1',
-    headline: 'UAE AI Market to Hit $6.4B by 2026 — Full Analysis',
-    category: 'Market Reports',
-    categoryColor: PURPLE,
-    author: 'WeThink Research',
-    date: 'May 14, 2026',
-    readTime: '8 min',
-    reads: '4.2k',
+    headline: 'How AI is Reshaping Banking in the Middle East',
+    source: 'Khaleej Times',
+    category: 'Case Studies',
+    categoryColor: BLUE,
+    readTime: '5 min',
+    trending: true,
     url: 'https://www.khaleejtimes.com/uae/technology',
   },
   {
     id: '2',
-    headline: 'How DEWA Cut Operational Costs 23% with Predictive Maintenance AI',
-    category: 'Case Studies',
+    headline: "DEWA's Smart Grid AI Implementation Success",
+    source: 'DEWA Press',
+    category: 'UAE Focus',
     categoryColor: GREEN,
-    author: 'WeThink Research',
-    date: 'May 10, 2026',
-    readTime: '6 min',
-    reads: '2.8k',
+    readTime: '4 min',
+    trending: false,
     url: 'https://www.dewa.gov.ae/en/about-dewa/news-and-media/press-and-news',
   },
   {
     id: '3',
-    headline: 'Arabic NLP: The Untapped $800M Opportunity in Gulf Technology',
+    headline: 'Arabic NLP: State of the Art Models for Gulf Enterprises',
+    source: 'Hugging Face',
     category: 'AI Trends',
-    categoryColor: TEAL,
-    author: 'WeThink Research',
-    date: 'May 7, 2026',
-    readTime: '5 min',
-    reads: '3.1k',
-    url: 'https://huggingface.co/CAMeL-Lab',
+    categoryColor: PURPLE,
+    readTime: '8 min',
+    trending: true,
+    url: 'https://huggingface.co/models?language=ar',
   },
   {
     id: '4',
-    headline: 'Dubai Smart City Initiative: Lessons from 14 AI Deployments',
+    headline: 'Smart Dubai 2030: AI-Powered Government Services',
+    source: 'Smart Dubai',
     category: 'UAE Focus',
-    categoryColor: AMBER,
-    author: 'WeThink Research',
-    date: 'May 3, 2026',
-    readTime: '7 min',
-    reads: '1.9k',
-    url: 'https://www.smartdubai.ae/initiatives',
+    categoryColor: TEAL,
+    readTime: '6 min',
+    trending: false,
+    url: 'https://www.digitaldubai.ae',
   },
   {
     id: '5',
-    headline: 'Building AI Teams in the Gulf: Hiring & Retention Guide 2025',
+    headline: 'AI for Enterprise: Complete Learning Path 2025',
+    source: 'LinkedIn Learning',
     category: 'Guides',
-    categoryColor: RED,
-    author: 'WeThink Research',
-    date: 'Apr 28, 2026',
+    categoryColor: AMBER,
     readTime: '10 min',
-    reads: '2.3k',
+    trending: false,
     url: 'https://www.linkedin.com/learning/topics/artificial-intelligence',
   },
   {
     id: '6',
-    headline: "e& (Etisalat) Customer AI: From 500-User Pilot to 4M Active Users",
-    category: 'Case Studies',
-    categoryColor: GREEN,
-    author: 'WeThink Research',
-    date: 'Apr 22, 2026',
-    readTime: '5 min',
-    reads: '5.7k',
-    url: 'https://www.eand.com/en/media/press-releases.html',
+    headline: 'e& Group Digital Transformation Report — AI at Scale',
+    source: 'e& (Etisalat)',
+    category: 'Market Reports',
+    categoryColor: BLUE,
+    readTime: '7 min',
+    trending: true,
+    url: 'https://www.eand.com/en/media-centre.html',
   },
 ];
 
@@ -183,23 +178,19 @@ function FeaturedCard() {
             style={styles.featuredOverlay}
           />
 
-          {/* Badge top-left */}
-          <View style={[styles.featuredBadge, { backgroundColor: FEATURED_ARTICLE.tagColor }]}>
-            <Text style={styles.featuredBadgeText}>{FEATURED_ARTICLE.tag}</Text>
-          </View>
-
           {/* Content at bottom */}
           <View style={styles.featuredContent}>
+            <View style={styles.featuredTopRow}>
+              <View style={styles.featuredBadge}>
+                <Text style={styles.featuredBadgeText}>{FEATURED_ARTICLE.tag}</Text>
+              </View>
+              <Text style={styles.featuredSource}>{FEATURED_ARTICLE.source} · {FEATURED_ARTICLE.readTime}</Text>
+            </View>
             <Text style={styles.featuredHeadline} numberOfLines={3}>
               {FEATURED_ARTICLE.title}
             </Text>
             <View style={styles.featuredMeta}>
-              <LinearGradient colors={[BLUE, PURPLE]} style={styles.featuredAvatar}>
-                <Text style={styles.featuredAvatarText}>WT</Text>
-              </LinearGradient>
-              <Text style={styles.featuredAuthor}>{FEATURED_ARTICLE.author}</Text>
-              <Text style={styles.featuredDot}>·</Text>
-              <Text style={styles.featuredReadTime}>{FEATURED_ARTICLE.readTime}</Text>
+              <Text style={styles.featuredReadLink}>Read on Reuters →</Text>
             </View>
           </View>
         </LinearGradient>
@@ -275,6 +266,19 @@ function ArticleCard({
         onPressOut={handlePressOut}
         activeOpacity={1}
       >
+        {/* Source + meta row */}
+        <View style={styles.articleSourceRow}>
+          <Text style={[styles.articleSource, { color: colors.textMuted }]}>{article.source}</Text>
+          <Text style={[styles.metaDot, { color: colors.textMuted }]}>•</Text>
+          <ClockIcon color={colors.textMuted} />
+          <Text style={[styles.metaText, { color: colors.textMuted }]}>{article.readTime}</Text>
+          {article.trending && (
+            <View style={styles.trendingBadge}>
+              <Text style={styles.trendingText}>↑ Trending</Text>
+            </View>
+          )}
+        </View>
+
         <View style={styles.articleTop}>
           <View
             style={[
@@ -306,23 +310,9 @@ function ArticleCard({
           {article.headline}
         </Text>
 
-        <View style={styles.articleMeta}>
-          <View style={[styles.authorDot, { backgroundColor: article.categoryColor }]} />
-          <Text style={[styles.authorName, { color: colors.textSecondary }]}>{article.author}</Text>
-          <Text style={[styles.metaDot, { color: colors.textMuted }]}>·</Text>
-          <Text style={[styles.articleDate, { color: colors.textMuted }]}>{article.date}</Text>
-        </View>
-
-        <View style={styles.articleFooter}>
-          <View style={styles.metaItem}>
-            <ClockIcon color={colors.textMuted} />
-            <Text style={[styles.metaText, { color: colors.textMuted }]}>{article.readTime} read</Text>
-          </View>
-          <View style={styles.metaItem}>
-            <EyeIcon color={colors.textMuted} />
-            <Text style={[styles.metaText, { color: colors.textMuted }]}>{article.reads} reads</Text>
-          </View>
-        </View>
+        <Text style={[styles.readArticleLink, { color: article.categoryColor }]}>
+          Read article ↗
+        </Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -565,16 +555,16 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     top: '35%',
   },
+  featuredTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   featuredBadge: {
-    position: 'absolute',
-    top: 16,
-    left: 18,
-    borderRadius: 10,
+    borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  featuredBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
-  featuredContent: { padding: 18 },
+  featuredBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  featuredSource: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '500' },
+  featuredContent: { padding: 18, justifyContent: 'flex-end', flex: 1 },
   featuredHeadline: {
     color: '#fff',
     fontSize: 17,
@@ -584,13 +574,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   featuredMeta: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  featuredAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  featuredReadLink: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '600' },
+  featuredAvatar: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   featuredAvatarText: { color: '#fff', fontSize: 8, fontWeight: '900' },
   featuredAuthor: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '600' },
   featuredDot: { color: 'rgba(255,255,255,0.5)', fontSize: 12 },
@@ -614,6 +599,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
+  articleSourceRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 8 },
+  articleSource: { fontSize: 11, fontWeight: '600' },
+  trendingBadge: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(5,150,105,0.15)',
+    borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2,
+  },
+  trendingText: { fontSize: 9, fontWeight: '700', color: '#34d399' },
+  readArticleLink: { fontSize: 11, fontWeight: '700', marginTop: 6 },
   categoryBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
