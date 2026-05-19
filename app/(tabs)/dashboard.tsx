@@ -147,7 +147,7 @@ function getWhyIcon(iconType: string, color: string) {
 // Kept with built-in Animated API — array of animated values created in useRef,
 // cannot use hooks in loops (reanimated rule), and these are already performant.
 
-import { Animated } from 'react-native';
+import { Animated as RNAnimated } from 'react-native';
 
 const NODES = [
   { x: 0.15, y: 0.18 }, { x: 0.5, y: 0.08 }, { x: 0.85, y: 0.22 },
@@ -159,27 +159,27 @@ const EDGES = [
 ];
 
 function NeuralNetwork({ height }: { height: number }) {
-  const pulseAnims = useRef(NODES.map(() => new Animated.Value(0))).current;
-  const edgeAnims = useRef(EDGES.map(() => new Animated.Value(0))).current;
+  const pulseAnims = useRef(NODES.map(() => new RNAnimated.Value(0))).current;
+  const edgeAnims = useRef(EDGES.map(() => new RNAnimated.Value(0))).current;
 
   useEffect(() => {
     NODES.forEach((_, i) => {
       const loop = () =>
-        Animated.sequence([
-          Animated.delay(i * 180),
-          Animated.timing(pulseAnims[i], { toValue: 1, duration: 700, useNativeDriver: true }),
-          Animated.timing(pulseAnims[i], { toValue: 0.3, duration: 1400, useNativeDriver: true }),
+        RNAnimated.sequence([
+          RNAnimated.delay(i * 180),
+          RNAnimated.timing(pulseAnims[i], { toValue: 1, duration: 700, useNativeDriver: true }),
+          RNAnimated.timing(pulseAnims[i], { toValue: 0.3, duration: 1400, useNativeDriver: true }),
         ]);
-      Animated.loop(loop()).start();
+      RNAnimated.loop(loop()).start();
     });
     EDGES.forEach((_, i) => {
       const loop = () =>
-        Animated.sequence([
-          Animated.delay(i * 120 + 400),
-          Animated.timing(edgeAnims[i], { toValue: 1, duration: 900, useNativeDriver: true }),
-          Animated.timing(edgeAnims[i], { toValue: 0.15, duration: 1600, useNativeDriver: true }),
+        RNAnimated.sequence([
+          RNAnimated.delay(i * 120 + 400),
+          RNAnimated.timing(edgeAnims[i], { toValue: 1, duration: 900, useNativeDriver: true }),
+          RNAnimated.timing(edgeAnims[i], { toValue: 0.15, duration: 1600, useNativeDriver: true }),
         ]);
-      Animated.loop(loop()).start();
+      RNAnimated.loop(loop()).start();
     });
   }, []);
 
@@ -270,11 +270,11 @@ function ImpactCard({ item, index }: { item: typeof IMPACT_DATA[0]; index: numbe
     const colors = [item.color, '#fff', TEAL, PURPLE, BLUE];
     const newParticles: Particle[] = Array.from({ length: 14 }, (_, i) => {
       const id = particleIdRef.current++;
-      const anim = new Animated.Value(0);
-      const opacAnim = new Animated.Value(1);
-      Animated.parallel([
-        Animated.timing(anim, { toValue: 1, duration: 650, useNativeDriver: true }),
-        Animated.timing(opacAnim, { toValue: 0, duration: 650, useNativeDriver: true }),
+      const anim = new RNAnimated.Value(0);
+      const opacAnim = new RNAnimated.Value(1);
+      RNAnimated.parallel([
+        RNAnimated.timing(anim, { toValue: 1, duration: 650, useNativeDriver: true }),
+        RNAnimated.timing(opacAnim, { toValue: 0, duration: 650, useNativeDriver: true }),
       ]).start(() => setParticles(prev => prev.filter(p => p.id !== id)));
       return { id, x: locationX, y: locationY, anim, opacAnim, angle: (i / 14) * Math.PI * 2, color: colors[i % colors.length] };
     });
@@ -314,7 +314,7 @@ function WireframeGlobe({ size = 210 }: { size: number }) {
   const cx = size / 2;
   const cy = size / 2;
   const R = size * 0.38;
-  const angle = useRef(new Animated.Value(0)).current;
+  const angle = useRef(new RNAnimated.Value(0)).current;
   const pulseAnim = useSharedValue(1);
   const [state, setState] = useState({
     dots: [
@@ -346,7 +346,7 @@ function WireframeGlobe({ size = 210 }: { size: number }) {
         ],
       });
     });
-    Animated.loop(Animated.timing(angle, { toValue: Math.PI * 2, duration: 8000, useNativeDriver: false })).start();
+    RNAnimated.loop(RNAnimated.timing(angle, { toValue: Math.PI * 2, duration: 8000, useNativeDriver: false })).start();
     pulseAnim.value = withRepeat(withSequence(
       withTiming(1.5, { duration: 2200 }),
       withTiming(1, { duration: 2200 }),
@@ -408,13 +408,13 @@ function WireframeGlobe({ size = 210 }: { size: number }) {
 // Kept with built-in Animated — simple translateX loop, already performant.
 
 function DataTicker() {
-  const anim = useRef(new Animated.Value(0)).current;
+  const anim = useRef(new RNAnimated.Value(0)).current;
   const TICKER = '  247 PROJECTS  ◆  AED 340M+ FRAUD PREVENTED  ◆  180+ CLIENTS  ◆  4M USERS SERVED  ◆  6 COUNTRIES  ◆  99.9% UPTIME  ◆  ISO 27001 CERTIFIED  ◆  ';
 
   useEffect(() => {
     const run = () => {
       anim.setValue(0);
-      Animated.timing(anim, { toValue: 1, duration: 22000, useNativeDriver: true }).start(({ finished }) => {
+      RNAnimated.timing(anim, { toValue: 1, duration: 22000, useNativeDriver: true }).start(({ finished }) => {
         if (finished) run();
       });
     };
@@ -463,15 +463,15 @@ function HeroBadge() {
 // Kept with built-in Animated — translateX loop with interpolate, simple.
 
 function ShimmerHeadline({ text }: { text: string }) {
-  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const shimmerAnim = useRef(new RNAnimated.Value(0)).current;
   const lines = text.split('\n');
 
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(shimmerAnim, { toValue: 1, duration: 2200, useNativeDriver: true }),
-        Animated.delay(2500),
-        Animated.timing(shimmerAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
+    RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(shimmerAnim, { toValue: 1, duration: 2200, useNativeDriver: true }),
+        RNAnimated.delay(2500),
+        RNAnimated.timing(shimmerAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
       ])
     ).start();
   }, []);
@@ -525,9 +525,9 @@ const PARTICLE_CONFIG = [
 function ParticleField({ height }: { height: number }) {
   const anims = useRef(
     PARTICLE_CONFIG.map(() => ({
-      x: new Animated.Value(0),
-      y: new Animated.Value(0),
-      opacity: new Animated.Value(0),
+      x: new RNAnimated.Value(0),
+      y: new RNAnimated.Value(0),
+      opacity: new RNAnimated.Value(0),
     }))
   ).current;
 
@@ -536,27 +536,27 @@ function ParticleField({ height }: { height: number }) {
       const { x, y, opacity } = anims[i];
 
       // Fade in
-      Animated.timing(opacity, {
+      RNAnimated.timing(opacity, {
         toValue: p.opacity,
         duration: 1000 + i * 80,
         useNativeDriver: true,
       }).start();
 
       // X drift loop
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(x, { toValue: (Math.random() - 0.5) * 30, duration: p.dur, useNativeDriver: true }),
-          Animated.timing(x, { toValue: (Math.random() - 0.5) * 25, duration: p.dur * 0.9, useNativeDriver: true }),
-          Animated.timing(x, { toValue: 0, duration: p.dur * 1.1, useNativeDriver: true }),
+      RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(x, { toValue: (Math.random() - 0.5) * 30, duration: p.dur, useNativeDriver: true }),
+          RNAnimated.timing(x, { toValue: (Math.random() - 0.5) * 25, duration: p.dur * 0.9, useNativeDriver: true }),
+          RNAnimated.timing(x, { toValue: 0, duration: p.dur * 1.1, useNativeDriver: true }),
         ])
       ).start();
 
       // Y drift loop (offset timing)
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(y, { toValue: (Math.random() - 0.5) * 20, duration: p.dur * 1.2, useNativeDriver: true }),
-          Animated.timing(y, { toValue: (Math.random() - 0.5) * 15, duration: p.dur, useNativeDriver: true }),
-          Animated.timing(y, { toValue: 0, duration: p.dur * 0.8, useNativeDriver: true }),
+      RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(y, { toValue: (Math.random() - 0.5) * 20, duration: p.dur * 1.2, useNativeDriver: true }),
+          RNAnimated.timing(y, { toValue: (Math.random() - 0.5) * 15, duration: p.dur, useNativeDriver: true }),
+          RNAnimated.timing(y, { toValue: 0, duration: p.dur * 0.8, useNativeDriver: true }),
         ])
       ).start();
     });
