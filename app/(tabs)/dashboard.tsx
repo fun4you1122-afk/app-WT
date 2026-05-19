@@ -456,7 +456,7 @@ function ShimmerHeadline({ text }: { text: string }) {
   const translateX = shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [-100, W] });
 
   return (
-    <View style={{ overflow: 'hidden', marginBottom: 10 }}>
+    <View style={{ overflow: 'hidden', marginBottom: 12 }}>
       <Text style={styles.heroHeadline}>{lines[0]}</Text>
       <Text style={[styles.heroHeadline, { color: BLUE }]}>{lines[1]}</Text>
       <Animated.View style={{
@@ -627,7 +627,7 @@ function IndustryCard({ item, index }: { item: typeof INDUSTRIES[0]; index: numb
     ]).start();
   };
 
-  const cardW = (W - 60) / 2;
+  const cardW = W * 0.62;
 
   return (
     <Animated.View
@@ -839,7 +839,7 @@ function HeroContent({ scrollY, isDark }: { scrollY: Animated.Value; isDark: boo
     ])).start();
   }, []);
 
-  const HERO_H = 440;
+  const HERO_H = 500;
 
   const heroTranslate = scrollY.interpolate({
     inputRange: [0, 300],
@@ -1095,14 +1095,18 @@ export default function Dashboard() {
           </ScrollView>
         </View>
 
-        {/* Industry Grid — 3D Tilt Cards */}
+        {/* Industry Grid — 3D Tilt Cards (horizontal scroll) */}
         <View style={styles.section}>
           <SectionHeader title="Industries We Serve" colors={colors} />
-          <View style={styles.industryGrid}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.industryRow}
+          >
             {INDUSTRIES.map((item, i) => (
               <IndustryCard key={item.name} item={item} index={i} />
             ))}
-          </View>
+          </ScrollView>
         </View>
 
         {/* Success Story */}
@@ -1140,12 +1144,12 @@ export default function Dashboard() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const HERO_H = 440;
+const HERO_H = 500;
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingBottom: 24 },
-  section: { marginTop: 28 },
+  section: { marginTop: 36 },
   padH: { paddingHorizontal: 24 },
 
   sectionHeader: {
@@ -1160,7 +1164,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 2,
   },
-  sectionTitle: { fontSize: 21, fontWeight: '900', letterSpacing: -0.5 },
+  sectionTitle: { fontSize: 21, fontWeight: '900', letterSpacing: -0.5, marginBottom: 12 },
 
   // Hero
   heroOuter: {
@@ -1170,7 +1174,7 @@ const styles = StyleSheet.create({
   heroContent: {
     paddingTop: Platform.OS === 'ios' ? 56 : 40,
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    paddingBottom: 28,
     flex: 1,
     justifyContent: 'space-between',
   },
@@ -1182,8 +1186,8 @@ const styles = StyleSheet.create({
   },
   heroLogoRow: { flexDirection: 'row', alignItems: 'center' },
   heroLogoImage: {
-    width: 130,
-    height: 36,
+    width: 160,
+    height: 48,
   },
   heroGearBtn: {
     width: 36,
@@ -1223,7 +1227,7 @@ const styles = StyleSheet.create({
   heroPills: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
     marginTop: 14,
     marginBottom: 4,
   },
@@ -1258,9 +1262,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255,255,255,0.65)',
     lineHeight: 20,
-    marginBottom: 22,
+    marginBottom: 8,
   },
-  heroCtas: { flexDirection: 'row', gap: 12 },
+  heroCtas: { flexDirection: 'row', gap: 12, marginTop: 16 },
   ctaSolid: {
     flex: 1,
     backgroundColor: '#fff',
@@ -1324,9 +1328,9 @@ const styles = StyleSheet.create({
   },
   statCard: {
     borderRadius: 20,
-    paddingTop: 14,
-    paddingBottom: 18,
-    paddingHorizontal: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    minHeight: 130,
     shadowOpacity: 0.07,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -1343,8 +1347,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
   },
   counterItem: { alignItems: 'flex-start' },
-  counterValue: { fontSize: 36, fontWeight: '900', letterSpacing: -1.5 },
-  counterLabel: { fontSize: 11, fontWeight: '600', color: '#94A3B8', marginTop: 4 },
+  counterValue: { fontSize: 42, fontWeight: '900', letterSpacing: -1.5 },
+  counterLabel: { fontSize: 13, fontWeight: '600', color: '#94A3B8', marginTop: 4 },
 
   // Industry Cards
   industryGrid: {
@@ -1353,17 +1357,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     gap: 12,
   },
+  industryRow: {
+    paddingHorizontal: 24,
+    gap: 12,
+    paddingBottom: 4,
+  },
   industryCardShadow: {
     position: 'absolute',
     bottom: -6,
     left: 8,
     right: 8,
-    height: 120,
+    height: 140,
     borderRadius: 20,
     backgroundColor: 'rgba(0,0,0,0.2)',
   },
   industryCard: {
-    height: 120,
+    height: 140,
     borderRadius: 20,
     padding: 16,
     overflow: 'hidden',

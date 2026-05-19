@@ -738,7 +738,7 @@ export default function AboutScreen() {
               max={stat.value * 1.2}
               label={stat.label}
               color={stat.color}
-              size={76}
+              size={72}
             />
           ))}
         </Animated.View>
@@ -954,9 +954,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 26,
+    width: 90,
+    height: 90,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,
@@ -969,7 +969,7 @@ const styles = StyleSheet.create({
   logoText: { color: '#fff', fontSize: 28, fontWeight: '900', letterSpacing: -1 },
   heroCompanyName: {
     color: '#fff',
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '900',
     letterSpacing: -0.8,
     marginBottom: 6,
@@ -1053,9 +1053,10 @@ const styles = StyleSheet.create({
   // Leadership
   leadershipRow: { paddingHorizontal: 24, paddingBottom: 4, gap: 12 },
   leaderCard: {
-    width: 165,
+    width: 200,
     borderRadius: 20,
     padding: 16,
+    paddingBottom: 16,
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
@@ -1112,7 +1113,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 7,
     paddingHorizontal: 14,
-    paddingVertical: 9,
+    paddingVertical: 10,
     borderRadius: 22,
     borderWidth: 1,
   },
@@ -1165,7 +1166,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 15,
+    paddingVertical: 14,
     gap: 14,
   },
   contactIconWrap: {

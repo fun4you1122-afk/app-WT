@@ -680,7 +680,7 @@ export default function ServicesScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingBottom: 24 },
-  section: { marginTop: 28, paddingHorizontal: 24 },
+  section: { marginTop: 32, paddingHorizontal: 24 },
 
   sectionTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 16 },
   sectionAccent: { width: 4, height: 22, borderRadius: 2, marginTop: 2 },
@@ -690,7 +690,7 @@ const styles = StyleSheet.create({
   // Header
   header: {
     paddingTop: Platform.OS === 'ios' ? 60 : 44,
-    paddingBottom: 36,
+    paddingBottom: 44,
     overflow: 'hidden',
     minHeight: 180,
   },
@@ -706,10 +706,10 @@ const styles = StyleSheet.create({
   headerBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   headerTitle: {
     color: '#fff',
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: '900',
     letterSpacing: -1,
-    lineHeight: 40,
+    lineHeight: 38,
     marginBottom: 8,
   },
   headerSubtitle: { color: 'rgba(255,255,255,0.75)', fontSize: 14, lineHeight: 20 },
@@ -747,7 +747,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     marginBottom: 7,
   },
-  serviceDesc: { fontSize: 13.5, lineHeight: 20, marginBottom: 14 },
+  serviceDesc: { fontSize: 13.5, lineHeight: 20, marginBottom: 14, paddingVertical: 4 },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: {
     paddingHorizontal: 10,
@@ -760,7 +760,7 @@ const styles = StyleSheet.create({
   // Engagement Models
   engRow: { paddingBottom: 4, gap: 12 },
   engCard: {
-    width: 170,
+    width: 185,
     borderRadius: 20,
     borderWidth: 1.5,
     overflow: 'hidden',
@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 18,
   },
   popularBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800', letterSpacing: 0.3 },
-  engName: { fontSize: 16, fontWeight: '900', letterSpacing: -0.3, marginBottom: 5, paddingHorizontal: 14 },
+  engName: { fontSize: 17, fontWeight: '900', letterSpacing: -0.3, marginBottom: 5, paddingHorizontal: 14 },
   engDesc: { fontSize: 12, lineHeight: 17, marginBottom: 14, paddingHorizontal: 14 },
   engRangeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14 },
   engRangeDot: { width: 7, height: 7, borderRadius: 3.5 },
@@ -800,8 +800,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'flex-end',
   },
-  toolName: { fontSize: 14, fontWeight: '800', lineHeight: 17 },
-  toolSub: { fontSize: 11, fontWeight: '500' },
+  toolName: { fontSize: 15, fontWeight: '800', lineHeight: 18 },
+  toolSub: { fontSize: 12, fontWeight: '500' },
   toolArrowWrap: { position: 'absolute', top: 10, right: 10 },
 
   // CTA

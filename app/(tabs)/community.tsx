@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     minHeight: 180,
   },
-  headerInner: { paddingHorizontal: 24, zIndex: 1 },
+  headerInner: { paddingHorizontal: 20, zIndex: 1 },
   headerBadge: {
     alignSelf: 'flex-start',
     backgroundColor: 'rgba(255,255,255,0.2)',
@@ -533,8 +533,8 @@ const styles = StyleSheet.create({
   headerSubtitle: { color: 'rgba(255,255,255,0.72)', fontSize: 14, lineHeight: 20 },
 
   // Category filter
-  catScroll: { marginTop: 22 },
-  catRow: { paddingHorizontal: 24, paddingBottom: 4, gap: 8 },
+  catScroll: { marginTop: 28 },
+  catRow: { paddingHorizontal: 20, paddingBottom: 4, gap: 8 },
   catChip: {
     paddingHorizontal: 16,
     paddingVertical: 9,
@@ -544,10 +544,11 @@ const styles = StyleSheet.create({
   catChipText: { fontSize: 13, fontWeight: '600' },
 
   // Featured
-  featuredSection: { marginTop: 22, paddingHorizontal: 16 },
+  featuredSection: { marginTop: 28, paddingHorizontal: 20 },
   featuredCard: {
     borderRadius: 22,
-    height: 220,
+    minHeight: 200,
+    height: 230,
     overflow: 'hidden',
     justifyContent: 'flex-end',
   },
@@ -564,7 +565,7 @@ const styles = StyleSheet.create({
   },
   featuredBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
   featuredSource: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '500' },
-  featuredContent: { padding: 18, justifyContent: 'flex-end', flex: 1 },
+  featuredContent: { padding: 20, justifyContent: 'flex-end', flex: 1 },
   featuredHeadline: {
     color: '#fff',
     fontSize: 17,
@@ -582,12 +583,13 @@ const styles = StyleSheet.create({
   featuredReadTime: { color: 'rgba(255,255,255,0.65)', fontSize: 12 },
 
   // Article list
-  articleSection: { marginTop: 22, paddingHorizontal: 16, gap: 12 },
+  articleSection: { marginTop: 28, paddingHorizontal: 20, gap: 14 },
   articleCard: {
     borderRadius: 18,
     borderWidth: 1,
     borderLeftWidth: 4,
     padding: 16,
+    marginBottom: 14,
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 },
@@ -639,7 +641,7 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 14 },
 
   // Newsletter
-  newsletterSection: { marginTop: 24, paddingHorizontal: 16 },
+  newsletterSection: { marginTop: 28, paddingHorizontal: 20 },
   newsletterCard: { borderRadius: 24, padding: 24, overflow: 'hidden' },
   newsletterIconWrap: {
     width: 46,

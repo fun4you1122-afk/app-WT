@@ -342,8 +342,8 @@ const bubbleStyles = StyleSheet.create({
   },
   avatarText: { fontSize: 13, fontWeight: '900', color: '#fff' },
   bubble: {
-    maxWidth: W * 0.72,
-    borderRadius: 20,
+    maxWidth: W * 0.78,
+    borderRadius: 18,
     paddingHorizontal: 15,
     paddingTop: 12,
     paddingBottom: 9,
@@ -687,10 +687,10 @@ const styles = StyleSheet.create({
   clearBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
 
   // Booking card (floating)
-  bookingOuter: { marginHorizontal: 16, marginTop: 12, marginBottom: 2 },
+  bookingOuter: { marginHorizontal: 16, marginTop: 14, marginBottom: 2 },
   bookingCard: {
     borderRadius: 20,
-    padding: 16,
+    padding: 20,
     shadowOpacity: 0.18,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 6 },
@@ -772,7 +772,7 @@ const styles = StyleSheet.create({
 
   // Messages
   scroll: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 12, gap: 8 },
+  scrollContent: { padding: 16, paddingBottom: 80, gap: 8 },
   suggestSection: { marginBottom: 14 },
   suggestTitle: { fontSize: 12, fontWeight: '600', marginBottom: 10 },
   suggestGrid: { gap: 8 },
@@ -787,9 +787,9 @@ const styles = StyleSheet.create({
   // Input
   inputArea: {
     borderTopWidth: 1,
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 14,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 36 : 16,
   },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   input: {
