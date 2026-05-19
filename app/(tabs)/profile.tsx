@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  ScrollView, StyleSheet, View, Text,
+  ScrollView, StyleSheet, View, Text, Image,
   TouchableOpacity, Switch, Dimensions, Platform, StatusBar,
   Linking,
 } from 'react-native';
@@ -450,114 +450,63 @@ function ContactRow({
   );
 }
 
-// ─── Counter Ring ─────────────────────────────────────────────────────────────
+// ─── Animated Stat Card with Bar Chart ───────────────────────────────────────
 
-const AnimCircle = Animated.createAnimatedComponent(Circle);
+const BAR_TARGETS = [0.35, 0.55, 0.45, 0.75, 0.6, 0.85, 0.7, 1.0];
 
-function CounterRing({ value, max, label, color, size = 104 }: {
-  value: number; max: number; label: string; color: string; size?: number;
+function AnimatedStatCard({ value, suffix = '', label, color }: {
+  value: number; suffix?: string; label: string; color: string;
 }) {
   const progress = useSharedValue(0);
-  const glowAnim = useSharedValue(0.4);
   const [displayVal, setDisplayVal] = useState('0');
-  const R = size * 0.4;
-  const circumference = 2 * Math.PI * R;
-  const strokeW = size * 0.09;
+  const barAnims = useRef(BAR_TARGETS.map(() => new RNAnimated.Value(0))).current;
 
   const updateDisplay = (v: number) => setDisplayVal(Math.round(v * value).toString());
-
-  useDerivedValue(() => {
-    runOnJS(updateDisplay)(progress.value);
-  });
-
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(glowAnim.value, [0.4, 1], [0.07, 0.18]),
-  }));
-
-  const animatedProps = useAnimatedProps(() => ({
-    strokeDashoffset: interpolate(progress.value, [0, 1], [circumference, circumference * 0.05]),
-  }));
+  useDerivedValue(() => { runOnJS(updateDisplay)(progress.value); });
 
   useEffect(() => {
-    progress.value = withTiming(1, {
-      duration: 1800,
-      easing: REasing.out(REasing.cubic),
+    progress.value = withTiming(1, { duration: 1600, easing: REasing.out(REasing.cubic) });
+    barAnims.forEach((anim, i) => {
+      RNAnimated.sequence([
+        RNAnimated.delay(i * 70),
+        RNAnimated.timing(anim, { toValue: BAR_TARGETS[i], duration: 600, useNativeDriver: true }),
+      ]).start();
     });
-    glowAnim.value = withRepeat(withSequence(
-      withTiming(1, { duration: 1200 }),
-      withTiming(0.4, { duration: 1200 }),
-    ), -1, false);
-    return () => {
-      cancelAnimation(progress);
-      cancelAnimation(glowAnim);
-    };
+    return () => cancelAnimation(progress);
   }, []);
 
+  const CHART_H = 36;
+
   return (
-    <View style={{
-      width: size,
-      alignItems: 'center',
-    }}>
-      {/* Glow halo behind ring */}
-      <Animated.View style={[{
-        position: 'absolute',
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        backgroundColor: color,
-        top: 0,
-      }, glowStyle]} />
+    <View style={styles.statCard}>
+      <LinearGradient
+        colors={[color + '20', color + '06']}
+        style={StyleSheet.absoluteFillObject as any}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+      <View style={[styles.statCardAccent, { backgroundColor: color }]} />
 
-      <View style={{
-        width: size,
-        height: size,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        {/* Ring SVG */}
-        <Svg width={size} height={size} style={{ position: 'absolute' }}>
-          {/* Dark filled center */}
-          <Circle
-            cx={size / 2} cy={size / 2} r={R - strokeW / 2}
-            fill={color + '18'}
-          />
-          {/* Track */}
-          <Circle
-            cx={size / 2} cy={size / 2} r={R}
-            stroke={color + '28'}
-            strokeWidth={strokeW}
-            fill="none"
-          />
-          {/* Progress arc */}
-          <AnimCircle
-            cx={size / 2} cy={size / 2} r={R}
-            stroke={color}
-            strokeWidth={strokeW}
-            fill="none"
-            strokeDasharray={`${circumference} ${circumference}`}
-            animatedProps={animatedProps}
-            strokeLinecap="round"
-            transform={`rotate(-90, ${size / 2}, ${size / 2})`}
-          />
-        </Svg>
+      <Text style={[styles.statCardValue, { color }]}>{displayVal}{suffix}</Text>
+      <Text style={styles.statCardLabel}>{label}</Text>
 
-        {/* Center text */}
-        <Text style={{ fontSize: size * 0.22, fontWeight: '900', color, letterSpacing: -0.5 }}>
-          {displayVal}
-        </Text>
+      {/* Animated bar chart — bars grow from bottom using translateY trick */}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: CHART_H, marginTop: 10 }}>
+        {barAnims.map((anim, i) => (
+          <View key={i} style={{ width: 7, height: CHART_H, justifyContent: 'flex-end' }}>
+            <RNAnimated.View
+              style={{
+                width: 7,
+                height: CHART_H,
+                borderRadius: 3,
+                backgroundColor: color,
+                opacity: 0.55 + i * 0.06,
+                transform: [{ scaleY: anim }],
+              }}
+            />
+          </View>
+        ))}
       </View>
-
-      {/* Label below ring */}
-      <Text style={{
-        fontSize: 10,
-        fontWeight: '700',
-        color: '#94A3B8',
-        textAlign: 'center',
-        marginTop: 6,
-        letterSpacing: 0.3,
-      }} numberOfLines={1}>
-        {label}
-      </Text>
     </View>
   );
 }
@@ -704,16 +653,13 @@ export default function AboutScreen() {
 
             <GlitchBadge text="ABOUT US" />
 
-            {/* Animated WT Logo */}
-            <Animated.View style={logoStyle}>
-              <LinearGradient
-                colors={[PURPLE, BLUE]}
-                style={styles.logoCircle}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text style={styles.logoText}>WT</Text>
-              </LinearGradient>
+            {/* Company Logo */}
+            <Animated.View style={[styles.logoCircle, logoStyle]}>
+              <Image
+                source={require('../../assets/images/wethink-logo.png')}
+                style={{ width: 90, height: 90, borderRadius: 26 }}
+                resizeMode="cover"
+              />
             </Animated.View>
 
             <Text style={styles.heroCompanyName}>WeThink.ae</Text>
@@ -728,16 +674,15 @@ export default function AboutScreen() {
           </LinearGradient>
         </Animated.View>
 
-        {/* ── Stats Rings ── */}
-        <Animated.View style={[styles.ringsRow, contentStyle]}>
+        {/* ── Stats Grid ── */}
+        <Animated.View style={[styles.statsGrid, contentStyle]}>
           {COMPANY_STATS.map((stat) => (
-            <CounterRing
+            <AnimatedStatCard
               key={stat.label}
               value={stat.value}
-              max={stat.value * 1.2}
+              suffix={stat.suffix}
               label={stat.label}
               color={stat.color}
-              size={72}
             />
           ))}
         </Animated.View>
@@ -1008,6 +953,51 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(13,27,75,0.85)',
     borderWidth: 1,
     borderColor: 'rgba(0,85,255,0.18)',
+  },
+
+  // Stats Grid (2×2)
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    paddingHorizontal: 20,
+    marginTop: 20,
+  },
+  statCard: {
+    width: (W - 52) / 2,
+    borderRadius: 20,
+    padding: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+  },
+  statCardAccent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  statCardValue: {
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: -1,
+    marginTop: 8,
+  },
+  statCardLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 2,
+  },
+  statBarsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 4,
+    marginTop: 10,
+    height: 36,
   },
 
   // Stats
