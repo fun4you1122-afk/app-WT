@@ -1,27 +1,34 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Animated, Easing, ScrollView, StyleSheet, View, Text,
+  ScrollView, StyleSheet, View, Text,
   TouchableOpacity, Switch, Dimensions, Platform, StatusBar,
   Linking,
 } from 'react-native';
+import Animated, {
+  useSharedValue, useAnimatedStyle, useAnimatedProps, withTiming, withSpring,
+  withRepeat, withSequence, withDelay, Easing as REasing,
+  interpolate, cancelAnimation,
+  runOnJS, useDerivedValue,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import Svg, { Path, Circle, Rect, Ellipse, G } from 'react-native-svg';
 
-const AnimSvgCircle = Animated.createAnimatedComponent(Circle);
-
 // ─── New Animated Components ──────────────────────────────────────────────────
 
+// GlitchBadge — kept with built-in Animated (simple sweep, already performant)
+import { Animated as RNAnimated, Easing } from 'react-native';
+
 function GlitchBadge({ text }: { text: string }) {
-  const sweepAnim = useRef(new Animated.Value(-1)).current;
+  const sweepAnim = useRef(new RNAnimated.Value(-1)).current;
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(sweepAnim, { toValue: 2, duration: 1800, useNativeDriver: true, delay: 0 }),
-        Animated.timing(sweepAnim, { toValue: -1, duration: 0, useNativeDriver: true }),
-        Animated.delay(2200),
+    const loop = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(sweepAnim, { toValue: 2, duration: 1800, useNativeDriver: true, delay: 0 }),
+        RNAnimated.timing(sweepAnim, { toValue: -1, duration: 0, useNativeDriver: true }),
+        RNAnimated.delay(2200),
       ])
     );
     loop.start();
@@ -43,7 +50,7 @@ function GlitchBadge({ text }: { text: string }) {
         gap: 6,
       }}>
         {/* sweep shimmer line */}
-        <Animated.View style={{
+        <RNAnimated.View style={{
           position: 'absolute',
           top: 0,
           bottom: 0,
@@ -58,20 +65,21 @@ function GlitchBadge({ text }: { text: string }) {
   );
 }
 
+// WaveformBar — kept with built-in Animated (array of values, can't use hooks in loops)
 function WaveformBar({ barCount = 14, color = '#fff', height = 36 }: { barCount?: number; color?: string; height?: number }) {
-  const anims = useRef(Array.from({ length: barCount }, () => new Animated.Value(Math.random() * 0.6 + 0.2))).current;
+  const anims = useRef(Array.from({ length: barCount }, () => new RNAnimated.Value(Math.random() * 0.6 + 0.2))).current;
 
   useEffect(() => {
     const animations = anims.map((anim, i) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(anim, {
+      RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(anim, {
             toValue: Math.random() * 0.7 + 0.3,
             duration: 300 + Math.random() * 400,
             useNativeDriver: true,
             delay: i * 40,
           }),
-          Animated.timing(anim, {
+          RNAnimated.timing(anim, {
             toValue: Math.random() * 0.3 + 0.1,
             duration: 300 + Math.random() * 300,
             useNativeDriver: true,
@@ -86,7 +94,7 @@ function WaveformBar({ barCount = 14, color = '#fff', height = 36 }: { barCount?
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, height }}>
       {anims.map((anim, i) => (
-        <Animated.View
+        <RNAnimated.View
           key={i}
           style={{
             width: 3,
@@ -103,27 +111,27 @@ function WaveformBar({ barCount = 14, color = '#fff', height = 36 }: { barCount?
 }
 
 function MorphingBlob({ color, size = 160, opacity = 0.15 }: { color: string; size?: number; opacity?: number }) {
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useSharedValue(1);
+
+  const blobStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseAnim.value }],
+  }));
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.15, duration: 2200, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 0.9, duration: 2200, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
+    pulseAnim.value = withRepeat(withSequence(
+      withTiming(1.15, { duration: 2200 }),
+      withTiming(0.9, { duration: 2200 }),
+    ), -1, false);
+    return () => cancelAnimation(pulseAnim);
   }, []);
 
   return (
-    <Animated.View style={{
+    <Animated.View style={[{
       width: size, height: size,
       borderRadius: size / 2,
       backgroundColor: color,
       opacity,
-      transform: [{ scale: pulseAnim }],
-    }} />
+    }, blobStyle]} />
   );
 }
 
@@ -145,15 +153,16 @@ function CircuitLines({ width: W2, height: H2 = 120, color = 'rgba(255,255,255,0
   );
 }
 
+// ScanBeam — kept with built-in Animated (simple translateY loop)
 function ScanBeam({ width: W2, height: H2 }: { width: number; height: number }) {
-  const scanAnim = useRef(new Animated.Value(-2)).current;
+  const scanAnim = useRef(new RNAnimated.Value(-2)).current;
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scanAnim, { toValue: H2 + 2, duration: 2400, useNativeDriver: true }),
-        Animated.delay(1600),
-        Animated.timing(scanAnim, { toValue: -2, duration: 0, useNativeDriver: true }),
+    const loop = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(scanAnim, { toValue: H2 + 2, duration: 2400, useNativeDriver: true }),
+        RNAnimated.delay(1600),
+        RNAnimated.timing(scanAnim, { toValue: -2, duration: 0, useNativeDriver: true }),
       ])
     );
     loop.start();
@@ -161,7 +170,7 @@ function ScanBeam({ width: W2, height: H2 }: { width: number; height: number }) 
   }, []);
 
   return (
-    <Animated.View
+    <RNAnimated.View
       pointerEvents="none"
       style={{
         position: 'absolute',
@@ -293,18 +302,17 @@ function AnimatedCounter({
 }: {
   target: number; suffix?: string; color: string;
 }) {
-  const anim = useRef(new Animated.Value(0)).current;
+  const progress = useSharedValue(0);
   const [display, setDisplay] = useState('0');
 
+  const updateDisplay = (v: number) => setDisplay(Math.round(v * target).toString());
+
+  useDerivedValue(() => {
+    runOnJS(updateDisplay)(progress.value);
+  });
+
   useEffect(() => {
-    const id = anim.addListener(({ value }) => setDisplay(Math.round(value).toString()));
-    Animated.timing(anim, {
-      toValue: target,
-      duration: 1200,
-      useNativeDriver: false,
-      easing: Easing.out(Easing.cubic),
-    }).start();
-    return () => anim.removeListener(id);
+    progress.value = withTiming(1, { duration: 1200, easing: REasing.out(REasing.cubic) });
   }, []);
 
   return (
@@ -315,27 +323,34 @@ function AnimatedCounter({
 // ─── Leader Card ──────────────────────────────────────────────────────────────
 
 function LeaderCard({ person, colors }: { person: typeof LEADERSHIP[0]; colors: any }) {
-  const scale = useRef(new Animated.Value(1)).current;
-  const glowOpacity = useRef(new Animated.Value(0.4)).current;
+  const scale = useSharedValue(1);
+  const glowOpacity = useSharedValue(0.4);
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
+  }));
+
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowOpacity, { toValue: 1, duration: 1200, useNativeDriver: true }),
-        Animated.timing(glowOpacity, { toValue: 0.4, duration: 1200, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
+    glowOpacity.value = withRepeat(withSequence(
+      withTiming(1, { duration: 1200 }),
+      withTiming(0.4, { duration: 1200 }),
+    ), -1, false);
+    return () => cancelAnimation(glowOpacity);
   }, []);
 
-  const handlePressIn = () =>
-    Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, damping: 14 }).start();
-  const handlePressOut = () =>
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 12 }).start();
+  const handlePressIn = () => {
+    scale.value = withSpring(0.96, { damping: 14 });
+  };
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 12 });
+  };
 
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
+    <Animated.View style={cardStyle}>
       <TouchableOpacity
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -343,7 +358,7 @@ function LeaderCard({ person, colors }: { person: typeof LEADERSHIP[0]; colors: 
         style={[styles.leaderCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
       >
         {/* Pulsing glow behind avatar */}
-        <Animated.View style={{
+        <Animated.View style={[{
           position: 'absolute',
           top: 8,
           alignSelf: 'center',
@@ -351,8 +366,7 @@ function LeaderCard({ person, colors }: { person: typeof LEADERSHIP[0]; colors: 
           height: 80,
           borderRadius: 28,
           backgroundColor: person.accentColor + '30',
-          opacity: glowOpacity,
-        }} />
+        }, glowStyle]} />
         <LinearGradient
           colors={person.gradient}
           style={styles.leaderAvatarWrap}
@@ -391,16 +405,22 @@ function ContactRow({
 }: {
   icon: string; label: string; onPress: () => void; colors: any; isLast: boolean;
 }) {
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useSharedValue(1);
 
-  const handlePressIn = () =>
-    Animated.spring(scale, { toValue: 0.98, useNativeDriver: true, damping: 14 }).start();
-  const handlePressOut = () =>
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 12 }).start();
+  const rowStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98, { damping: 14 });
+  };
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 12 });
+  };
 
   return (
     <>
-      <Animated.View style={{ transform: [{ scale }] }}>
+      <Animated.View style={rowStyle}>
         <TouchableOpacity
           style={styles.contactRow}
           onPressIn={handlePressIn}
@@ -432,46 +452,46 @@ function ContactRow({
 
 // ─── Counter Ring ─────────────────────────────────────────────────────────────
 
+const AnimCircle = Animated.createAnimatedComponent(Circle);
+
 function CounterRing({ value, max, label, color, size = 104 }: {
   value: number; max: number; label: string; color: string; size?: number;
 }) {
-  const progress = useRef(new Animated.Value(0)).current;
-  const countAnim = useRef(new Animated.Value(0)).current;
-  const glowAnim = useRef(new Animated.Value(0.4)).current;
+  const progress = useSharedValue(0);
+  const glowAnim = useSharedValue(0.4);
   const [displayVal, setDisplayVal] = useState('0');
   const R = size * 0.4;
   const circumference = 2 * Math.PI * R;
   const strokeW = size * 0.09;
 
-  useEffect(() => {
-    // count-up + arc fill
-    Animated.timing(progress, {
-      toValue: value / max,
-      duration: 1800,
-      useNativeDriver: false,
-      easing: Easing.out(Easing.cubic),
-    }).start();
-    const id = countAnim.addListener(({ value: v }) => setDisplayVal(Math.round(v).toString()));
-    Animated.timing(countAnim, {
-      toValue: value,
-      duration: 1800,
-      useNativeDriver: false,
-      easing: Easing.out(Easing.cubic),
-    }).start();
-    // pulsing glow
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim, { toValue: 1, duration: 1200, useNativeDriver: false }),
-        Animated.timing(glowAnim, { toValue: 0.4, duration: 1200, useNativeDriver: false }),
-      ])
-    ).start();
-    return () => countAnim.removeListener(id);
-  }, []);
+  const updateDisplay = (v: number) => setDisplayVal(Math.round(v * value).toString());
 
-  const strokeDashoffset = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [circumference, circumference * 0.05],
+  useDerivedValue(() => {
+    runOnJS(updateDisplay)(progress.value);
   });
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(glowAnim.value, [0.4, 1], [0.07, 0.18]),
+  }));
+
+  const animatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: interpolate(progress.value, [0, 1], [circumference, circumference * 0.05]),
+  }));
+
+  useEffect(() => {
+    progress.value = withTiming(1, {
+      duration: 1800,
+      easing: REasing.out(REasing.cubic),
+    });
+    glowAnim.value = withRepeat(withSequence(
+      withTiming(1, { duration: 1200 }),
+      withTiming(0.4, { duration: 1200 }),
+    ), -1, false);
+    return () => {
+      cancelAnimation(progress);
+      cancelAnimation(glowAnim);
+    };
+  }, []);
 
   return (
     <View style={{
@@ -479,15 +499,14 @@ function CounterRing({ value, max, label, color, size = 104 }: {
       alignItems: 'center',
     }}>
       {/* Glow halo behind ring */}
-      <Animated.View style={{
+      <Animated.View style={[{
         position: 'absolute',
         width: size,
         height: size,
         borderRadius: size / 2,
         backgroundColor: color,
-        opacity: glowAnim.interpolate({ inputRange: [0.4, 1], outputRange: [0.07, 0.18] }),
         top: 0,
-      }} />
+      }, glowStyle]} />
 
       <View style={{
         width: size,
@@ -510,13 +529,13 @@ function CounterRing({ value, max, label, color, size = 104 }: {
             fill="none"
           />
           {/* Progress arc */}
-          <AnimSvgCircle
+          <AnimCircle
             cx={size / 2} cy={size / 2} r={R}
             stroke={color}
             strokeWidth={strokeW}
             fill="none"
             strokeDasharray={`${circumference} ${circumference}`}
-            strokeDashoffset={strokeDashoffset}
+            animatedProps={animatedProps}
             strokeLinecap="round"
             transform={`rotate(-90, ${size / 2}, ${size / 2})`}
           />
@@ -547,21 +566,24 @@ function CounterRing({ value, max, label, color, size = 104 }: {
 
 function FlipCertCard({ cert, colors }: { cert: typeof CERTIFICATIONS[0]; colors: any }) {
   const [flipped, setFlipped] = useState(false);
-  const flipAnim = useRef(new Animated.Value(0)).current;
+  const flipAnim = useSharedValue(0);
 
   const handleFlip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Animated.spring(flipAnim, {
-      toValue: flipped ? 0 : 1,
-      useNativeDriver: true,
-      damping: 14,
-      stiffness: 120,
-    }).start(() => setFlipped(!flipped));
+    flipAnim.value = withSpring(flipped ? 0 : 1, { damping: 14, stiffness: 120 }, () => {
+      runOnJS(setFlipped)(!flipped);
+    });
   };
 
-  const frontRotate = flipAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
-  const backRotate = flipAnim.interpolate({ inputRange: [0, 1], outputRange: ['180deg', '360deg'] });
   const cardW = (W - 72) / 3;
+
+  const frontStyle = useAnimatedStyle(() => ({
+    transform: [{ rotateY: `${interpolate(flipAnim.value, [0, 1], [0, 180])}deg` }],
+  }));
+
+  const backStyle = useAnimatedStyle(() => ({
+    transform: [{ rotateY: `${interpolate(flipAnim.value, [0, 1], [180, 360])}deg` }],
+  }));
 
   return (
     <TouchableOpacity onPress={handleFlip} activeOpacity={1} style={{ width: cardW, height: 130 }}>
@@ -573,7 +595,7 @@ function FlipCertCard({ cert, colors }: { cert: typeof CERTIFICATIONS[0]; colors
         borderWidth: 1, borderColor: colors.border,
         alignItems: 'center', justifyContent: 'center', gap: 8, padding: 10,
         backfaceVisibility: 'hidden',
-      }, { transform: [{ rotateY: frontRotate }] }]}>
+      }, frontStyle]}>
         <LinearGradient colors={[cert.color + '22', cert.color + '08']} style={{
           width: 44, height: 44, borderRadius: 22,
           alignItems: 'center', justifyContent: 'center',
@@ -592,7 +614,7 @@ function FlipCertCard({ cert, colors }: { cert: typeof CERTIFICATIONS[0]; colors
         borderRadius: 16, overflow: 'hidden',
         alignItems: 'center', justifyContent: 'center', padding: 12,
         backfaceVisibility: 'hidden',
-      }, { transform: [{ rotateY: backRotate }] }]}>
+      }, backStyle]}>
         <LinearGradient colors={[cert.color + 'DD', cert.color]} style={{
           ...StyleSheet.absoluteFillObject as any,
           borderRadius: 16,
@@ -613,42 +635,33 @@ function FlipCertCard({ cert, colors }: { cert: typeof CERTIFICATIONS[0]; colors
 
 export default function AboutScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
-  const heroAnim = useRef(new Animated.Value(0)).current;
-  const contentAnim = useRef(new Animated.Value(0)).current;
-  const logoScale = useRef(new Animated.Value(0.8)).current;
-  const logoRotate = useRef(new Animated.Value(0)).current;
+  const heroAnim = useSharedValue(0);
+  const contentAnim = useSharedValue(0);
+  const logoScale = useSharedValue(0.8);
+  const logoRotate = useSharedValue(0);
+
+  const heroStyle = useAnimatedStyle(() => ({
+    opacity: heroAnim.value,
+    transform: [{ translateY: interpolate(heroAnim.value, [0, 1], [-20, 0]) }],
+  }));
+
+  const contentStyle = useAnimatedStyle(() => ({
+    opacity: contentAnim.value,
+  }));
+
+  const logoStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: logoScale.value },
+      { rotate: `${interpolate(logoRotate.value, [0, 1], [-8, 0])}deg` },
+    ],
+  }));
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(heroAnim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-          easing: Easing.out(Easing.cubic),
-        }),
-        Animated.spring(logoScale, {
-          toValue: 1,
-          delay: 200,
-          useNativeDriver: true,
-          damping: 14,
-          stiffness: 120,
-        }),
-        Animated.timing(logoRotate, {
-          toValue: 1,
-          duration: 600,
-          delay: 200,
-          useNativeDriver: true,
-          easing: Easing.out(Easing.back(1.5)),
-        }),
-      ]),
-      Animated.timing(contentAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.cubic),
-      }),
-    ]).start();
+    heroAnim.value = withTiming(1, { duration: 600, easing: REasing.out(REasing.cubic) });
+    logoScale.value = withDelay(200, withSpring(1, { damping: 14, stiffness: 120 }));
+    logoRotate.value = withDelay(200, withTiming(1, { duration: 600, easing: REasing.out(REasing.back(1.5)) }));
+    // content fades in after hero
+    contentAnim.value = withDelay(600, withTiming(1, { duration: 400, easing: REasing.out(REasing.cubic) }));
   }, []);
 
   const handleThemeToggle = () => {
@@ -656,23 +669,13 @@ export default function AboutScreen() {
     toggleTheme();
   };
 
-  const logoRotateDeg = logoRotate.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['-8deg', '0deg'],
-  });
-
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
         {/* ── Hero ── */}
-        <Animated.View
-          style={{
-            opacity: heroAnim,
-            transform: [{ translateY: heroAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }],
-          }}
-        >
+        <Animated.View style={heroStyle}>
           <LinearGradient
             colors={['#020818', '#0D1B4B', '#0055FF']}
             start={{ x: 0, y: 0 }}
@@ -702,11 +705,7 @@ export default function AboutScreen() {
             <GlitchBadge text="ABOUT US" />
 
             {/* Animated WT Logo */}
-            <Animated.View
-              style={{
-                transform: [{ scale: logoScale }, { rotate: logoRotateDeg }],
-              }}
-            >
+            <Animated.View style={logoStyle}>
               <LinearGradient
                 colors={[PURPLE, BLUE]}
                 style={styles.logoCircle}
@@ -730,7 +729,7 @@ export default function AboutScreen() {
         </Animated.View>
 
         {/* ── Stats Rings ── */}
-        <Animated.View style={[styles.ringsRow, { opacity: contentAnim }]}>
+        <Animated.View style={[styles.ringsRow, contentStyle]}>
           {COMPANY_STATS.map((stat) => (
             <CounterRing
               key={stat.label}

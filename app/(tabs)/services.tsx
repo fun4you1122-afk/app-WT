@@ -1,8 +1,14 @@
 import React, { useRef, useEffect, useState } from 'react';
 import {
-  Animated, ScrollView, StyleSheet, View, Text,
+  ScrollView, StyleSheet, View, Text,
   TouchableOpacity, Dimensions, Platform, StatusBar, Linking,
 } from 'react-native';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withTiming, withSpring,
+  withRepeat, withSequence, withDelay, Easing as REasing,
+  interpolate, cancelAnimation,
+  runOnJS,
+} from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -11,15 +17,18 @@ import { useTheme } from '../../context/ThemeContext';
 
 // ─── New Animated Components ──────────────────────────────────────────────────
 
+// GlitchBadge — kept with built-in Animated (simple sweep, already performant)
+import { Animated as RNAnimated } from 'react-native';
+
 function GlitchBadge({ text }: { text: string }) {
-  const sweepAnim = useRef(new Animated.Value(-1)).current;
+  const sweepAnim = useRef(new RNAnimated.Value(-1)).current;
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(sweepAnim, { toValue: 2, duration: 1800, useNativeDriver: true, delay: 0 }),
-        Animated.timing(sweepAnim, { toValue: -1, duration: 0, useNativeDriver: true }),
-        Animated.delay(2200),
+    const loop = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(sweepAnim, { toValue: 2, duration: 1800, useNativeDriver: true, delay: 0 }),
+        RNAnimated.timing(sweepAnim, { toValue: -1, duration: 0, useNativeDriver: true }),
+        RNAnimated.delay(2200),
       ])
     );
     loop.start();
@@ -41,7 +50,7 @@ function GlitchBadge({ text }: { text: string }) {
         gap: 6,
       }}>
         {/* sweep shimmer line */}
-        <Animated.View style={{
+        <RNAnimated.View style={{
           position: 'absolute',
           top: 0,
           bottom: 0,
@@ -56,20 +65,21 @@ function GlitchBadge({ text }: { text: string }) {
   );
 }
 
+// WaveformBar — kept with built-in Animated (array of animated values, can't use hooks in loops)
 function WaveformBar({ barCount = 14, color = '#fff', height = 36 }: { barCount?: number; color?: string; height?: number }) {
-  const anims = useRef(Array.from({ length: barCount }, () => new Animated.Value(Math.random() * 0.6 + 0.2))).current;
+  const anims = useRef(Array.from({ length: barCount }, () => new RNAnimated.Value(Math.random() * 0.6 + 0.2))).current;
 
   useEffect(() => {
     const animations = anims.map((anim, i) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(anim, {
+      RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(anim, {
             toValue: Math.random() * 0.7 + 0.3,
             duration: 300 + Math.random() * 400,
             useNativeDriver: true,
             delay: i * 40,
           }),
-          Animated.timing(anim, {
+          RNAnimated.timing(anim, {
             toValue: Math.random() * 0.3 + 0.1,
             duration: 300 + Math.random() * 300,
             useNativeDriver: true,
@@ -84,7 +94,7 @@ function WaveformBar({ barCount = 14, color = '#fff', height = 36 }: { barCount?
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, height }}>
       {anims.map((anim, i) => (
-        <Animated.View
+        <RNAnimated.View
           key={i}
           style={{
             width: 3,
@@ -101,27 +111,27 @@ function WaveformBar({ barCount = 14, color = '#fff', height = 36 }: { barCount?
 }
 
 function MorphingBlob({ color, size = 160, opacity = 0.15 }: { color: string; size?: number; opacity?: number }) {
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useSharedValue(1);
+
+  const blobStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseAnim.value }],
+  }));
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.15, duration: 2200, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 0.9, duration: 2200, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
+    pulseAnim.value = withRepeat(withSequence(
+      withTiming(1.15, { duration: 2200 }),
+      withTiming(0.9, { duration: 2200 }),
+    ), -1, false);
+    return () => cancelAnimation(pulseAnim);
   }, []);
 
   return (
-    <Animated.View style={{
+    <Animated.View style={[{
       width: size, height: size,
       borderRadius: size / 2,
       backgroundColor: color,
       opacity,
-      transform: [{ scale: pulseAnim }],
-    }} />
+    }, blobStyle]} />
   );
 }
 
@@ -143,15 +153,16 @@ function CircuitLines({ width: W2, height: H2 = 120, color = 'rgba(255,255,255,0
   );
 }
 
+// ScanBeam — kept with built-in Animated (simple translateY loop)
 function ScanBeam({ width: W2, height: H2 }: { width: number; height: number }) {
-  const scanAnim = useRef(new Animated.Value(-2)).current;
+  const scanAnim = useRef(new RNAnimated.Value(-2)).current;
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scanAnim, { toValue: H2 + 2, duration: 2400, useNativeDriver: true }),
-        Animated.delay(1600),
-        Animated.timing(scanAnim, { toValue: -2, duration: 0, useNativeDriver: true }),
+    const loop = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(scanAnim, { toValue: H2 + 2, duration: 2400, useNativeDriver: true }),
+        RNAnimated.delay(1600),
+        RNAnimated.timing(scanAnim, { toValue: -2, duration: 0, useNativeDriver: true }),
       ])
     );
     loop.start();
@@ -159,7 +170,7 @@ function ScanBeam({ width: W2, height: H2 }: { width: number; height: number }) 
   }, []);
 
   return (
-    <Animated.View
+    <RNAnimated.View
       pointerEvents="none"
       style={{
         position: 'absolute',
@@ -337,32 +348,26 @@ function ToolDiagonalArrow({ color }: { color: string }) {
 // ─── Service Card (animated left border reveal + slide up) ────────────────────
 
 function ServiceCard({ service, index, colors }: { service: typeof SERVICES[0]; index: number; colors: any }) {
-  const translateY = useRef(new Animated.Value(40)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(1)).current;
+  const translateY = useSharedValue(40);
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }, { scale: scale.value }],
+  }));
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.spring(translateY, {
-        toValue: 0,
-        delay: index * 110,
-        useNativeDriver: true,
-        damping: 15,
-        stiffness: 110,
-      }),
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 400,
-        delay: index * 110,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    translateY.value = withDelay(index * 110, withSpring(0, { damping: 15, stiffness: 110 }));
+    opacity.value = withDelay(index * 110, withTiming(1, { duration: 400 }));
   }, []);
 
-  const handlePressIn = () =>
-    Animated.spring(scale, { toValue: 0.98, useNativeDriver: true, damping: 14 }).start();
-  const handlePressOut = () =>
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 12 }).start();
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98, { damping: 14 });
+  };
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 12 });
+  };
 
   return (
     <Animated.View
@@ -372,10 +377,9 @@ function ServiceCard({ service, index, colors }: { service: typeof SERVICES[0]; 
           backgroundColor: colors.surface,
           borderColor: colors.border,
           borderLeftColor: service.color,
-          opacity,
-          transform: [{ translateY }, { scale }],
           shadowColor: service.color,
         },
+        cardStyle,
       ]}
     >
       <TouchableOpacity
@@ -434,15 +438,21 @@ function ServiceCard({ service, index, colors }: { service: typeof SERVICES[0]; 
 // ─── Engagement Model Card ────────────────────────────────────────────────────
 
 function EngagementCard({ model, colors }: { model: typeof ENGAGEMENT_MODELS[0]; colors: any }) {
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useSharedValue(1);
 
-  const handlePressIn = () =>
-    Animated.spring(scale, { toValue: 0.95, useNativeDriver: true, damping: 14 }).start();
-  const handlePressOut = () =>
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 12 }).start();
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95, { damping: 14 });
+  };
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 12 });
+  };
 
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
+    <Animated.View style={cardStyle}>
       <TouchableOpacity
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -488,17 +498,23 @@ function EngagementCard({ model, colors }: { model: typeof ENGAGEMENT_MODELS[0];
 // ─── Tool Card ────────────────────────────────────────────────────────────────
 
 function ToolCard({ tool }: { tool: typeof FREE_TOOLS[0] }) {
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useSharedValue(1);
 
-  const handlePressIn = () =>
-    Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, damping: 15, stiffness: 300 }).start();
-  const handlePressOut = () =>
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 12, stiffness: 250 }).start();
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.97, { damping: 15, stiffness: 300 });
+  };
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 12, stiffness: 250 });
+  };
 
   const cardW = W - 48;
 
   return (
-    <Animated.View style={[styles.toolCard, { width: cardW, transform: [{ scale }] }]}>
+    <Animated.View style={[styles.toolCard, { width: cardW }, cardStyle]}>
       <TouchableOpacity
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -541,14 +557,17 @@ function ToolCard({ tool }: { tool: typeof FREE_TOOLS[0] }) {
 
 export default function ServicesScreen() {
   const { colors } = useTheme();
-  const headerSlide = useRef(new Animated.Value(-30)).current;
-  const headerFade = useRef(new Animated.Value(0)).current;
+  const headerSlide = useSharedValue(-30);
+  const headerFade = useSharedValue(0);
+
+  const headerStyle = useAnimatedStyle(() => ({
+    opacity: headerFade.value,
+    transform: [{ translateY: headerSlide.value }],
+  }));
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(headerFade, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.spring(headerSlide, { toValue: 0, useNativeDriver: true, damping: 16, stiffness: 120 }),
-    ]).start();
+    headerFade.value = withTiming(1, { duration: 600 });
+    headerSlide.value = withSpring(0, { damping: 16, stiffness: 120 });
   }, []);
 
   return (
@@ -557,7 +576,7 @@ export default function ServicesScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
         {/* ── Animated Header ── */}
-        <Animated.View style={{ opacity: headerFade, transform: [{ translateY: headerSlide }] }}>
+        <Animated.View style={headerStyle}>
           <LinearGradient
             colors={['#0055FF', '#0EA5E9']}
             start={{ x: 0, y: 0 }}

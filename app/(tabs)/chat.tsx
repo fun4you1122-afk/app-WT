@@ -1,15 +1,24 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Animated, Easing, ScrollView, StyleSheet, View, Text,
+  ScrollView, StyleSheet, View, Text,
   TextInput, TouchableOpacity, KeyboardAvoidingView,
   Platform, Dimensions,
 } from 'react-native';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withTiming, withSpring,
+  withRepeat, withSequence, withDelay, Easing as REasing,
+  interpolate, cancelAnimation,
+  runOnJS,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import Svg, { Path, Circle, Rect, Ellipse } from 'react-native-svg';
 import { useTheme } from '../../context/ThemeContext';
+
+// Waveform and TypingIndicator use arrays of animated values — kept with built-in API
+import { Animated as RNAnimated, Easing } from 'react-native';
 
 const { width: W } = Dimensions.get('window');
 const CHAT_KEY = '@wethink_consult_chat_v2';
@@ -109,23 +118,24 @@ function ChevronRightIcon({ color }: { color: string }) {
 }
 
 // ─── Animated Waveform ───────────────────────────────────────────────────────
+// Kept with built-in Animated — array of animated values, cannot use hooks in loop
 
 function Waveform() {
   const bars = Array.from({ length: 18 }, (_, i) =>
-    useRef(new Animated.Value(0.3)).current
+    useRef(new RNAnimated.Value(0.3)).current
   );
 
   useEffect(() => {
     bars.forEach((bar, i) => {
       const animate = () => {
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(bar, {
+        RNAnimated.loop(
+          RNAnimated.sequence([
+            RNAnimated.timing(bar, {
               toValue: 0.2 + Math.random() * 0.8,
               duration: 250 + Math.random() * 300,
               useNativeDriver: true,
             }),
-            Animated.timing(bar, {
+            RNAnimated.timing(bar, {
               toValue: 0.15 + Math.random() * 0.4,
               duration: 200 + Math.random() * 250,
               useNativeDriver: true,
@@ -140,7 +150,7 @@ function Waveform() {
   return (
     <View style={styles.waveform}>
       {bars.map((bar, i) => (
-        <Animated.View
+        <RNAnimated.View
           key={i}
           style={[
             styles.waveBar,
@@ -159,64 +169,65 @@ function Waveform() {
 // ─── Pulsing Availability Dot ─────────────────────────────────────────────────
 
 function PulsingDot() {
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const opacityAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useSharedValue(1);
+  const opacityAnim = useSharedValue(1);
+
+  const ringStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseAnim.value }],
+    opacity: opacityAnim.value,
+  }));
 
   useEffect(() => {
-    Animated.loop(
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.8, duration: 900, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
-        ]),
-        Animated.sequence([
-          Animated.timing(opacityAnim, { toValue: 0.2, duration: 900, useNativeDriver: true }),
-          Animated.timing(opacityAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
-        ]),
-      ])
-    ).start();
+    pulseAnim.value = withRepeat(withSequence(
+      withTiming(1.8, { duration: 900 }),
+      withTiming(1, { duration: 900 }),
+    ), -1, false);
+    opacityAnim.value = withRepeat(withSequence(
+      withTiming(0.2, { duration: 900 }),
+      withTiming(1, { duration: 900 }),
+    ), -1, false);
+    return () => {
+      cancelAnimation(pulseAnim);
+      cancelAnimation(opacityAnim);
+    };
   }, []);
 
   return (
     <View style={styles.pulsingDotOuter}>
-      <Animated.View
-        style={[
-          styles.pulsingDotRing,
-          { transform: [{ scale: pulseAnim }], opacity: opacityAnim },
-        ]}
-      />
+      <Animated.View style={[styles.pulsingDotRing, ringStyle]} />
       <View style={styles.pulsingDotCore} />
     </View>
   );
 }
 
 // ─── Typing Indicator ────────────────────────────────────────────────────────
+// Kept with built-in Animated — array of dots, can't use hooks in loop
 
 function TypingIndicator({ colors }: { colors: any }) {
   const dots = [
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
+    useRef(new RNAnimated.Value(0)).current,
+    useRef(new RNAnimated.Value(0)).current,
+    useRef(new RNAnimated.Value(0)).current,
   ];
 
   useEffect(() => {
     const animations = dots.map((dot, i) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(i * 160),
-          Animated.timing(dot, {
+      RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.delay(i * 160),
+          RNAnimated.timing(dot, {
             toValue: -7,
             duration: 300,
             easing: Easing.inOut(Easing.quad),
             useNativeDriver: true,
           }),
-          Animated.timing(dot, {
+          RNAnimated.timing(dot, {
             toValue: 0,
             duration: 300,
             easing: Easing.inOut(Easing.quad),
             useNativeDriver: true,
           }),
-          Animated.delay(320),
+          RNAnimated.delay(320),
         ])
       )
     );
@@ -232,7 +243,7 @@ function TypingIndicator({ colors }: { colors: any }) {
       ]}
     >
       {dots.map((dot, i) => (
-        <Animated.View
+        <RNAnimated.View
           key={i}
           style={[
             typingStyles.dot,
@@ -262,28 +273,19 @@ const typingStyles = StyleSheet.create({
 
 function Bubble({ msg, colors }: { msg: Message; colors: any }) {
   const isUser = msg.role === 'user';
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(14)).current;
-  const scale = useRef(new Animated.Value(0.95)).current;
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(14);
+  const scale = useSharedValue(0.95);
+
+  const bubbleStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }, { scale: scale.value }],
+  }));
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: 280, useNativeDriver: true }),
-      Animated.spring(translateY, {
-        toValue: 0,
-        duration: 260,
-        useNativeDriver: true,
-        damping: 16,
-        stiffness: 180,
-      }),
-      Animated.spring(scale, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-        damping: 14,
-        stiffness: 200,
-      }),
-    ]).start();
+    opacity.value = withTiming(1, { duration: 280 });
+    translateY.value = withSpring(0, { damping: 16, stiffness: 180 });
+    scale.value = withSpring(1, { damping: 14, stiffness: 200 });
   }, []);
 
   return (
@@ -291,7 +293,7 @@ function Bubble({ msg, colors }: { msg: Message; colors: any }) {
       style={[
         bubbleStyles.row,
         isUser && bubbleStyles.rowUser,
-        { opacity, transform: [{ translateY }, { scale }] },
+        bubbleStyle,
       ]}
     >
       {!isUser && (
@@ -357,24 +359,26 @@ const bubbleStyles = StyleSheet.create({
 // ─── Booking Card ─────────────────────────────────────────────────────────────
 
 function BookingCard({ colors }: { colors: any }) {
-  const floatAnim = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(0.95)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+  const floatAnim = useSharedValue(0);
+  const scale = useSharedValue(0.95);
+  const opacity = useSharedValue(0);
+
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }, { translateY: floatAnim.value }],
+  }));
 
   useEffect(() => {
     // Entrance
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 14, stiffness: 110, delay: 200 }),
-      Animated.timing(opacity, { toValue: 1, duration: 500, delay: 200, useNativeDriver: true }),
-    ]).start();
+    scale.value = withDelay(200, withSpring(1, { damping: 14, stiffness: 110 }));
+    opacity.value = withDelay(200, withTiming(1, { duration: 500 }));
 
     // Floating animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, { toValue: -4, duration: 2200, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
-        Animated.timing(floatAnim, { toValue: 0, duration: 2200, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
-      ])
-    ).start();
+    floatAnim.value = withRepeat(withSequence(
+      withTiming(-4, { duration: 2200, easing: REasing.inOut(REasing.sin) }),
+      withTiming(0, { duration: 2200, easing: REasing.inOut(REasing.sin) }),
+    ), -1, false);
+    return () => cancelAnimation(floatAnim);
   }, []);
 
   return (
@@ -384,9 +388,8 @@ function BookingCard({ colors }: { colors: any }) {
         {
           backgroundColor: colors.surface,
           shadowColor: BLUE,
-          opacity,
-          transform: [{ scale }, { translateY: floatAnim }],
         },
+        cardStyle,
       ]}
     >
       <LinearGradient

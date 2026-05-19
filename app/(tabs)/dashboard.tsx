@@ -1,8 +1,14 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
-  Animated, ScrollView, StyleSheet, View, Text, Image,
+  ScrollView, StyleSheet, View, Text, Image,
   TouchableOpacity, Dimensions, Platform, RefreshControl,
 } from 'react-native';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withTiming, withSpring,
+  withRepeat, withSequence, withDelay, Easing as REasing,
+  interpolate, useAnimatedScrollHandler, cancelAnimation,
+  runOnJS, useDerivedValue,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
@@ -138,6 +144,10 @@ function getWhyIcon(iconType: string, color: string) {
 }
 
 // ─── Neural Network Visualization ────────────────────────────────────────────
+// Kept with built-in Animated API — array of animated values created in useRef,
+// cannot use hooks in loops (reanimated rule), and these are already performant.
+
+import { Animated } from 'react-native';
 
 const NODES = [
   { x: 0.15, y: 0.18 }, { x: 0.5, y: 0.08 }, { x: 0.85, y: 0.22 },
@@ -239,16 +249,19 @@ interface Particle {
 }
 
 function ImpactCard({ item, index }: { item: typeof IMPACT_DATA[0]; index: number }) {
-  const scale = useRef(new Animated.Value(0.88)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useSharedValue(0.88);
+  const opacity = useSharedValue(0);
   const [particles, setParticles] = useState<Particle[]>([]);
   const particleIdRef = useRef(0);
 
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
+
   useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 1, delay: index * 100, useNativeDriver: true, damping: 13, stiffness: 120 }),
-      Animated.timing(opacity, { toValue: 1, duration: 350, delay: index * 100, useNativeDriver: true }),
-    ]).start();
+    opacity.value = withDelay(index * 100, withTiming(1, { duration: 350 }));
+    scale.value = withDelay(index * 100, withSpring(1, { damping: 13, stiffness: 120 }));
   }, []);
 
   const handlePress = (evt: any) => {
@@ -269,7 +282,7 @@ function ImpactCard({ item, index }: { item: typeof IMPACT_DATA[0]; index: numbe
   };
 
   return (
-    <Animated.View style={{ opacity, transform: [{ scale }] }}>
+    <Animated.View style={cardStyle}>
       <TouchableOpacity onPress={handlePress} activeOpacity={0.88}>
         <LinearGradient colors={item.gradient} style={styles.impactCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
           <Svg style={StyleSheet.absoluteFill as any} width={150} height={110} pointerEvents="none">
@@ -302,7 +315,7 @@ function WireframeGlobe({ size = 210 }: { size: number }) {
   const cy = size / 2;
   const R = size * 0.38;
   const angle = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useSharedValue(1);
   const [state, setState] = useState({
     dots: [
       { x: cx + R, y: cy, color: BLUE },
@@ -311,6 +324,11 @@ function WireframeGlobe({ size = 210 }: { size: number }) {
     ],
     lons: [0.18, 0.42, 0.68, 0.9],
   });
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseAnim.value }],
+    opacity: interpolate(pulseAnim.value, [1, 1.5], [0.6, 0]),
+  }));
 
   useEffect(() => {
     const id = angle.addListener(({ value }) => {
@@ -329,10 +347,10 @@ function WireframeGlobe({ size = 210 }: { size: number }) {
       });
     });
     Animated.loop(Animated.timing(angle, { toValue: Math.PI * 2, duration: 8000, useNativeDriver: false })).start();
-    Animated.loop(Animated.sequence([
-      Animated.timing(pulseAnim, { toValue: 1.5, duration: 2200, useNativeDriver: true }),
-      Animated.timing(pulseAnim, { toValue: 1, duration: 2200, useNativeDriver: true }),
-    ])).start();
+    pulseAnim.value = withRepeat(withSequence(
+      withTiming(1.5, { duration: 2200 }),
+      withTiming(1, { duration: 2200 }),
+    ), -1, false);
     return () => angle.removeListener(id);
   }, []);
 
@@ -372,7 +390,7 @@ function WireframeGlobe({ size = 210 }: { size: number }) {
           </React.Fragment>
         ))}
       </Svg>
-      <Animated.View style={{
+      <Animated.View style={[{
         position: 'absolute',
         left: cx - R - 22,
         top: cy - R - 22,
@@ -381,14 +399,13 @@ function WireframeGlobe({ size = 210 }: { size: number }) {
         borderRadius: (R + 22),
         borderWidth: 1,
         borderColor: 'rgba(0,85,255,0.3)',
-        transform: [{ scale: pulseAnim }],
-        opacity: pulseAnim.interpolate({ inputRange: [1, 1.5], outputRange: [0.6, 0] }),
-      }} />
+      }, pulseStyle]} />
     </View>
   );
 }
 
 // ─── Data Ticker ──────────────────────────────────────────────────────────────
+// Kept with built-in Animated — simple translateX loop, already performant.
 
 function DataTicker() {
   const anim = useRef(new Animated.Value(0)).current;
@@ -420,24 +437,30 @@ function DataTicker() {
 // ─── Hero Badge ───────────────────────────────────────────────────────────────
 
 function HeroBadge() {
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useSharedValue(1);
+
+  const dotStyle = useAnimatedStyle(() => ({
+    opacity: pulseAnim.value,
+  }));
 
   useEffect(() => {
-    Animated.loop(Animated.sequence([
-      Animated.timing(pulseAnim, { toValue: 0.3, duration: 700, useNativeDriver: true }),
-      Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
-    ])).start();
+    pulseAnim.value = withRepeat(withSequence(
+      withTiming(0.3, { duration: 700 }),
+      withTiming(1, { duration: 700 }),
+    ), -1, false);
+    return () => cancelAnimation(pulseAnim);
   }, []);
 
   return (
     <View style={styles.heroBadge}>
-      <Animated.View style={[styles.heroBadgeDot, { opacity: pulseAnim }]} />
+      <Animated.View style={[styles.heroBadgeDot, dotStyle]} />
       <Text style={styles.heroBadgeText}>UAE'S #1 ENTERPRISE AI FIRM</Text>
     </View>
   );
 }
 
 // ─── Shimmer Headline ─────────────────────────────────────────────────────────
+// Kept with built-in Animated — translateX loop with interpolate, simple.
 
 function ShimmerHeadline({ text }: { text: string }) {
   const shimmerAnim = useRef(new Animated.Value(0)).current;
@@ -474,6 +497,7 @@ function ShimmerHeadline({ text }: { text: string }) {
 }
 
 // ─── ParticleField ────────────────────────────────────────────────────────────
+// Kept with built-in Animated — array of animated values, cannot use hooks in loops.
 
 const PARTICLE_CONFIG = [
   { x: 0.08, y: 0.15, size: 2, color: BLUE, opacity: 0.5, dur: 5200 },
@@ -570,17 +594,17 @@ function AnimatedCounter({
 }: {
   target: number; suffix: string; label: string; color: string; duration?: number;
 }) {
-  const anim = useRef(new Animated.Value(0)).current;
+  const progress = useSharedValue(0);
   const [display, setDisplay] = useState('0');
 
+  const updateDisplay = (v: number) => setDisplay(Math.round(v * target).toString());
+
+  useDerivedValue(() => {
+    runOnJS(updateDisplay)(progress.value);
+  });
+
   useEffect(() => {
-    const id = anim.addListener(({ value }) => setDisplay(Math.round(value).toString()));
-    Animated.timing(anim, {
-      toValue: target,
-      duration,
-      useNativeDriver: false,
-    }).start();
-    return () => anim.removeListener(id);
+    progress.value = withTiming(1, { duration, easing: REasing.out(REasing.cubic) });
   }, []);
 
   return (
@@ -596,63 +620,41 @@ function AnimatedCounter({
 // ─── Industry Card (3D Tilt) ──────────────────────────────────────────────────
 
 function IndustryCard({ item, index }: { item: typeof INDUSTRIES[0]; index: number }) {
-  const scale = useRef(new Animated.Value(0.9)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-  const tiltX = useRef(new Animated.Value(0)).current;
-  const tiltY = useRef(new Animated.Value(0)).current;
+  const scale = useSharedValue(0.9);
+  const opacity = useSharedValue(0);
+  const tiltX = useSharedValue(0);
+  const tiltY = useSharedValue(0);
+
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [
+      { scale: scale.value },
+      { perspective: 800 },
+      { rotateX: `${interpolate(tiltY.value, [-10, 10], [-10, 10])}deg` },
+      { rotateY: `${interpolate(tiltX.value, [-10, 10], [-10, 10])}deg` },
+    ],
+  }));
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scale, {
-        toValue: 1, delay: index * 90, useNativeDriver: true, damping: 13, stiffness: 120,
-      }),
-      Animated.timing(opacity, {
-        toValue: 1, duration: 350, delay: index * 90, useNativeDriver: true,
-      }),
-    ]).start();
+    opacity.value = withDelay(index * 90, withTiming(1, { duration: 350 }));
+    scale.value = withDelay(index * 90, withSpring(1, { damping: 13, stiffness: 120 }));
   }, []);
 
   const handlePressIn = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Animated.parallel([
-      Animated.spring(tiltX, { toValue: 8, useNativeDriver: true, damping: 10, stiffness: 200 }),
-      Animated.spring(tiltY, { toValue: -5, useNativeDriver: true, damping: 10, stiffness: 200 }),
-    ]).start();
+    tiltX.value = withSpring(8, { damping: 10, stiffness: 200 });
+    tiltY.value = withSpring(-5, { damping: 10, stiffness: 200 });
   };
 
   const handlePressOut = () => {
-    Animated.parallel([
-      Animated.spring(tiltX, { toValue: 0, useNativeDriver: true, damping: 12, stiffness: 200 }),
-      Animated.spring(tiltY, { toValue: 0, useNativeDriver: true, damping: 12, stiffness: 200 }),
-    ]).start();
+    tiltX.value = withSpring(0, { damping: 12, stiffness: 200 });
+    tiltY.value = withSpring(0, { damping: 12, stiffness: 200 });
   };
 
   const cardW = W * 0.62;
 
   return (
-    <Animated.View
-      style={[
-        { opacity, width: cardW },
-        {
-          transform: [
-            { scale },
-            { perspective: 800 },
-            {
-              rotateX: tiltY.interpolate({
-                inputRange: [-10, 10],
-                outputRange: ['-10deg', '10deg'],
-              }),
-            },
-            {
-              rotateY: tiltX.interpolate({
-                inputRange: [-10, 10],
-                outputRange: ['-10deg', '10deg'],
-              }),
-            },
-          ],
-        },
-      ]}
-    >
+    <Animated.View style={[{ width: cardW }, cardStyle]}>
       {/* Shadow layer for depth */}
       <View style={[styles.industryCardShadow, { width: cardW }]} />
       <TouchableOpacity
@@ -687,30 +689,30 @@ function IndustryCard({ item, index }: { item: typeof INDUSTRIES[0]; index: numb
 // ─── Success Story ────────────────────────────────────────────────────────────
 
 function SuccessStory() {
-  const scale = useRef(new Animated.Value(0.96)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-  const progressAnim = useRef(new Animated.Value(0)).current;
+  const scale = useSharedValue(0.96);
+  const opacity = useSharedValue(0);
+  const progressAnim = useSharedValue(0);
   const [progressWidth, setProgressWidth] = useState(0);
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 1, delay: 250, useNativeDriver: true, damping: 14, stiffness: 110 }),
-      Animated.timing(opacity, { toValue: 1, duration: 400, delay: 250, useNativeDriver: true }),
-    ]).start();
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
 
-    // Progress bar fill
-    Animated.timing(progressAnim, {
-      toValue: 1,
-      duration: 1600,
-      delay: 600,
-      useNativeDriver: false,
-    }).start();
+  const progressStyle = useAnimatedStyle(() => ({
+    width: interpolate(progressAnim.value, [0, 1], [0, progressWidth]),
+  }));
+
+  useEffect(() => {
+    opacity.value = withDelay(250, withTiming(1, { duration: 400 }));
+    scale.value = withDelay(250, withSpring(1, { damping: 14, stiffness: 110 }));
+    progressAnim.value = withDelay(600, withTiming(1, { duration: 1600 }));
   }, []);
 
   const cardW = W - 48;
 
   return (
-    <Animated.View style={{ opacity, transform: [{ scale }] }}>
+    <Animated.View style={cardStyle}>
       <TouchableOpacity
         onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
         activeOpacity={0.92}
@@ -741,17 +743,7 @@ function SuccessStory() {
             style={styles.progressTrack}
             onLayout={(e) => setProgressWidth(e.nativeEvent.layout.width)}
           >
-            <Animated.View
-              style={[
-                styles.progressFill,
-                {
-                  width: progressAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, progressWidth],
-                  }),
-                },
-              ]}
-            />
+            <Animated.View style={[styles.progressFill, progressStyle]} />
           </View>
 
           <View style={styles.storyFooter}>
@@ -772,15 +764,21 @@ function SuccessStory() {
 // ─── Glass Why Card ───────────────────────────────────────────────────────────
 
 function GlassWhyCard({ item, isDark }: { item: typeof WHY_ITEMS[0]; isDark: boolean }) {
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useSharedValue(1);
 
-  const handlePressIn = () =>
-    Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, damping: 14 }).start();
-  const handlePressOut = () =>
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 12 }).start();
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.96, { damping: 14 });
+  };
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 12 });
+  };
 
   return (
-    <Animated.View style={[styles.glassCardOuter, { transform: [{ scale }] }]}>
+    <Animated.View style={[styles.glassCardOuter, cardStyle]}>
       <TouchableOpacity
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -809,43 +807,47 @@ function GlassWhyCard({ item, isDark }: { item: typeof WHY_ITEMS[0]; isDark: boo
 
 // ─── Hero Section (with parallax) ────────────────────────────────────────────
 
-function HeroContent({ scrollY, isDark }: { scrollY: Animated.Value; isDark: boolean }) {
-  const orb1Scale = useRef(new Animated.Value(1)).current;
-  const orb2Scale = useRef(new Animated.Value(1)).current;
-  const orb3Scale = useRef(new Animated.Value(1)).current;
-  const fadeIn = useRef(new Animated.Value(0)).current;
-  const slideUp = useRef(new Animated.Value(32)).current;
-  const hintOpacity = useRef(new Animated.Value(0)).current;
+function HeroContent({ scrollY, isDark }: { scrollY: Animated.SharedValue<number>; isDark: boolean }) {
+  const orb1Scale = useSharedValue(1);
+  const orb2Scale = useSharedValue(1);
+  const orb3Scale = useSharedValue(1);
+  const fadeIn = useSharedValue(0);
+  const slideUp = useSharedValue(32);
+  const hintOpacity = useSharedValue(0);
+
+  const heroTranslateStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: interpolate(scrollY.value, [0, 300], [0, -100], 'clamp') }],
+  }));
+
+  const contentStyle = useAnimatedStyle(() => ({
+    opacity: fadeIn.value,
+    transform: [{ translateY: slideUp.value }],
+  }));
+
+  const orb1Style = useAnimatedStyle(() => ({ transform: [{ scale: orb1Scale.value }] }));
+  const orb2Style = useAnimatedStyle(() => ({ transform: [{ scale: orb2Scale.value }] }));
+  const orb3Style = useAnimatedStyle(() => ({ transform: [{ scale: orb3Scale.value }] }));
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeIn, { toValue: 1, duration: 700, useNativeDriver: true }),
-      Animated.spring(slideUp, { toValue: 0, useNativeDriver: true, damping: 16, stiffness: 110 }),
-    ]).start();
+    fadeIn.value = withTiming(1, { duration: 700 });
+    slideUp.value = withSpring(0, { damping: 16, stiffness: 110 });
+    hintOpacity.value = withDelay(1400, withTiming(0.65, { duration: 600 }));
 
-    Animated.timing(hintOpacity, { toValue: 0.65, duration: 600, delay: 1400, useNativeDriver: true }).start();
-
-    Animated.loop(Animated.sequence([
-      Animated.timing(orb1Scale, { toValue: 1.2, duration: 3200, useNativeDriver: true }),
-      Animated.timing(orb1Scale, { toValue: 1, duration: 3200, useNativeDriver: true }),
-    ])).start();
-    Animated.loop(Animated.sequence([
-      Animated.timing(orb2Scale, { toValue: 1.15, duration: 4100, useNativeDriver: true }),
-      Animated.timing(orb2Scale, { toValue: 1, duration: 4100, useNativeDriver: true }),
-    ])).start();
-    Animated.loop(Animated.sequence([
-      Animated.timing(orb3Scale, { toValue: 1.1, duration: 5600, useNativeDriver: true }),
-      Animated.timing(orb3Scale, { toValue: 1, duration: 5600, useNativeDriver: true }),
-    ])).start();
+    orb1Scale.value = withRepeat(withSequence(
+      withTiming(1.2, { duration: 3200 }),
+      withTiming(1, { duration: 3200 }),
+    ), -1, false);
+    orb2Scale.value = withRepeat(withSequence(
+      withTiming(1.15, { duration: 4100 }),
+      withTiming(1, { duration: 4100 }),
+    ), -1, false);
+    orb3Scale.value = withRepeat(withSequence(
+      withTiming(1.1, { duration: 5600 }),
+      withTiming(1, { duration: 5600 }),
+    ), -1, false);
   }, []);
 
   const HERO_H = 500;
-
-  const heroTranslate = scrollY.interpolate({
-    inputRange: [0, 300],
-    outputRange: [0, -100],
-    extrapolate: 'clamp',
-  });
 
   const ctaPress = (route: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -862,16 +864,11 @@ function HeroContent({ scrollY, isDark }: { scrollY: Animated.Value; isDark: boo
       />
 
       {/* Parallax content */}
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          { transform: [{ translateY: heroTranslate }] },
-        ]}
-      >
+      <Animated.View style={[StyleSheet.absoluteFill, heroTranslateStyle]}>
         {/* Glowing orbs */}
-        <Animated.View style={[styles.orb, styles.orb1, { transform: [{ scale: orb1Scale }] }]} />
-        <Animated.View style={[styles.orb, styles.orb2, { transform: [{ scale: orb2Scale }] }]} />
-        <Animated.View style={[styles.orb, styles.orb3, { transform: [{ scale: orb3Scale }] }]} />
+        <Animated.View style={[styles.orb, styles.orb1, orb1Style]} />
+        <Animated.View style={[styles.orb, styles.orb2, orb2Style]} />
+        <Animated.View style={[styles.orb, styles.orb3, orb3Style]} />
 
         {/* SVG decorative ellipses */}
         <Svg
@@ -912,7 +909,7 @@ function HeroContent({ scrollY, isDark }: { scrollY: Animated.Value; isDark: boo
           </TouchableOpacity>
         </View>
 
-        <Animated.View style={{ opacity: fadeIn, transform: [{ translateY: slideUp }] }}>
+        <Animated.View style={contentStyle}>
           {/* Hero badge */}
           <HeroBadge />
           <ShimmerHeadline text={"The Middle East's\nLeading AI Partner"} />
@@ -993,18 +990,21 @@ function StatsStrip({ colors }: { colors: any }) {
 // ─── CTA Banner ───────────────────────────────────────────────────────────────
 
 function CTABanner() {
-  const scale = useRef(new Animated.Value(0.96)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useSharedValue(0.96);
+  const opacity = useSharedValue(0);
+
+  const bannerStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 1, delay: 100, useNativeDriver: true, damping: 14, stiffness: 100 }),
-      Animated.timing(opacity, { toValue: 1, duration: 500, delay: 100, useNativeDriver: true }),
-    ]).start();
+    opacity.value = withDelay(100, withTiming(1, { duration: 500 }));
+    scale.value = withDelay(100, withSpring(1, { damping: 14, stiffness: 100 }));
   }, []);
 
   return (
-    <Animated.View style={{ opacity, transform: [{ scale }] }}>
+    <Animated.View style={bannerStyle}>
       <LinearGradient
         colors={['#1E0A4C', '#3B0764', '#7C3AED']}
         start={{ x: 0, y: 0 }}
@@ -1048,7 +1048,13 @@ function SectionHeader({ title, colors }: { title: string; colors: any }) {
 export default function Dashboard() {
   const { colors, isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollY = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -1060,10 +1066,7 @@ export default function Dashboard() {
       <Animated.ScrollView
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
+        onScroll={scrollHandler}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

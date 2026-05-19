@@ -1,8 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Animated, ScrollView, StyleSheet, View, Text,
+  ScrollView, StyleSheet, View, Text,
   TextInput, TouchableOpacity, Dimensions, Platform, StatusBar, Linking,
 } from 'react-native';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withTiming, withSpring,
+  withRepeat, withSequence, withDelay, Easing as REasing,
+  interpolate, cancelAnimation,
+  runOnJS,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Circle, Rect, Ellipse } from 'react-native-svg';
@@ -143,18 +149,21 @@ function MailIcon({ color }: { color: string }) {
 // ─── Featured Article Card ────────────────────────────────────────────────────
 
 function FeaturedCard() {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(0.96)).current;
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(0.96);
+
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 14, stiffness: 110 }),
-    ]).start();
+    opacity.value = withTiming(1, { duration: 600 });
+    scale.value = withSpring(1, { damping: 14, stiffness: 110 });
   }, []);
 
   return (
-    <Animated.View style={{ opacity, transform: [{ scale }] }}>
+    <Animated.View style={cardStyle}>
       <TouchableOpacity
         onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); Linking.openURL(FEATURED_ARTICLE.url); }}
         activeOpacity={0.9}
@@ -209,42 +218,40 @@ function ArticleCard({
   colors: any;
 }) {
   const [bookmarked, setBookmarked] = useState(false);
-  const slideAnim = useRef(new Animated.Value(24)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-  const bookmarkScale = useRef(new Animated.Value(1)).current;
-  const cardScale = useRef(new Animated.Value(1)).current;
+  const slideAnim = useSharedValue(24);
+  const opacityAnim = useSharedValue(0);
+  const bookmarkScale = useSharedValue(1);
+  const cardScale = useSharedValue(1);
+
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity: opacityAnim.value,
+    transform: [{ translateY: slideAnim.value }, { scale: cardScale.value }],
+  }));
+
+  const bookmarkStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: bookmarkScale.value }],
+  }));
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: 350,
-        delay: index * 65,
-        useNativeDriver: true,
-      }),
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        delay: index * 65,
-        useNativeDriver: true,
-        damping: 16,
-        stiffness: 130,
-      }),
-    ]).start();
+    opacityAnim.value = withDelay(index * 65, withTiming(1, { duration: 350 }));
+    slideAnim.value = withDelay(index * 65, withSpring(0, { damping: 16, stiffness: 130 }));
   }, []);
 
   const handleBookmark = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setBookmarked(prev => !prev);
-    Animated.sequence([
-      Animated.spring(bookmarkScale, { toValue: 1.4, useNativeDriver: true, damping: 8, stiffness: 300 }),
-      Animated.spring(bookmarkScale, { toValue: 1, useNativeDriver: true, damping: 10, stiffness: 200 }),
-    ]).start();
+    bookmarkScale.value = withSequence(
+      withSpring(1.4, { damping: 8, stiffness: 300 }),
+      withSpring(1, { damping: 10, stiffness: 200 }),
+    );
   }, []);
 
-  const handlePressIn = () =>
-    Animated.spring(cardScale, { toValue: 0.98, useNativeDriver: true, damping: 14 }).start();
-  const handlePressOut = () =>
-    Animated.spring(cardScale, { toValue: 1, useNativeDriver: true, damping: 12 }).start();
+  const handlePressIn = () => {
+    cardScale.value = withSpring(0.98, { damping: 14 });
+  };
+  const handlePressOut = () => {
+    cardScale.value = withSpring(1, { damping: 12 });
+  };
 
   return (
     <Animated.View
@@ -254,10 +261,9 @@ function ArticleCard({
           backgroundColor: colors.surface,
           borderColor: colors.border,
           borderLeftColor: article.categoryColor,
-          opacity: opacityAnim,
-          transform: [{ translateY: slideAnim }, { scale: cardScale }],
           shadowColor: article.categoryColor,
         },
+        cardStyle,
       ]}
     >
       <TouchableOpacity
@@ -293,7 +299,7 @@ function ArticleCard({
               {article.category}
             </Text>
           </View>
-          <Animated.View style={{ transform: [{ scale: bookmarkScale }] }}>
+          <Animated.View style={bookmarkStyle}>
             <TouchableOpacity
               onPress={handleBookmark}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -323,14 +329,18 @@ function ArticleCard({
 function NewsletterCard({ colors }: { colors: any }) {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
-  const btnScale = useRef(new Animated.Value(1)).current;
+  const btnScale = useSharedValue(1);
+
+  const btnStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: btnScale.value }],
+  }));
 
   const handleSubscribe = () => {
     if (!email.trim()) return;
-    Animated.sequence([
-      Animated.spring(btnScale, { toValue: 0.94, useNativeDriver: true, damping: 12 }),
-      Animated.spring(btnScale, { toValue: 1, useNativeDriver: true, damping: 10 }),
-    ]).start();
+    btnScale.value = withSequence(
+      withSpring(0.94, { damping: 12 }),
+      withSpring(1, { damping: 10 }),
+    );
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setSubscribed(true);
   };
@@ -368,7 +378,7 @@ function NewsletterCard({ colors }: { colors: any }) {
             keyboardType="email-address"
             autoCapitalize="none"
           />
-          <Animated.View style={{ transform: [{ scale: btnScale }] }}>
+          <Animated.View style={btnStyle}>
             <TouchableOpacity
               style={styles.subscribeBtn}
               onPress={handleSubscribe}
@@ -388,14 +398,17 @@ function NewsletterCard({ colors }: { colors: any }) {
 export default function InsightsScreen() {
   const { colors } = useTheme();
   const [activeCategory, setActiveCategory] = useState('All');
-  const headerFade = useRef(new Animated.Value(0)).current;
-  const headerSlide = useRef(new Animated.Value(-24)).current;
+  const headerFade = useSharedValue(0);
+  const headerSlide = useSharedValue(-24);
+
+  const headerStyle = useAnimatedStyle(() => ({
+    opacity: headerFade.value,
+    transform: [{ translateY: headerSlide.value }],
+  }));
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(headerFade, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.spring(headerSlide, { toValue: 0, useNativeDriver: true, damping: 16, stiffness: 120 }),
-    ]).start();
+    headerFade.value = withTiming(1, { duration: 600 });
+    headerSlide.value = withSpring(0, { damping: 16, stiffness: 120 });
   }, []);
 
   const filteredArticles = activeCategory === 'All'
@@ -408,9 +421,7 @@ export default function InsightsScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
         {/* ── Header ── */}
-        <Animated.View
-          style={{ opacity: headerFade, transform: [{ translateY: headerSlide }] }}
-        >
+        <Animated.View style={headerStyle}>
           <LinearGradient
             colors={['#0D1B4B', '#0055FF']}
             start={{ x: 0, y: 0 }}
