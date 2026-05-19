@@ -424,7 +424,7 @@ function DataTicker() {
   const translateX = anim.interpolate({ inputRange: [0, 1], outputRange: [W, -W * 2.5] });
 
   return (
-    <View style={{ overflow: 'hidden', height: 22, marginTop: 10 }}>
+    <View style={{ overflow: 'hidden', height: 22, marginTop: 10, marginHorizontal: -24 }}>
       <Animated.View style={{ transform: [{ translateX }] }}>
         <Text style={{ color: 'rgba(255,255,255,0.38)', fontSize: 10, letterSpacing: 1.8, fontWeight: '700' }}>
           {TICKER}{TICKER}
