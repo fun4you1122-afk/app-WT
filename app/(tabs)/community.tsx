@@ -2,13 +2,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   ScrollView, StyleSheet, View, Text,
   TextInput, TouchableOpacity, Dimensions, Platform, StatusBar, Linking,
+  Animated, Easing,
 } from 'react-native';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, withSpring,
-  withRepeat, withSequence, withDelay, Easing as REasing,
-  interpolate, cancelAnimation,
-  runOnJS,
-} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Circle, Rect, Ellipse } from 'react-native-svg';
@@ -149,17 +144,17 @@ function MailIcon({ color }: { color: string }) {
 // ─── Featured Article Card ────────────────────────────────────────────────────
 
 function FeaturedCard() {
-  const opacity = useSharedValue(0);
-  const scale = useSharedValue(0.96);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0.96)).current;
 
-  const cardStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ scale: scale.value }],
-  }));
+  const cardStyle = {
+    opacity,
+    transform: [{ scale }],
+  };
 
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 600 });
-    scale.value = withSpring(1, { damping: 14, stiffness: 110 });
+    Animated.timing(opacity, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+    Animated.spring(scale, { toValue: 1, damping: 14, stiffness: 110, useNativeDriver: true }).start();
   }, []);
 
   return (
@@ -218,39 +213,45 @@ function ArticleCard({
   colors: any;
 }) {
   const [bookmarked, setBookmarked] = useState(false);
-  const slideAnim = useSharedValue(24);
-  const opacityAnim = useSharedValue(0);
-  const bookmarkScale = useSharedValue(1);
-  const cardScale = useSharedValue(1);
+  const slideAnim = useRef(new Animated.Value(24)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const bookmarkScale = useRef(new Animated.Value(1)).current;
+  const cardScale = useRef(new Animated.Value(1)).current;
 
-  const cardStyle = useAnimatedStyle(() => ({
-    opacity: opacityAnim.value,
-    transform: [{ translateY: slideAnim.value }, { scale: cardScale.value }],
-  }));
+  const cardStyle = {
+    opacity: opacityAnim,
+    transform: [{ translateY: slideAnim }, { scale: cardScale }],
+  };
 
-  const bookmarkStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: bookmarkScale.value }],
-  }));
+  const bookmarkStyle = {
+    transform: [{ scale: bookmarkScale }],
+  };
 
   useEffect(() => {
-    opacityAnim.value = withDelay(index * 65, withTiming(1, { duration: 350 }));
-    slideAnim.value = withDelay(index * 65, withSpring(0, { damping: 16, stiffness: 130 }));
+    Animated.sequence([
+      Animated.delay(index * 65),
+      Animated.timing(opacityAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
+    ]).start();
+    Animated.sequence([
+      Animated.delay(index * 65),
+      Animated.spring(slideAnim, { toValue: 0, damping: 16, stiffness: 130, useNativeDriver: true }),
+    ]).start();
   }, []);
 
   const handleBookmark = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setBookmarked(prev => !prev);
-    bookmarkScale.value = withSequence(
-      withSpring(1.4, { damping: 8, stiffness: 300 }),
-      withSpring(1, { damping: 10, stiffness: 200 }),
-    );
+    Animated.sequence([
+      Animated.spring(bookmarkScale, { toValue: 1.4, damping: 8, stiffness: 300, useNativeDriver: true }),
+      Animated.spring(bookmarkScale, { toValue: 1, damping: 10, stiffness: 200, useNativeDriver: true }),
+    ]).start();
   }, []);
 
   const handlePressIn = () => {
-    cardScale.value = withSpring(0.98, { damping: 14 });
+    Animated.spring(cardScale, { toValue: 0.98, damping: 14, useNativeDriver: true }).start();
   };
   const handlePressOut = () => {
-    cardScale.value = withSpring(1, { damping: 12 });
+    Animated.spring(cardScale, { toValue: 1, damping: 12, useNativeDriver: true }).start();
   };
 
   return (
@@ -329,18 +330,18 @@ function ArticleCard({
 function NewsletterCard({ colors }: { colors: any }) {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
-  const btnScale = useSharedValue(1);
+  const btnScale = useRef(new Animated.Value(1)).current;
 
-  const btnStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: btnScale.value }],
-  }));
+  const btnStyle = {
+    transform: [{ scale: btnScale }],
+  };
 
   const handleSubscribe = () => {
     if (!email.trim()) return;
-    btnScale.value = withSequence(
-      withSpring(0.94, { damping: 12 }),
-      withSpring(1, { damping: 10 }),
-    );
+    Animated.sequence([
+      Animated.spring(btnScale, { toValue: 0.94, damping: 12, useNativeDriver: true }),
+      Animated.spring(btnScale, { toValue: 1, damping: 10, useNativeDriver: true }),
+    ]).start();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setSubscribed(true);
   };
@@ -398,17 +399,17 @@ function NewsletterCard({ colors }: { colors: any }) {
 export default function InsightsScreen() {
   const { colors } = useTheme();
   const [activeCategory, setActiveCategory] = useState('All');
-  const headerFade = useSharedValue(0);
-  const headerSlide = useSharedValue(-24);
+  const headerFade = useRef(new Animated.Value(0)).current;
+  const headerSlide = useRef(new Animated.Value(-24)).current;
 
-  const headerStyle = useAnimatedStyle(() => ({
-    opacity: headerFade.value,
-    transform: [{ translateY: headerSlide.value }],
-  }));
+  const headerStyle = {
+    opacity: headerFade,
+    transform: [{ translateY: headerSlide }],
+  };
 
   useEffect(() => {
-    headerFade.value = withTiming(1, { duration: 600 });
-    headerSlide.value = withSpring(0, { damping: 16, stiffness: 120 });
+    Animated.timing(headerFade, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+    Animated.spring(headerSlide, { toValue: 0, damping: 16, stiffness: 120, useNativeDriver: true }).start();
   }, []);
 
   const filteredArticles = activeCategory === 'All'

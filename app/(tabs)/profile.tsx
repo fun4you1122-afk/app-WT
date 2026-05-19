@@ -2,33 +2,34 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   ScrollView, StyleSheet, View, Text, Image,
   TouchableOpacity, Switch, Dimensions, Platform, StatusBar,
-  Linking,
+  Linking, Animated, Easing,
 } from 'react-native';
-import Animated, {
-  useSharedValue, useAnimatedStyle, useAnimatedProps, withTiming, withSpring,
-  withRepeat, withSequence, withDelay, Easing as REasing,
-  interpolate, cancelAnimation,
-  runOnJS, useDerivedValue,
-} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import Svg, { Path, Circle, Rect, Ellipse, G } from 'react-native-svg';
 
+const { width: W } = Dimensions.get('window');
+
+// ─── Brand Colors ─────────────────────────────────────────────────────────────
+const BLUE = '#0055FF';
+const PURPLE = '#7C3AED';
+const TEAL = '#0EA5E9';
+const GREEN = '#059669';
+const AMBER = '#D97706';
+const RED = '#DC2626';
+
 // ─── New Animated Components ──────────────────────────────────────────────────
 
-// GlitchBadge — kept with built-in Animated (simple sweep, already performant)
-import { Animated as RNAnimated, Easing } from 'react-native';
-
 function GlitchBadge({ text }: { text: string }) {
-  const sweepAnim = useRef(new RNAnimated.Value(-1)).current;
+  const sweepAnim = useRef(new Animated.Value(-1)).current;
 
   useEffect(() => {
-    const loop = RNAnimated.loop(
-      RNAnimated.sequence([
-        RNAnimated.timing(sweepAnim, { toValue: 2, duration: 1800, useNativeDriver: true, delay: 0 }),
-        RNAnimated.timing(sweepAnim, { toValue: -1, duration: 0, useNativeDriver: true }),
-        RNAnimated.delay(2200),
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(sweepAnim, { toValue: 2, duration: 1800, useNativeDriver: true }),
+        Animated.timing(sweepAnim, { toValue: -1, duration: 0, useNativeDriver: true }),
+        Animated.delay(2200),
       ])
     );
     loop.start();
@@ -50,7 +51,7 @@ function GlitchBadge({ text }: { text: string }) {
         gap: 6,
       }}>
         {/* sweep shimmer line */}
-        <RNAnimated.View style={{
+        <Animated.View style={{
           position: 'absolute',
           top: 0,
           bottom: 0,
@@ -65,21 +66,21 @@ function GlitchBadge({ text }: { text: string }) {
   );
 }
 
-// WaveformBar — kept with built-in Animated (array of values, can't use hooks in loops)
+// WaveformBar — array of values, can't use hooks in loops
 function WaveformBar({ barCount = 14, color = '#fff', height = 36 }: { barCount?: number; color?: string; height?: number }) {
-  const anims = useRef(Array.from({ length: barCount }, () => new RNAnimated.Value(Math.random() * 0.6 + 0.2))).current;
+  const anims = useRef(Array.from({ length: barCount }, () => new Animated.Value(Math.random() * 0.6 + 0.2))).current;
 
   useEffect(() => {
     const animations = anims.map((anim, i) =>
-      RNAnimated.loop(
-        RNAnimated.sequence([
-          RNAnimated.timing(anim, {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, {
             toValue: Math.random() * 0.7 + 0.3,
             duration: 300 + Math.random() * 400,
             useNativeDriver: true,
             delay: i * 40,
           }),
-          RNAnimated.timing(anim, {
+          Animated.timing(anim, {
             toValue: Math.random() * 0.3 + 0.1,
             duration: 300 + Math.random() * 300,
             useNativeDriver: true,
@@ -94,7 +95,7 @@ function WaveformBar({ barCount = 14, color = '#fff', height = 36 }: { barCount?
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, height }}>
       {anims.map((anim, i) => (
-        <RNAnimated.View
+        <Animated.View
           key={i}
           style={{
             width: 3,
@@ -111,18 +112,18 @@ function WaveformBar({ barCount = 14, color = '#fff', height = 36 }: { barCount?
 }
 
 function MorphingBlob({ color, size = 160, opacity = 0.15 }: { color: string; size?: number; opacity?: number }) {
-  const pulseAnim = useSharedValue(1);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  const blobStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulseAnim.value }],
-  }));
+  const blobStyle = {
+    transform: [{ scale: pulseAnim }],
+  };
 
   useEffect(() => {
-    pulseAnim.value = withRepeat(withSequence(
-      withTiming(1.15, { duration: 2200 }),
-      withTiming(0.9, { duration: 2200 }),
-    ), -1, false);
-    return () => cancelAnimation(pulseAnim);
+    Animated.loop(Animated.sequence([
+      Animated.timing(pulseAnim, { toValue: 1.15, duration: 2200, useNativeDriver: true }),
+      Animated.timing(pulseAnim, { toValue: 0.9, duration: 2200, useNativeDriver: true }),
+    ])).start();
+    return () => pulseAnim.stopAnimation();
   }, []);
 
   return (
@@ -153,16 +154,16 @@ function CircuitLines({ width: W2, height: H2 = 120, color = 'rgba(255,255,255,0
   );
 }
 
-// ScanBeam — kept with built-in Animated (simple translateY loop)
+// ScanBeam — simple translateY loop
 function ScanBeam({ width: W2, height: H2 }: { width: number; height: number }) {
-  const scanAnim = useRef(new RNAnimated.Value(-2)).current;
+  const scanAnim = useRef(new Animated.Value(-2)).current;
 
   useEffect(() => {
-    const loop = RNAnimated.loop(
-      RNAnimated.sequence([
-        RNAnimated.timing(scanAnim, { toValue: H2 + 2, duration: 2400, useNativeDriver: true }),
-        RNAnimated.delay(1600),
-        RNAnimated.timing(scanAnim, { toValue: -2, duration: 0, useNativeDriver: true }),
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scanAnim, { toValue: H2 + 2, duration: 2400, useNativeDriver: true }),
+        Animated.delay(1600),
+        Animated.timing(scanAnim, { toValue: -2, duration: 0, useNativeDriver: true }),
       ])
     );
     loop.start();
@@ -170,7 +171,7 @@ function ScanBeam({ width: W2, height: H2 }: { width: number; height: number }) 
   }, []);
 
   return (
-    <RNAnimated.View
+    <Animated.View
       pointerEvents="none"
       style={{
         position: 'absolute',
@@ -186,16 +187,6 @@ function ScanBeam({ width: W2, height: H2 }: { width: number; height: number }) 
     />
   );
 }
-
-const { width: W } = Dimensions.get('window');
-
-// ─── Brand Colors ─────────────────────────────────────────────────────────────
-const BLUE = '#0055FF';
-const PURPLE = '#7C3AED';
-const TEAL = '#0EA5E9';
-const GREEN = '#059669';
-const AMBER = '#D97706';
-const RED = '#DC2626';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -302,17 +293,13 @@ function AnimatedCounter({
 }: {
   target: number; suffix?: string; color: string;
 }) {
-  const progress = useSharedValue(0);
+  const progress = useRef(new Animated.Value(0)).current;
   const [display, setDisplay] = useState('0');
 
-  const updateDisplay = (v: number) => setDisplay(Math.round(v * target).toString());
-
-  useDerivedValue(() => {
-    runOnJS(updateDisplay)(progress.value);
-  });
-
   useEffect(() => {
-    progress.value = withTiming(1, { duration: 1200, easing: REasing.out(REasing.cubic) });
+    const id = progress.addListener(({ value }) => setDisplay(Math.round(value * target).toString()));
+    Animated.timing(progress, { toValue: 1, duration: 1200, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+    return () => progress.removeListener(id);
   }, []);
 
   return (
@@ -323,30 +310,30 @@ function AnimatedCounter({
 // ─── Leader Card ──────────────────────────────────────────────────────────────
 
 function LeaderCard({ person, colors }: { person: typeof LEADERSHIP[0]; colors: any }) {
-  const scale = useSharedValue(1);
-  const glowOpacity = useSharedValue(0.4);
+  const scale = useRef(new Animated.Value(1)).current;
+  const glowOpacity = useRef(new Animated.Value(0.4)).current;
 
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-  }));
+  const glowStyle = {
+    opacity: glowOpacity,
+  };
 
-  const cardStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const cardStyle = {
+    transform: [{ scale }],
+  };
 
   useEffect(() => {
-    glowOpacity.value = withRepeat(withSequence(
-      withTiming(1, { duration: 1200 }),
-      withTiming(0.4, { duration: 1200 }),
-    ), -1, false);
-    return () => cancelAnimation(glowOpacity);
+    Animated.loop(Animated.sequence([
+      Animated.timing(glowOpacity, { toValue: 1, duration: 1200, useNativeDriver: true }),
+      Animated.timing(glowOpacity, { toValue: 0.4, duration: 1200, useNativeDriver: true }),
+    ])).start();
+    return () => glowOpacity.stopAnimation();
   }, []);
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.96, { damping: 14 });
+    Animated.spring(scale, { toValue: 0.96, damping: 14, useNativeDriver: true }).start();
   };
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 12 });
+    Animated.spring(scale, { toValue: 1, damping: 12, useNativeDriver: true }).start();
   };
 
   return (
@@ -405,17 +392,17 @@ function ContactRow({
 }: {
   icon: string; label: string; onPress: () => void; colors: any; isLast: boolean;
 }) {
-  const scale = useSharedValue(1);
+  const scale = useRef(new Animated.Value(1)).current;
 
-  const rowStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const rowStyle = {
+    transform: [{ scale }],
+  };
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.98, { damping: 14 });
+    Animated.spring(scale, { toValue: 0.98, damping: 14, useNativeDriver: true }).start();
   };
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 12 });
+    Animated.spring(scale, { toValue: 1, damping: 12, useNativeDriver: true }).start();
   };
 
   return (
@@ -457,22 +444,20 @@ const BAR_TARGETS = [0.35, 0.55, 0.45, 0.75, 0.6, 0.85, 0.7, 1.0];
 function AnimatedStatCard({ value, suffix = '', label, color }: {
   value: number; suffix?: string; label: string; color: string;
 }) {
-  const progress = useSharedValue(0);
+  const progress = useRef(new Animated.Value(0)).current;
   const [displayVal, setDisplayVal] = useState('0');
-  const barAnims = useRef(BAR_TARGETS.map(() => new RNAnimated.Value(0))).current;
-
-  const updateDisplay = (v: number) => setDisplayVal(Math.round(v * value).toString());
-  useDerivedValue(() => { runOnJS(updateDisplay)(progress.value); });
+  const barAnims = useRef(BAR_TARGETS.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
-    progress.value = withTiming(1, { duration: 1600, easing: REasing.out(REasing.cubic) });
+    const id = progress.addListener(({ value: v }) => setDisplayVal(Math.round(v * value).toString()));
+    Animated.timing(progress, { toValue: 1, duration: 1600, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
     barAnims.forEach((anim, i) => {
-      RNAnimated.sequence([
-        RNAnimated.delay(i * 70),
-        RNAnimated.timing(anim, { toValue: BAR_TARGETS[i], duration: 600, useNativeDriver: true }),
+      Animated.sequence([
+        Animated.delay(i * 70),
+        Animated.timing(anim, { toValue: BAR_TARGETS[i], duration: 600, useNativeDriver: true }),
       ]).start();
     });
-    return () => cancelAnimation(progress);
+    return () => progress.removeListener(id);
   }, []);
 
   const CHART_H = 36;
@@ -494,7 +479,7 @@ function AnimatedStatCard({ value, suffix = '', label, color }: {
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: CHART_H, marginTop: 10 }}>
         {barAnims.map((anim, i) => (
           <View key={i} style={{ width: 7, height: CHART_H, justifyContent: 'flex-end' }}>
-            <RNAnimated.View
+            <Animated.View
               style={{
                 width: 7,
                 height: CHART_H,
@@ -515,24 +500,24 @@ function AnimatedStatCard({ value, suffix = '', label, color }: {
 
 function FlipCertCard({ cert, colors }: { cert: typeof CERTIFICATIONS[0]; colors: any }) {
   const [flipped, setFlipped] = useState(false);
-  const flipAnim = useSharedValue(0);
+  const flipAnim = useRef(new Animated.Value(0)).current;
 
   const handleFlip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    flipAnim.value = withSpring(flipped ? 0 : 1, { damping: 14, stiffness: 120 }, () => {
-      runOnJS(setFlipped)(!flipped);
-    });
+    const newFlipped = !flipped;
+    setFlipped(newFlipped);
+    Animated.spring(flipAnim, { toValue: newFlipped ? 1 : 0, damping: 14, stiffness: 120, useNativeDriver: true }).start();
   };
 
   const cardW = (W - 72) / 3;
 
-  const frontStyle = useAnimatedStyle(() => ({
-    transform: [{ rotateY: `${interpolate(flipAnim.value, [0, 1], [0, 180])}deg` }],
-  }));
+  const frontStyle = {
+    transform: [{ rotateY: flipAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }],
+  };
 
-  const backStyle = useAnimatedStyle(() => ({
-    transform: [{ rotateY: `${interpolate(flipAnim.value, [0, 1], [180, 360])}deg` }],
-  }));
+  const backStyle = {
+    transform: [{ rotateY: flipAnim.interpolate({ inputRange: [0, 1], outputRange: ['180deg', '360deg'] }) }],
+  };
 
   return (
     <TouchableOpacity onPress={handleFlip} activeOpacity={1} style={{ width: cardW, height: 130 }}>
@@ -584,33 +569,42 @@ function FlipCertCard({ cert, colors }: { cert: typeof CERTIFICATIONS[0]; colors
 
 export default function AboutScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
-  const heroAnim = useSharedValue(0);
-  const contentAnim = useSharedValue(0);
-  const logoScale = useSharedValue(0.8);
-  const logoRotate = useSharedValue(0);
+  const heroAnim = useRef(new Animated.Value(0)).current;
+  const contentAnim = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(0.8)).current;
+  const logoRotate = useRef(new Animated.Value(0)).current;
 
-  const heroStyle = useAnimatedStyle(() => ({
-    opacity: heroAnim.value,
-    transform: [{ translateY: interpolate(heroAnim.value, [0, 1], [-20, 0]) }],
-  }));
+  const heroStyle = {
+    opacity: heroAnim,
+    transform: [{ translateY: heroAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }],
+  };
 
-  const contentStyle = useAnimatedStyle(() => ({
-    opacity: contentAnim.value,
-  }));
+  const contentStyle = {
+    opacity: contentAnim,
+  };
 
-  const logoStyle = useAnimatedStyle(() => ({
+  const logoStyle = {
     transform: [
-      { scale: logoScale.value },
-      { rotate: `${interpolate(logoRotate.value, [0, 1], [-8, 0])}deg` },
+      { scale: logoScale },
+      { rotate: logoRotate.interpolate({ inputRange: [0, 1], outputRange: ['-8deg', '0deg'] }) },
     ],
-  }));
+  };
 
   useEffect(() => {
-    heroAnim.value = withTiming(1, { duration: 600, easing: REasing.out(REasing.cubic) });
-    logoScale.value = withDelay(200, withSpring(1, { damping: 14, stiffness: 120 }));
-    logoRotate.value = withDelay(200, withTiming(1, { duration: 600, easing: REasing.out(REasing.back(1.5)) }));
+    Animated.timing(heroAnim, { toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    Animated.sequence([
+      Animated.delay(200),
+      Animated.spring(logoScale, { toValue: 1, damping: 14, stiffness: 120, useNativeDriver: true }),
+    ]).start();
+    Animated.sequence([
+      Animated.delay(200),
+      Animated.timing(logoRotate, { toValue: 1, duration: 600, easing: Easing.out(Easing.back(1.5)), useNativeDriver: true }),
+    ]).start();
     // content fades in after hero
-    contentAnim.value = withDelay(600, withTiming(1, { duration: 400, easing: REasing.out(REasing.cubic) }));
+    Animated.sequence([
+      Animated.delay(600),
+      Animated.timing(contentAnim, { toValue: 1, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
   }, []);
 
   const handleThemeToggle = () => {
